@@ -41,7 +41,53 @@
 #include "stm32f4xx_hal.h"
 
 /* USER CODE BEGIN Includes */
-//ciao
+
+#define MD_422HZ_1KHZ 0
+#define MD_27KHZ_14KHZ 1
+#define MD_7KHZ_3KHZ 2
+#define MD_26HZ_2KHZ 3
+
+#define ADC_OPT_ENABLED 1
+#define ADC_OPT_DISABLED 0
+
+#define CELL_CH_ALL 0
+#define CELL_CH_1and7 1
+#define CELL_CH_2and8 2
+#define CELL_CH_3and9 3
+#define CELL_CH_4and10 4
+#define CELL_CH_5and11 5
+#define CELL_CH_6and12 6
+
+#define SELFTEST_1 1
+#define SELFTEST_2 2
+
+#define AUX_CH_ALL 0
+#define AUX_CH_GPIO1 1
+#define AUX_CH_GPIO2 2
+#define AUX_CH_GPIO3 3
+#define AUX_CH_GPIO4 4
+#define AUX_CH_GPIO5 5
+#define AUX_CH_VREF2 6
+
+#define STAT_CH_ALL 0
+#define STAT_CH_SOC 1
+#define STAT_CH_ITEMP 2
+#define STAT_CH_VREGA 3
+#define STAT_CH_VREGD 4
+
+#define DCP_DISABLED 0
+#define DCP_ENABLED 1
+
+#define PULL_UP_CURRENT 1
+#define PULL_DOWN_CURRENT 0
+
+#define CELL_CHANNELS 12
+#define AUX_CHANNELS 6
+#define STAT_CHANNELS 4
+#define CELL 1
+#define AUX 2
+#define STAT 3
+
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -386,10 +432,23 @@ int main(void)
   MX_USART2_UART_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
+
   int TOT_IC=1;
   int CELL_CH=9;
+
+   uint8_t NUM_RX_BYT = 8;
+    uint8_t BYT_IN_REG = 6;
+    uint8_t CELL_IN_REG = 3;
+   uint8_t NUM_CV_REG = 3;
+
   uint8_t cell_data[8];
-  uint16_t cell_codes[CELL_CH];
+  uint16_t cell_codes[TOT_IC][CELL_CH];
+  uint16_t parsed_cell;
+  uint16_t received_pec;
+  uint16_t data_pec;
+  uint8_t pec_error=0;
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -401,25 +460,44 @@ int main(void)
 
   /* USER CODE BEGIN 3 */
 	  //wakeup_idle1();
-	  	  ltc6811_adcv(2, 0, 1);
+	  	  ltc6811_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
 	  	  ltc6811_pollAdc();
 	  	  //HAL_Delay(3);
 	  	  //wakeup_idle1();
-	  	  ltc6811_rdcv_reg(1, TOT_IC, cell_data);
 
-	  	  uint8_t data_counter=0;
-	  	  for(uint8_t current_cell = 0; current_cell < 3; current_cell++) {
-	  	  	 // loops once for each of the 3 cell voltage codes in the register
-	  	  	 uint16_t parsed_cell = cell_data[data_counter] + (cell_data[data_counter + 1] << 8);	//Each cell code is received as two bytes and is combined to
-	  	  	 cell_codes[current_cell] = parsed_cell; //valori in V
-	  	  	 data_counter = data_counter + 2;        //Because cell voltage codes are two bytes the data counter
+	   for(uint8_t cell_reg = 1; cell_reg<NUM_CV_REG+1; cell_reg++){                  //executes once for each of the ltc6811 cell voltage registers
 
-	  	  	 uint8_t num[10];
-	  	  	 sprintf(num, "%d - ", parsed_cell);
-	  	  	 HAL_UART_Transmit(&huart2, num, strlen(num), 100);
-	  	  	 HAL_Delay(100);
-	  	  }
-	  	  HAL_UART_Transmit(&huart2, "\r\n", 2, 100);
+		  uint8_t data_counter = 0;
+		  ltc6811_rdcv_reg(cell_reg, TOT_IC, cell_data);
+
+		  	  for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
+
+		   	  	   //Current_ic is used as the IC counter
+		   	  	   //Loops once for each of the 3 cell voltage codes in the register
+
+		   	  	   	   for(uint8_t current_cell = 0; current_cell < 3; current_cell++) {
+
+		   	  	   		   //Loops once for each of the 3 cell voltage codes in the register
+		   	  	   		   //Each cell code is received as two bytes and is combined to
+		   	  	   		   uint16_t parsed_cell = cell_data[data_counter]+(cell_reg-1)+ (cell_data[data_counter + 1] << 8);
+		   	  	   		   //Because cell voltage codes are two bytes the data counter
+		   	  	   		   cell_codes[current_cell][current_cell  + ((cell_reg - 1) * CELL_IN_REG)] = parsed_cell;
+		   	  	   		   //valori in V
+		   	  	   		   data_counter = data_counter + 2;
+		   	  	   		   uint8_t num[9];
+		   	  	   		   sprintf(num, "%d - ", parsed_cell);
+		   	  	   		   HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
+		   	  	   		   HAL_Delay(100);
+		   	  	   	   }
+		   	  	   	received_pec = (cell_data[data_counter] << 8) + cell_data[data_counter + 1];
+		   	  	   	data_pec = pec15(BYT_IN_REG, &cell_data[current_ic * NUM_RX_BYT]);
+		   	  	   		if(received_pec != data_pec){
+		   	  	   			pec_error = -1;
+		   	  	   		}
+		   	  	   	data_counter = data_counter + 2;
+		   	  	   	HAL_UART_Transmit(&huart2, "\r\n", 2, 100);
+		  	  }
+	   }
   }
   /* USER CODE END 3 */
 
