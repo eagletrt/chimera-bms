@@ -22,6 +22,8 @@ Src/stm32f4xx_hal_msp.o: ../Src/stm32f4xx_hal_msp.c \
  C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash.h \
  C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ex.h \
  C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ramfunc.h \
+ C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c.h \
+ C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c_ex.h \
  C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr.h \
  C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr_ex.h \
  C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_spi.h \
@@ -72,6 +74,10 @@ C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Drive
 C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ex.h:
 
 C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_flash_ramfunc.h:
+
+C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c.h:
+
+C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_i2c_ex.h:
 
 C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_pwr.h:
 

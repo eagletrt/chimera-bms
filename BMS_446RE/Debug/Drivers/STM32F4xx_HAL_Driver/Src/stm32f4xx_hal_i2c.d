@@ -1,5 +1,5 @@
-Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.o: \
- ../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c \
+Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.o: \
+ ../Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c \
  C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h \
  C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Inc/stm32f4xx_hal_conf.h \
  C:/Users/Utente/Documents/GitHub/eagle-bms/BMS_446RE/Inc/main.h \
