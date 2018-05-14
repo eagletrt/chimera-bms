@@ -88,7 +88,11 @@
 #define AUX 2
 #define STAT 3
 
-#define EEPROM_ADDRESS 0xA  //1010
+
+#define M24M02DRC_1_DATA_ADDRESS 0x50 // Address of the first 1024 page M24M02DRC EEPROM data buffer, 2048 bits (256 8-bit bytes) per page
+#define M24M02DRC_1_IDPAGE_ADDRESS 0x58 // Address of the single M24M02DRC lockable ID page of the first EEPROM
+#define M24M02DRC_2_DATA_ADDRESS 0x54 // Address of the second 1024 page M24M02DRC EEPROM data buffer, 2048 bits (256 8-bit bytes) per page
+#define M24M02DRC_2_IDPAGE_ADDRESS 0x5C // Address of the single M24M02DRC lockable ID page of the second EEPROM
 /* USER CODE END Includes */
 
 
@@ -112,6 +116,8 @@ static void MX_SPI1_Init(void);
 static void MX_I2C1_Init(void);
 
 
+
+
 void i_write(unsigned position, unsigned int data){         //i2c write
 	int count=0;
 	if(data>255){
@@ -124,16 +130,17 @@ void i_write(unsigned position, unsigned int data){         //i2c write
 	}
 
 	if(count>0){
-		HAL_I2C_Mem_Write(&hi2c1,EEPROM_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
+		//for writing to EEPROM
+		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
 		HAL_Delay(5);
-		HAL_I2C_Mem_Write(&hi2c1,EEPROM_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
+		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
 		HAL_Delay(5);
 
 	}else{
 
-		HAL_I2C_Mem_Write(&hi2c1,EEPROM_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
+		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
 		HAL_Delay(5);
-		HAL_I2C_Mem_Write(&hi2c1,EEPROM_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
+		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
 	    HAL_Delay(5);
 
 	}
@@ -144,8 +151,9 @@ unsigned int i_read(unsigned position){                   //i2c read
 
 	int count=0;
 	unsigned int data=0;
-	HAL_I2C_Mem_Read(&hi2c1,EEPROM_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
-	HAL_I2C_Mem_Read(&hi2c1,EEPROM_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
+	//for reading to EEPROM
+	HAL_I2C_Mem_Read(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
+	HAL_I2C_Mem_Read(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
 	data=data+(count*255);
 	return data;
 
@@ -167,6 +175,81 @@ unsigned int i_read(unsigned position){                   //i2c read
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+
+//	This command will write the configuration registers of the ltc6811-1s
+//	 connected in a daisy chain stack. The configuration is written in descending
+//	 order so the last device's configuration is written first.
+//
+	void ltc6811_wrcfg(uint8_t total_ic, //The number of ICs being written to
+	                   uint8_t config[][6] //A two dimensional array of the configuration data that will be written
+	                  )
+	{
+	  const uint8_t BYTES_IN_REG = 6;
+	  const uint8_t CMD_LEN = 4+(8*total_ic);
+	  uint8_t *cmd;
+	  uint16_t cfg_pec;
+	  uint8_t cmd_index; //command counter
+
+	  cmd = (uint8_t *)malloc(CMD_LEN*sizeof(uint8_t));
+
+
+	  cmd[0] = 0x00;
+	  cmd[1] = 0x01;
+	  cmd[2] = 0x3d;
+	  cmd[3] = 0x6e;
+
+
+	  cmd_index = 4;
+	  for (uint8_t current_ic = total_ic; current_ic > 0; current_ic--)       // executes for each ltc6811 in daisy chain, this loops starts with
+	  {
+	    // the last IC on the stack. The first configuration written is
+	    // received by the last IC in the daisy chain
+
+	    for (uint8_t current_byte = 0; current_byte < BYTES_IN_REG; current_byte++) // executes for each of the 6 bytes in the CFGR register
+	    {
+	      // current_byte is the byte counter
+
+	      cmd[cmd_index] = config[current_ic-1][current_byte];            //adding the config data to the array to be sent
+	      cmd_index = cmd_index + 1;
+	    }
+
+	    cfg_pec = (uint16_t)pec15(BYTES_IN_REG, &config[current_ic-1][0]);   // calculating the PEC for each ICs configuration register data
+	    cmd[cmd_index] = (uint8_t)(cfg_pec >> 8);
+	    cmd[cmd_index + 1] = (uint8_t)cfg_pec;
+	    cmd_index = cmd_index + 2;
+	  }
+
+
+	  wakeup_idle1();                                 //This will guarantee that the ltc6811 isoSPI port is awake.This command can be removed.
+
+	//  output_low(LTC6811_CS);
+	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+
+	  spi_write_array(CMD_LEN, cmd);
+	 // output_high(LTC6811_CS);
+
+	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+	  free(cmd);
+	}
+
+	//scan I2C adresses
+uint8_t retrieveI2Cid(){
+
+
+	uint8_t i;
+
+for(i=0; i<255; i++){
+
+		if(HAL_I2C_IsDeviceReady(&hi2c1, i, 1, 10) == HAL_OK){
+
+	//HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_12);
+		break;
+		}
+		return i;
+}
+
+}
+
 
 	uint8_t spi_read_byte(uint8_t tx_dat)
 	{
