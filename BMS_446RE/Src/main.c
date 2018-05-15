@@ -233,8 +233,7 @@ int main(void)
 	}
 
 	//scan I2C adresses
-uint8_t retrieveI2Cid(){
-
+	uint8_t retrieveI2Cid(){
 
 	uint8_t i;
 
@@ -536,6 +535,40 @@ for(i=0; i<255; i++){
 
 	  return(counter);
 	}
+
+	/*!  Write the LTC6811 Sctrl register
+	*/
+	void LTC6811_wrsctrl(uint8_t nIC, //!< number of ICs in the daisy chain
+	                     uint8_t sctrl_reg
+//	                     cell_asic ic[]
+	                    ){
+
+
+	}
+
+
+	/*!  Reads sctrl registers of a LTC6811 daisy chain
+	@return int8_t, PEC Status.
+	  0: Data read back has matching PEC
+	  -1: Data read back has incorrect PEC
+	*/
+	int8_t LTC6811_rdsctrl(uint8_t nIC, //!< number of ICs in the daisy chain
+	                       uint8_t sctrl_reg
+//	                       cell_asic ic[] //!< a two dimensional array that the function stores the read pwm data
+	                      ){
+
+
+	}
+
+	/*!  Start Sctrl data communication
+	This command will start the sctrl pulse communication over the spins
+	*/
+	void LTC6811_stsctrl(){
+
+
+	}
+
+
   /* USER CODE END 1 */
 
   /* MCU Configuration----------------------------------------------------------*/

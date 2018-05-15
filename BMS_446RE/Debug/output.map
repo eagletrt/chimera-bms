@@ -4189,7 +4189,7 @@ LOAD c:/ac6/systemworkbench/plugins/fr.ac6.mcu.externaltools.arm-none.win32_1.15
                 0x000006e2       0x22 c:/ac6/systemworkbench/plugins/fr.ac6.mcu.externaltools.arm-none.win32_1.15.0.201708311556/tools/compiler/bin/../lib/gcc/arm-none-eabi/6.3.1/thumb/v7e-m/fpv4-sp/hard/crtn.o
 OUTPUT(BMS_446RE.elf elf32-littlearm)
 
-.debug_info     0x00000000    0x1333d
+.debug_info     0x00000000    0x13392
  .debug_info    0x00000000     0x122e Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.o
  .debug_info    0x0000122e     0x1778 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.o
  .debug_info    0x000029a6      0xfe5 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.o
@@ -4198,11 +4198,11 @@ OUTPUT(BMS_446RE.elf elf32-littlearm)
  .debug_info    0x00008319     0x1414 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.o
  .debug_info    0x0000972d     0x220a Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_spi.o
  .debug_info    0x0000b937     0x1f1d Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.o
- .debug_info    0x0000d854     0x284e Src/main.o
- .debug_info    0x000100a2     0x1aad Src/stm32f4xx_hal_msp.o
- .debug_info    0x00011b4f      0xa0a Src/stm32f4xx_it.o
- .debug_info    0x00012559      0xd64 Src/system_stm32f4xx.o
- .debug_info    0x000132bd       0x80 startup/startup_stm32f446xx.o
+ .debug_info    0x0000d854     0x28a3 Src/main.o
+ .debug_info    0x000100f7     0x1aad Src/stm32f4xx_hal_msp.o
+ .debug_info    0x00011ba4      0xa0a Src/stm32f4xx_it.o
+ .debug_info    0x000125ae      0xd64 Src/system_stm32f4xx.o
+ .debug_info    0x00013312       0x80 startup/startup_stm32f446xx.o
 
 .debug_abbrev   0x00000000     0x236c
  .debug_abbrev  0x00000000      0x2e3 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.o
@@ -4364,7 +4364,7 @@ OUTPUT(BMS_446RE.elf elf32-littlearm)
  .debug_line    0x00008c5b      0x830 Src/system_stm32f4xx.o
  .debug_line    0x0000948b       0x7f startup/startup_stm32f446xx.o
 
-.debug_str      0x00000000    0xc5bcb
+.debug_str      0x00000000    0xc5c04
  .debug_str     0x00000000    0xc2c69 Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.o
                               0xc3074 (size before relaxing)
  .debug_str     0x000c2c69      0x3ae Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.o
@@ -4381,13 +4381,13 @@ OUTPUT(BMS_446RE.elf elf32-littlearm)
                               0xc2cc9 (size before relaxing)
  .debug_str     0x000c4ef9      0x67b Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.o
                               0xc2d28 (size before relaxing)
- .debug_str     0x000c5574      0x52a Src/main.o
-                              0xc397a (size before relaxing)
- .debug_str     0x000c5a9e       0x1b Src/stm32f4xx_hal_msp.o
+ .debug_str     0x000c5574      0x563 Src/main.o
+                              0xc39ba (size before relaxing)
+ .debug_str     0x000c5ad7       0x1b Src/stm32f4xx_hal_msp.o
                               0xc3279 (size before relaxing)
- .debug_str     0x000c5ab9       0xb8 Src/stm32f4xx_it.o
+ .debug_str     0x000c5af2       0xb8 Src/stm32f4xx_it.o
                               0xc23bf (size before relaxing)
- .debug_str     0x000c5b71       0x5a Src/system_stm32f4xx.o
+ .debug_str     0x000c5baa       0x5a Src/system_stm32f4xx.o
                               0xc24c4 (size before relaxing)
 
 .comment        0x00000000       0x7f
