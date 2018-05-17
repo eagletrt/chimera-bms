@@ -553,7 +553,7 @@ for(i=0; i<255; i++){
 	void ltc6811_wrsctrl(uint8_t nIC, //!< number of ICs in the daisy chain
 	                     uint8_t sctrl_reg,
 	                     uint8_t sctrl[][6]
-	                    ){
+	                    ){ 					//0b00010100
 		uint8_t cmd[12];
 					uint16_t cmd_pec;
 					uint16_t cmd_pec1;
@@ -564,7 +564,7 @@ for(i=0; i<255; i++){
 						cmd[0]=0x00;
 //						md_bits = (MD & 0x01) << 7;
 //						cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
-						cmd[1]=0x14;
+						cmd[1]=0b00010100;
 
 						cmd_pec = pec15(2, cmd);
 
@@ -573,9 +573,9 @@ for(i=0; i<255; i++){
 						cmd[4]= 0b00010001;
 						cmd[5]= 0b00010001;
 						cmd[6]= 0b00010001;
-						cmd[7]= 0b00010001;
+						cmd[7]= 0b10010001;
 						cmd[8]= 0b00010001;
-						cmd[9]= 0b00010001;
+						cmd[9]= 0b00011001;
 						cmd_pec1 = pec15(2, cmd);
 
 						cmd[10] = (uint8_t)(cmd_pec1 >> 8);
@@ -614,13 +614,14 @@ for(i=0; i<255; i++){
 		uint16_t cmd_pec1;
 		uint8_t* d;
 		//uint8_t md_bits;
+
 		for(int i=0;i<nIC;i++){
 		//						md_bits = (MD & 0x02) >> 1;
 								//cmd[0] = md_bits + 0x02;
 								cmd[0]=0x00;
 		//						md_bits = (MD & 0x01) << 7;
 		//						cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
-								cmd[1]=0x14;
+								cmd[1]=0b00010110;
 
 								cmd_pec = pec15(2, cmd);
 
@@ -630,9 +631,9 @@ for(i=0; i<255; i++){
 								cmd[4]= 0b00010001;
 								cmd[5]= 0b00010001;
 								cmd[6]= 0b00010001;
-								cmd[7]= 0b00010001;
+								cmd[7]= 0b10010001;
 								cmd[8]= 0b00010001;
-								cmd[9]= 0b00010001;
+								cmd[9]= 0b00011001;
 
 								cmd_pec1 = pec15(2, cmd);
 
