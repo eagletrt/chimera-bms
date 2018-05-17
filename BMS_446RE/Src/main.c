@@ -536,28 +536,119 @@ for(i=0; i<255; i++){
 	  return(counter);
 	}
 
-	/*!  Write the LTC6811 Sctrl register
+	/*!  Write the ltc6811 Sctrl register
+	 This command will write the pwm registers of the ltc6811-1s
+	 connected in a daisy chain stack. The pwm is written in descending
+	 order so the last device's pwm is written first.
+	 The function will calculate the needed PEC codes for the write data
+	 and then transmit data to the ICs on a daisy chain.
+	Command Code:
+	-------------
+	|               |             CMD[0]                              |                            CMD[1]                             |
+	|---------------|---------------------------------------------------------------|---------------------------------------------------------------|
+	|CMD[0:1]     |  15   |  14   |  13   |  12   |  11   |  10   |   9   |   8   |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   |
+	|---------------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
+	|WRSCTRL:         |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   1   |   0   |   1   |   0   |   0   |
 	*/
-	void LTC6811_wrsctrl(uint8_t nIC, //!< number of ICs in the daisy chain
-	                     uint8_t sctrl_reg
-//	                     cell_asic ic[]
+	void ltc6811_wrsctrl(uint8_t nIC, //!< number of ICs in the daisy chain
+	                     uint8_t sctrl_reg,
+	                     uint8_t sctrl[][6]
 	                    ){
+		uint8_t cmd[12];
+					uint16_t cmd_pec;
+					uint16_t cmd_pec1;
+					//uint8_t md_bits;
 
+//						md_bits = (MD & 0x02) >> 1;
+						//cmd[0] = md_bits + 0x02;
+						cmd[0]=0x00;
+//						md_bits = (MD & 0x01) << 7;
+//						cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
+						cmd[1]=0x14;
+
+						cmd_pec = pec15(2, cmd);
+
+						cmd[2] = (uint8_t)(cmd_pec >> 8);
+						cmd[3] = (uint8_t)(cmd_pec);
+						cmd[4]= 0b00010001;
+						cmd[5]= 0b00010001;
+						cmd[6]= 0b00010001;
+						cmd[7]= 0b00010001;
+						cmd[8]= 0b00010001;
+						cmd[9]= 0b00010001;
+						cmd_pec1 = pec15(2, cmd);
+
+						cmd[10] = (uint8_t)(cmd_pec1 >> 8);
+						cmd[11] = (uint8_t)(cmd_pec1);
+
+						wakeup_idle1();
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+
+						spi_write_array(12, cmd);
+
+						//HAL_SPI_Transmit(&hspi1, cmd, 4,10);
+						HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
 
 	}
 
 
-	/*!  Reads sctrl registers of a LTC6811 daisy chain
+	/*!  Reads sctrl registers of a ltc6811 daisy chain
+	uint8_t r_sctrl[][8] is a two dimensional array that the function stores the read pwm data. The sctrl data for each IC
+	is stored in blocks of 8 bytes with the pwm data of the lowest IC on the stack in the first 8 bytes
+	block of the array, the second IC in the second 8 byte etc. Below is an table illustrating the array organization:
 	@return int8_t, PEC Status.
 	  0: Data read back has matching PEC
 	  -1: Data read back has incorrect PEC
+	Command Code:
+	-------------
+	|CMD[0:1]   |  15   |  14   |  13   |  12   |  11   |  10   |   9   |   8   |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   |
+	|---------------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
+	|rdsctrl:         |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   1   |   0   |   1   |   1   |   0   |
 	*/
-	int8_t LTC6811_rdsctrl(uint8_t nIC, //!< number of ICs in the daisy chain
-	                       uint8_t sctrl_reg
-//	                       cell_asic ic[] //!< a two dimensional array that the function stores the read pwm data
+	int8_t ltc6811_rdsctrl(uint8_t nIC, //!< number of ICs in the daisy chain
+	                       uint8_t sctrl_reg,
+	                       uint8_t r_sctrl[][8] //!< a two dimensional array that the function stores the read pwm data
 	                      ){
+		uint8_t cmd[12];
+		uint8_t cmd_pec;
+		uint16_t cmd_pec1;
+		uint8_t* d;
+		//uint8_t md_bits;
+		for(int i=0;i<nIC;i++){
+		//						md_bits = (MD & 0x02) >> 1;
+								//cmd[0] = md_bits + 0x02;
+								cmd[0]=0x00;
+		//						md_bits = (MD & 0x01) << 7;
+		//						cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
+								cmd[1]=0x14;
+
+								cmd_pec = pec15(2, cmd);
+
+								cmd[2] = (uint8_t)(cmd_pec >> 8);
+								cmd[3] = (uint8_t)(cmd_pec);
+
+								cmd[4]= 0b00010001;
+								cmd[5]= 0b00010001;
+								cmd[6]= 0b00010001;
+								cmd[7]= 0b00010001;
+								cmd[8]= 0b00010001;
+								cmd[9]= 0b00010001;
+
+								cmd_pec1 = pec15(2, cmd);
+
+								cmd[10] = (uint8_t)(cmd_pec1 >> 8);
+								cmd[11] = (uint8_t)(cmd_pec1);
+
+								uint8_t* r;
 
 
+
+								HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+								spi_write_read(cmd,12,r,12);      //  DA CONTROLLARE CON PCB
+								d[i]=r;
+								//HAL_SPI_Transmit(&hspi1, cmd, 4,10);
+								HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+		}
 	}
 
 	/*!  Start Sctrl data communication
