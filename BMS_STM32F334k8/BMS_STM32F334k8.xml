@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <targetDefinitions xmlns="http://openstm32.org/stm32TargetDefinitions" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://openstm32.org/stm32TargetDefinitions stm32TargetDefinitions.xsd">
-  <board id="BMS_STM32F334k8">
-    <name>BMS_STM32F334k8</name>
+  <board id="BMS_STM32F334K8">
+    <name>BMS_STM32F334K8</name>
     <mcuId>STM32F334K8Tx</mcuId>  <!-- mcu-->
     <dbgIF>SWD</dbgIF>
     <dbgDEV>ST-LinkV2-1</dbgDEV>
