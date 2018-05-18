@@ -39,7 +39,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f3xx_hal.h"
-
+#include "stm32f3xx_hal_can.h"
+#include "stm32f4xx_hal_can.h"
 /* USER CODE BEGIN Includes */
 
 #define MD_422HZ_1KHZ 0
@@ -94,6 +95,14 @@
 #define M24M02DRC_2_DATA_ADDRESS 0x54 // Address of the second 1024 page M24M02DRC EEPROM data buffer, 2048 bits (256 8-bit bytes) per page
 #define M24M02DRC_2_IDPAGE_ADDRESS 0x5C // Address of the single M24M02DRC lockable ID page of the second EEPROM
 
+
+//==CAN include
+
+#include <string.h>
+#include <stdlib.h>
+#include <inttypes.h>
+CAN_FilterConfTypeDef sFilter;
+CanRxMsgTypeDef RxHeader;
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -683,6 +692,21 @@ int main(void)
   MX_SPI1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  /* SETTING CAN */
+  	sFilter.FilterMode = CAN_FILTERMODE_IDMASK;
+  	sFilter.FilterMode = CAN_FILTERMODE_IDMASK;
+  	sFilter.FilterIdLow = 0;
+  	sFilter.FilterIdHigh = 0;
+  	sFilter.FilterMaskIdHigh = 0;
+  	sFilter.FilterMaskIdLow = 0;
+  	sFilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  	sFilter.BankNumber = 0;
+  	sFilter.FilterScale = CAN_FILTERSCALE_16BIT;
+  	sFilter.FilterActivation = ENABLE;
+  	HAL_CAN_ConfigFilter(&hcan, &sFilter);
+
+  	HAL_CAN_Init(&hcan);
+
   int TOT_IC=12;
     int CELL_CH=9;
 
@@ -708,6 +732,48 @@ int main(void)
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
+
+
+  	  uint8_t TxData[8];
+  	  TxData[0] = 1;
+  	  TxData[1] = 2;
+  	  TxData[2] = 3;
+  	  TxData[3] = 4;
+  	  TxData[4] = 5;
+  	  TxData[5] = 6;
+  	  TxData[6] = 7;
+  	  TxData[7] = 8;
+  	  //SICCOME NON FUNZIONA --> CAN_Send(0x64, TxData, 8);
+  	  /*int idsave;
+  	  uint8_t RxData[8];
+  	  idsave = CAN_Receive(RxData, 8);
+*/
+  	  //SEND
+  	  	HAL_StatusTypeDef status;
+
+  		CanTxMsgTypeDef TxMess;
+  		TxMess.StdId = 0x600 + 1; // 0x600 + Node ID
+  		TxMess.DLC = 0x0;
+  		TxMess.IDE = CAN_ID_STD;
+  		TxMess.RTR = 0;
+  		hcan.pTxMsg = &TxMess;
+  		status = HAL_CAN_Transmit(&hcan, 1000);
+  	  //Receive
+  		CanRxMsgTypeDef RxMess;
+  		RxMess.FIFONumber = CAN_FIFO1;
+		RxMess.FMI = 14;
+		RxMess.StdId =  0x580 + 1; // 0x580 + Node ID
+		RxMess.DLC = 0;
+		RxMess.RTR = 0;
+		RxMess.IDE = CAN_ID_STD;
+		hcan.pRxMsg = &RxMess;
+		status = HAL_CAN_Receive(&hcan, CAN_FIFO1, 100);
+
+		HAL_Delay(1000);
+
+
+
+
 	  //wakeup_idle1();
 	 	  	  ltc6811_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
 	 	  	  ltc6811_pollAdc();
@@ -940,7 +1006,43 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+/*
+int CAN_Send(int id, uint8_t dataTx[], int size){
 
+	HAL_StatusTypeDef status;
+
+
+
+	uint32_t mailbox;
+	uint8_t flag = 0;
+
+	CanTxMsgTypeDef TxHeader;
+	TxHeader.StdId = id;
+	TxHeader.IDE = CAN_ID_STD;
+	TxHeader.RTR = CAN_RTR_DATA;
+	TxHeader.DLC = size;
+	//TxHeader.TransmitGlobalTime = DISABLE;
+=======NON VA
+	if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) != 0 && HAL_CAN_IsTxMessagePending(&hcan, CAN_TXMAILBOX_0) == 0){
+		HAL_CAN_AddTxMessage(&hcan, &TxHeader, dataTx, &mailbox);
+		flag = 1;
+	}
+
+	return flag;
+}
+
+int CAN_Receive(uint8_t *DataRx, int size){
+	=======NON VA
+
+	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_FIFO0) != 0){
+		HAL_CAN_GetRxMessage(&hcan, CAN_FIFO0, &RxHeader, DataRx);
+	}
+
+	int id = RxHeader.StdId;
+
+	return id;
+}
+*/
 /* USER CODE END 4 */
 
 /**
