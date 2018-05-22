@@ -182,8 +182,8 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
-/*----- ltc6811 Write Configuration Function -----*/
-void ltc6811_wrcfg(uint8_t total_ic,   //The number of ICs being written to
+/*----- ltc6804 Write Configuration Function -----*/
+void ltc6804_wrcfg(uint8_t total_ic,   //The number of ICs being written to
 		               uint8_t config[][6] //A two dimensional array of the configuration data that will be written
 		               )
 		{
@@ -352,7 +352,7 @@ void wakeup_sleep(){
 }
 
 /*----- Read the raw data from the ltc6811 cell voltage register -----*/
-void ltc6811_rdcv_reg(uint8_t reg, 			// Determines which cell voltage register is read back
+void ltc6804_rdcv_reg(uint8_t reg, 			// Determines which cell voltage register is read back
 			          uint8_t total_ic, 	// The number of ICs in the
 			          uint8_t data[] 		// An array of the unparsed cell codes
 			          ){
@@ -402,7 +402,7 @@ void ltc6811_rdcv_reg(uint8_t reg, 			// Determines which cell voltage register 
 	// output_high(LTC6811_CS);
 }
 
-void ltc6811_adcv(uint8_t MD, 		//!< ADC Conversion Mode
+void ltc6804_adcv(uint8_t MD, 		//!< ADC Conversion Mode
                   uint8_t DCP, 		//!< Controls if Discharge is permitted during conversion
                   uint8_t CH 		//!< Sets which Cell channels are converted
 			      ){
@@ -427,7 +427,7 @@ void ltc6811_adcv(uint8_t MD, 		//!< ADC Conversion Mode
 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
 }
 
-void ltc6811_rdaux_reg(uint8_t reg, 		// Determines which GPIO voltage register is read back
+void ltc6804_rdaux_reg(uint8_t reg, 		// Determines which GPIO voltage register is read back
                        uint8_t total_ic, 	// The number of ICs in the system
                        uint8_t *data 		// Array of the unparsed auxiliary codes
 			           ){
@@ -471,7 +471,7 @@ void ltc6811_rdaux_reg(uint8_t reg, 		// Determines which GPIO voltage register 
 	// Output_high(LTC6811_CS);
 }
 
-uint32_t ltc6811_pollAdc(){
+uint32_t ltc6804_pollAdc(){
 
 	uint32_t counter = 0;
 	uint8_t finished = 0;
@@ -734,15 +734,15 @@ void LTC6811_stsctrl(){
 
 
 	 //wakeup_idle1();
-	 ltc6811_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
-	 ltc6811_pollAdc();
+	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
+	 ltc6804_pollAdc();
 	 //HAL_Delay(3);
 	 //wakeup_idle1();
 
 	 for(uint8_t cell_reg = 1; cell_reg<NUM_CV_REG+1; cell_reg++){                  // Executes once for each of the ltc6811 cell voltage registers
 
 		 uint8_t data_counter = 0;
-	     ltc6811_rdcv_reg(cell_reg, TOT_IC, cell_data);
+	     ltc6804_rdcv_reg(cell_reg, TOT_IC, cell_data);
 
 	     for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
 
