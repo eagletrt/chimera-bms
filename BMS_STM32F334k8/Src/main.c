@@ -708,27 +708,27 @@ void LTC6811_stsctrl(){
   	  */
 
   	  //SEND
-  	  	HAL_StatusTypeDef status;
-
-  		CanTxMsgTypeDef TxMess;
-  		TxMess.StdId = 0x600 + 1; // 0x600 + Node ID
-  		TxMess.DLC = 0x0;
-  		TxMess.IDE = CAN_ID_STD;
-  		TxMess.RTR = 0;
-  		hcan.pTxMsg = &TxMess;
-  		status = HAL_CAN_Transmit(&hcan, 1000);
+//  	  	HAL_StatusTypeDef status;
+//
+//  		CanTxMsgTypeDef TxMess;
+//  		TxMess.StdId = 0x600 + 1; // 0x600 + Node ID
+//  		TxMess.DLC = 0x0;
+//  		TxMess.IDE = CAN_ID_STD;
+//  		TxMess.RTR = 0;
+//  		hcan.pTxMsg = &TxMess;
+//  		status = HAL_CAN_Transmit(&hcan, 1000);
   	  //Receive
-  		CanRxMsgTypeDef RxMess;
-  		RxMess.FIFONumber = CAN_FIFO1;
-		RxMess.FMI = 14;
-		RxMess.StdId =  0x580 + 1; // 0x580 + Node ID
-		RxMess.DLC = 0;
-		RxMess.RTR = 0;
-		RxMess.IDE = CAN_ID_STD;
-		hcan.pRxMsg = &RxMess;
-		status = HAL_CAN_Receive(&hcan, CAN_FIFO1, 100);
-
-		HAL_Delay(1000);
+//  		CanRxMsgTypeDef RxMess;
+//  		RxMess.FIFONumber = CAN_FIFO1;
+//		RxMess.FMI = 14;
+//		RxMess.StdId =  0x580 + 1; // 0x580 + Node ID
+//		RxMess.DLC = 0;
+//		RxMess.RTR = 0;
+//		RxMess.IDE = CAN_ID_STD;
+//		hcan.pRxMsg = &RxMess;
+//		status = HAL_CAN_Receive(&hcan, CAN_FIFO1, 100);
+//
+//		HAL_Delay(1000);
 
 
 
@@ -752,15 +752,18 @@ void LTC6811_stsctrl(){
 	 		 for(uint8_t current_cell = 0; current_cell < 3; current_cell++) {
 
 	 			 //Loops once for each of the 3 cell voltage codes in the register
+
 	 		   	 //Each cell code is received as two bytes and is combined to
 	 		   	 uint16_t parsed_cell = cell_data[data_counter]+(cell_reg-1)+ (cell_data[data_counter + 1] << 8);
 	 		   	 //Because cell voltage codes are two bytes the data counter
 	 		   	 cell_codes[current_cell][current_cell  + ((cell_reg - 1) * CELL_IN_REG)] = parsed_cell;
+
 	 		   	 //valori in V
 	 		   	 data_counter = data_counter + 2;
 	 		   	 uint8_t num[9];
 	 		   	 sprintf(num, "%d - ", parsed_cell);
 	 		   	 HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
+
 	 		   	 HAL_Delay(100);
 	 		 }
 
@@ -967,8 +970,28 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-/*
-int CAN_Send(int id, uint8_t dataTx[], int size){
+
+ int CAN_Send(int id, uint8_t dataTx[8], int size ){
+ HAL_StatusTypeDef status;
+
+  		CanTxMsgTypeDef TxMess;
+  		TxMess.StdId = 0x600 + id; // 0x600 + Node ID
+  		TxMess.DLC = size;
+  		TxMess.IDE = CAN_ID_STD;
+  		TxMess.RTR = CAN_RTR_DATA;
+  		TxMess.Data[0] = dataTx[0];
+  		TxMess.Data[1] = dataTx[1];
+  		TxMess.Data[2] = dataTx[2];
+  		TxMess.Data[3] = dataTx[3];
+  		TxMess.Data[4] = dataTx[4];
+  		TxMess.Data[5] = dataTx[5];
+  		TxMess.Data[6] = dataTx[6];
+  		TxMess.Data[7] = dataTx[7];
+  		hcan.pTxMsg = &TxMess;
+
+  		status = HAL_CAN_Transmit(&hcan, 1000);
+ }
+/*int CAN_Send(int id, uint8_t dataTx[], int size){
 
 	HAL_StatusTypeDef status;
 
