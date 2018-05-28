@@ -189,89 +189,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
-/*----- ltc6804 Write Configuration Function -----*/
-//void ltc6804_wrcfg(uint8_t total_ic,   //The number of ICs being written to
-//		               uint8_t config[][6] //A two dimensional array of the configuration data that will be written
-//		               )
-//		{
-//		  const uint8_t BYTES_IN_REG = 6;
-//		  const uint8_t CMD_LEN = 4+(8*total_ic);
-//		  uint8_t *cmd;
-//		  uint16_t cfg_pec;
-//		  uint8_t cmd_index; //command counter
-//
-//		  cmd = (uint8_t *)malloc(CMD_LEN*sizeof(uint8_t));
-//
-//
-//		  cmd[0] = 0x00;
-//		  cmd[1] = 0x01;
-//		  cmd[2] = 0x3d;
-//		  cmd[3] = 0x6e;
-//
-//
-//		  cmd_index = 4;
-//		  for (uint8_t current_ic = total_ic; current_ic > 0; current_ic--)      		 // Executes for each ltc6811 in daisy chain, this loops starts with
-//		  {
-//		    // The last IC on the stack. The first configuration written is
-//		    // Received by the last IC in the daisy chain
-//
-//		    for (uint8_t current_byte = 0; current_byte < BYTES_IN_REG; current_byte++)	 // Executes for each of the 6 bytes in the CFGR register
-//		    {
-//		      // Current_byte is the byte counter
-//
-//		      cmd[cmd_index] = config[current_ic-1][current_byte];          			 // Adding the config data to the array to be sent
-//		      cmd_index = cmd_index + 1;
-//		    }
-//
-//		    cfg_pec = (uint16_t)pec15(BYTES_IN_REG, &config[current_ic-1][0]);   	     // Calculating the PEC for each ICs configuration register data
-//		    cmd[cmd_index] = (uint8_t)(cfg_pec >> 8);
-//		    cmd[cmd_index + 1] = (uint8_t)cfg_pec;
-//		    cmd_index = cmd_index + 2;
-//		  }
-//
-//
-//		  wakeup_idle1();                                 								 // This will guarantee that the ltc6811 isoSPI port is awake.This command can be removed.
-//
-//		  // Output_low(LTC6811_CS);
-//		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-//		  spi_write_array(CMD_LEN, cmd);
-//
-//		  // Output_high(LTC6811_CS);
-//		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-//		  free(cmd);
-//}
 
-///*----- Scan i2c Addresses -----*/
-//uint8_t retrieveI2Cid(){
-//
-//	uint8_t i;
-//	for(i=0; i<255; i++){
-//
-//			if(HAL_I2C_IsDeviceReady(&hi2c1, i, 1, 10) == HAL_OK){
-//		    //HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_12);
-//			break;
-//			}
-//			return i;
-//	}
-//
-//}
-
-///*----- SPI Read Function -----*/
-//uint8_t spi_read_byte(uint8_t tx_dat)
-//	{
-//	    uint8_t data;
-//
-//	    if ( HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)0xFF, (uint8_t*)&data, 1, HAL_MAX_DELAY) == HAL_OK )
-//	    {
-//	        return(data);
-//	    }
-//	    return(-1);
-//}
-
-///*----- Data Lenght Counter -----*/
-//int osal_DataLength( char *pString ){
-//	  return (int)( strlen( pString ) );
-//}
 
 uint16_t crc15Table[256] = {0x0,0xc599, 0xceab, 0xb32, 0xd8cf, 0x1d56, 0x1664, 0xd3fd, 0xf407, 0x319e, 0x3aac,
                             0xff35, 0x2cc8, 0xe951, 0xe263, 0x27fa, 0xad97, 0x680e, 0x633c, 0xa6a5, 0x7558, 0xb0c1,
@@ -297,224 +215,6 @@ uint16_t crc15Table[256] = {0x0,0xc599, 0xceab, 0xb32, 0xd8cf, 0x1d56, 0x1664, 0
                             0x2d02, 0xa76f, 0x62f6, 0x69c4, 0xac5d, 0x7fa0, 0xba39, 0xb10b, 0x7492, 0x5368, 0x96f1, 0x9dc3,
                             0x585a, 0x8ba7, 0x4e3e, 0x450c, 0x8095
                             };
-
-///*----- SPI Write Function (?) -----*/
-//void spi_write_read(uint8_t tx_Data[],	// Array of data to be written on SPI port
-//			        uint8_t tx_len, 	// Length of the tx data arry
-//			        uint8_t *rx_data,	// Input: array that will store the data read by the SPI port
-//			        uint8_t rx_len 		// Option: number of bytes to be read from the SPI port
-//			        ){
-//	for (uint8_t i = 0; i < tx_len; i++)
-//		  {
-//				// spi_write(tx_Data[i]);
-//				HAL_SPI_Transmit(&hspi1, (uint8_t*)&tx_Data[i], 1, 100);
-//		  }
-//
-//	for (uint8_t i = 0; i < rx_len; i++)
-//		  {
-//	            HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)0xFF, (uint8_t*)&rx_data[i], 1, 100);
-//		  }
-//}
-
-//uint16_t pec15(uint8_t len,uint8_t* data ){
-//
-//    uint16_t remainder,address;
-//	remainder = 16;					// PEC seed
-//	for (int i = 0; i < len; i++)
-//		{
-//			address = ((remainder >> 7) ^ data[i]) & 0xff;//calculate PEC table address
-//			remainder = (remainder << 8 ) ^ crc15Table[address];
-//		}
-//    return (remainder*2);//The CRC15 has a 0 in the LSB so the final value must be multiplied by 2
-//}
-
-//void wakeup_idle1(){
-//
-//    // output_low(LTC6811_CS);
-//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-//	spi_read_byte(0xff);
-//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-//
-//	//HAL_Delay(10);
-//}
-
-//void spi_write_array(uint8_t len, 		// Option: Number of bytes to be written on the SPI port
-//                     uint8_t data[] 	// Array of bytes to be written on the SPI port
-//			         )
-//	{
-//		uint8_t ret_val;
-//	    for ( int i = 0; i < len; i++ )
-//		    {
-//		        HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&data[i], &ret_val, 1, 100);
-//		    }
-//}
-
-//void wakeup_sleep(){
-//
-//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-//    // cs_low(GPIO_PIN_9);
-//    HAL_SPI_Transmit(&hspi1, 0xFF,1, 0xFF);
-//    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-//    HAL_Delay(1);
-//}
-//
-///*----- Read the raw data from the ltc6811 cell voltage register -----*/
-//void ltc6804_rdcv_reg(uint8_t reg, 			// Determines which cell voltage register is read back
-//			          uint8_t total_ic, 	// The number of ICs in the
-//			          uint8_t data[] 		// An array of the unparsed cell codes
-//			          ){
-//
-//	const uint8_t REG_LEN = 8; //number of bytes in each ICs register + 2 bytes for the PEC
-//	uint8_t cmd[4];
-//	uint16_t cmd_pec;
-//
-//	if (reg == 1)     //1: RDCVA
-//	  {
-//	    cmd[1] = 0x04;
-//	    cmd[0] = 0x00;
-//	  }else if (reg == 2) //2: RDCVB
-//		{
-//		  cmd[1] = 0x06;
-//		  cmd[0] = 0x00;
-//		}else if (reg == 3) //3: RDCVC
-//		  {
-//		    cmd[1] = 0x08;
-//		    cmd[0] = 0x00;
-//		  }else if (reg == 4) //4: RDCVD
-//			{
-//			  cmd[1] = 0x0A;
-//			  cmd[0] = 0x00;
-//			}else if (reg == 5) //4: RDCVE
-//			  {
-//			    cmd[1] = 0x09;
-//			    cmd[0] = 0x00;
-//			  }else if (reg == 6) //4: RDCVF
-//				{
-//				  cmd[1] = 0x0B;
-//				  cmd[0] = 0x00;
-//				}
-//
-//
-//	cmd_pec = pec15(2, cmd);
-//	cmd[2] = (uint8_t)(cmd_pec >> 8);
-//	cmd[3] = (uint8_t)(cmd_pec);
-//
-//	wakeup_idle1(); //This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
-//    // output_low(LTC6811_CS);
-//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-//	//uint8_t myData[8] = {1, 1, 1, 1, 1, 1, 1, 1};
-//	spi_write_read(cmd,4,data,8);
-//	//HAL_SPI_TransmitReceive(&hspi1,cmd,data,8,100);
-//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-//	// output_high(LTC6811_CS);
-//}
-
-//void ltc6804_adcv(uint8_t MD, 		//!< ADC Conversion Mode
-//                  uint8_t DCP, 		//!< Controls if Discharge is permitted during conversion
-//                  uint8_t CH 		//!< Sets which Cell channels are converted
-//			      ){
-//
-//	uint8_t cmd[4];
-//	uint16_t cmd_pec;
-//	uint8_t md_bits;
-//
-//	md_bits = (MD & 0x02) >> 1;
-//	cmd[0] = md_bits + 0x02;
-//	md_bits = (MD & 0x01) << 7;
-//	cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
-//	cmd_pec = pec15(2, cmd);
-//
-//	cmd[2] = (uint8_t)(cmd_pec >> 8);
-//    cmd[3] = (uint8_t)(cmd_pec);
-//
-//    wakeup_idle1();
-//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-//	spi_write_array(4, cmd);
-//	//HAL_SPI_Transmit(&hspi1, cmd, 4,10);
-//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-//}
-//
-//void ltc6804_rdaux_reg(uint8_t reg, 		// Determines which GPIO voltage register is read back
-//                       uint8_t total_ic, 	// The number of ICs in the system
-//                       uint8_t *data 		// Array of the unparsed auxiliary codes
-//			           ){
-//
-//	const uint8_t REG_LEN = 8; // number of bytes in the register + 2 bytes for the PEC
-//	uint8_t cmd[4];
-//	uint16_t cmd_pec;
-//
-//	if (reg == 1)     //Read back auxiliary group A
-//	  {
-//	    cmd[1] = 0x0C;
-//	    cmd[0] = 0x00;
-//	  }else if (reg == 2)  //Read back auxiliary group B
-//		{
-//		  cmd[1] = 0x0e;
-//		  cmd[0] = 0x00;
-//		}else if (reg == 3)  //Read back auxiliary group B
-//		  {
-//		    cmd[1] = 0x0D;
-//		    cmd[0] = 0x00;
-//		  }else if (reg == 4)  //Read back auxiliary group B
-//			{
-//			  cmd[1] = 0x0F;
-//			  cmd[0] = 0x00;
-//			}else          //Read back auxiliary group A
-//			  {
-//			    cmd[1] = 0x0C;
-//			    cmd[0] = 0x00;
-//			  }
-//
-//	cmd_pec = pec15(2, cmd);
-//	cmd[2] = (uint8_t)(cmd_pec >> 8);
-//	cmd[3] = (uint8_t)(cmd_pec);
-//
-//	wakeup_idle1(); // This will guarantee that the ltc6811 isoSPI port is awake, this command can be removed.
-//
-//    // Output_low(LTC6811_CS);
-//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-//	spi_write_read(cmd,4,data,(REG_LEN*total_ic));
-//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-//	// Output_high(LTC6811_CS);
-//}
-//
-//uint32_t ltc6804_pollAdc(){
-//
-//	uint32_t counter = 0;
-//	uint8_t finished = 0;
-//	uint8_t current_time = 0;
-//	uint8_t cmd[4];
-//	uint16_t cmd_pec;
-//
-//	cmd[0] = 0x07;
-//	cmd[1] = 0x14;
-//	cmd_pec = pec15(2, cmd);
-//	cmd[2] = (uint8_t)(cmd_pec >> 8);
-//	cmd[3] = (uint8_t)(cmd_pec);
-//
-//	wakeup_idle1(); //This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
-//
-//	// Output_low(LTC6811_CS);
-//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-//	spi_write_array(4,cmd);
-//
-//	while ((counter<200000)&&(finished == 0)){
-//	  uint8_t rx;
-//      // Current_time= HAL_SPI_Receive(&hspi1,rx,0xFF,100);
-//	  current_time= spi_read_byte(0xFF);
-//	  if (current_time>0){
-//		finished = 1;
-//	  }else{
-//		counter = counter + 10;
-//	  }
-//    }
-//
-//	// Output_high(LTC6811_CS);
-//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-//
-//    return(counter);
-//}
-
 
 /*!  Write the ltc6811 Sctrl register
 This command will write the pwm registers of the ltc6811-1s
@@ -708,6 +408,7 @@ Command Code:
   	  TxData[5] = 6;
   	  TxData[6] = 7;
   	  TxData[7] = 8;
+
   	  //SICCOME NON FUNZIONA --> CAN_Send(0x64, TxData, 8);
   	  /*int idsave;
   	  uint8_t RxData[8];
@@ -736,11 +437,11 @@ Command Code:
 //		status = HAL_CAN_Receive(&hcan, CAN_FIFO1, 100);
 //
 //		HAL_Delay(1000);
-uint16_t n=569;
 
-  //	MEASUREMENT_NewSample(n);
-  	//can_send();
+
 	 //wakeup_idle1();
+
+
 	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL,hspi1);
 	 ltc6804_pollAdc(hspi1);
 	 //HAL_Delay(3);
@@ -978,62 +679,19 @@ static void MX_GPIO_Init(void)
 
 /* USER CODE BEGIN 4 */
 //
-// int CAN_Send(int id, uint8_t dataTx[8], int size ){
-// HAL_StatusTypeDef status;
 //
-//  		CanTxMsgTypeDef TxMess;
-//  		TxMess.StdId = 0x600 + id; // 0x600 + Node ID
-//  		TxMess.DLC = size;
-//  		TxMess.IDE = CAN_ID_STD;
-//  		TxMess.RTR = CAN_RTR_DATA;
-//  		TxMess.Data[0] = dataTx[0];
-//  		TxMess.Data[1] = dataTx[1];
-//  		TxMess.Data[2] = dataTx[2];
-//  		TxMess.Data[3] = dataTx[3];
-//  		TxMess.Data[4] = dataTx[4];
-//  		TxMess.Data[5] = dataTx[5];
-//  		TxMess.Data[6] = dataTx[6];
-//  		TxMess.Data[7] = dataTx[7];
-//  		hcan.pTxMsg = &TxMess;
+//int CAN_Receive(uint8_t *DataRx, int size){
+//	=======NON VA
 //
-//  		status = HAL_CAN_Transmit(&hcan, 1000);
-// }
-/*int CAN_Send(int id, uint8_t dataTx[], int size){
-
-	HAL_StatusTypeDef status;
-
-
-
-	uint32_t mailbox;
-	uint8_t flag = 0;
-
-	CanTxMsgTypeDef TxHeader;
-	TxHeader.StdId = id;
-	TxHeader.IDE = CAN_ID_STD;
-	TxHeader.RTR = CAN_RTR_DATA;
-	TxHeader.DLC = size;
-	//TxHeader.TransmitGlobalTime = DISABLE;
-=======NON VA
-	if (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) != 0 && HAL_CAN_IsTxMessagePending(&hcan, CAN_TXMAILBOX_0) == 0){
-		HAL_CAN_AddTxMessage(&hcan, &TxHeader, dataTx, &mailbox);
-		flag = 1;
-	}
-
-	return flag;
-}
-
-int CAN_Receive(uint8_t *DataRx, int size){
-	=======NON VA
-
-	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_FIFO0) != 0){
-		HAL_CAN_GetRxMessage(&hcan, CAN_FIFO0, &RxHeader, DataRx);
-	}
-
-	int id = RxHeader.StdId;
-
-	return id;
-}
-*/
+//	if (HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_FIFO0) != 0){
+//		HAL_CAN_GetRxMessage(&hcan, CAN_FIFO0, &RxHeader, DataRx);
+//	}
+//
+//	int id = RxHeader.StdId;
+//
+//	return id;
+//}
+//*/
 /* USER CODE END 4 */
 
 /**
