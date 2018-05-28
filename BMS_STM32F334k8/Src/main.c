@@ -46,6 +46,8 @@
 #include "eeprom.h"
 #include "can.h"
 #include "ltc68xx.h"
+#include "adc_hv.h"
+
 /* USER CODE BEGIN Includes */
 
 //#define MD_422HZ_1KHZ 0
