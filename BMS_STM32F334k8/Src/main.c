@@ -39,61 +39,66 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f3xx_hal.h"
-#include "stm32f3xx_hal_can.h"
-#include "stm32f4xx_hal_can.h"
+
+//#include "stm32f3xx_hal_can.h"
+//#include "stm32f4xx_hal_can.h"
+#include "measurement.h"
+#include "eeprom.h"
+#include "can.h"
+#include "ltc68xx.h"
 /* USER CODE BEGIN Includes */
 
-#define MD_422HZ_1KHZ 0
-#define MD_27KHZ_14KHZ 1
-#define MD_7KHZ_3KHZ 2
-#define MD_26HZ_2KHZ 3
+//#define MD_422HZ_1KHZ 0
+//#define MD_27KHZ_14KHZ 1
+//#define MD_7KHZ_3KHZ 2
+//#define MD_26HZ_2KHZ 3
+//
+//#define ADC_OPT_ENABLED 1
+//#define ADC_OPT_DISABLED 0
+//
+//#define CELL_CH_ALL 0
+//#define CELL_CH_1and7 1
+//#define CELL_CH_2and8 2
+//#define CELL_CH_3and9 3
+//#define CELL_CH_4and10 4
+//#define CELL_CH_5and11 5
+//#define CELL_CH_6and12 6
+//
+//#define SELFTEST_1 1
+//#define SELFTEST_2 2
+//
+//#define AUX_CH_ALL 0
+//#define AUX_CH_GPIO1 1
+//#define AUX_CH_GPIO2 2
+//#define AUX_CH_GPIO3 3
+//#define AUX_CH_GPIO4 4
+//#define AUX_CH_GPIO5 5
+//#define AUX_CH_VREF2 6
+//
+//#define STAT_CH_ALL 0
+//#define STAT_CH_SOC 1
+//#define STAT_CH_ITEMP 2
+//#define STAT_CH_VREGA 3
+//#define STAT_CH_VREGD 4
+//
+//#define DCP_DISABLED 0
+//#define DCP_ENABLED 1
+//
+//#define PULL_UP_CURRENT 1
+//#define PULL_DOWN_CURRENT 0
+//
+//#define CELL_CHANNELS 12
+//#define AUX_CHANNELS 6
+//#define STAT_CHANNELS 4
+//#define CELL 1
+//#define AUX 2
+//#define STAT 3
 
-#define ADC_OPT_ENABLED 1
-#define ADC_OPT_DISABLED 0
 
-#define CELL_CH_ALL 0
-#define CELL_CH_1and7 1
-#define CELL_CH_2and8 2
-#define CELL_CH_3and9 3
-#define CELL_CH_4and10 4
-#define CELL_CH_5and11 5
-#define CELL_CH_6and12 6
-
-#define SELFTEST_1 1
-#define SELFTEST_2 2
-
-#define AUX_CH_ALL 0
-#define AUX_CH_GPIO1 1
-#define AUX_CH_GPIO2 2
-#define AUX_CH_GPIO3 3
-#define AUX_CH_GPIO4 4
-#define AUX_CH_GPIO5 5
-#define AUX_CH_VREF2 6
-
-#define STAT_CH_ALL 0
-#define STAT_CH_SOC 1
-#define STAT_CH_ITEMP 2
-#define STAT_CH_VREGA 3
-#define STAT_CH_VREGD 4
-
-#define DCP_DISABLED 0
-#define DCP_ENABLED 1
-
-#define PULL_UP_CURRENT 1
-#define PULL_DOWN_CURRENT 0
-
-#define CELL_CHANNELS 12
-#define AUX_CHANNELS 6
-#define STAT_CHANNELS 4
-#define CELL 1
-#define AUX 2
-#define STAT 3
-
-
-#define M24M02DRC_1_DATA_ADDRESS 0x50 // Address of the first 1024 page M24M02DRC EEPROM data buffer, 2048 bits (256 8-bit bytes) per page
-#define M24M02DRC_1_IDPAGE_ADDRESS 0x58 // Address of the single M24M02DRC lockable ID page of the first EEPROM
-#define M24M02DRC_2_DATA_ADDRESS 0x54 // Address of the second 1024 page M24M02DRC EEPROM data buffer, 2048 bits (256 8-bit bytes) per page
-#define M24M02DRC_2_IDPAGE_ADDRESS 0x5C // Address of the single M24M02DRC lockable ID page of the second EEPROM
+//#define M24M02DRC_1_DATA_ADDRESS 0x50 // Address of the first 1024 page M24M02DRC EEPROM data buffer, 2048 bits (256 8-bit bytes) per page
+//#define M24M02DRC_1_IDPAGE_ADDRESS 0x58 // Address of the single M24M02DRC lockable ID page of the first EEPROM
+//#define M24M02DRC_2_DATA_ADDRESS 0x54 // Address of the second 1024 page M24M02DRC EEPROM data buffer, 2048 bits (256 8-bit bytes) per page
+//#define M24M02DRC_2_IDPAGE_ADDRESS 0x5C // Address of the single M24M02DRC lockable ID page of the second EEPROM
 
 
 //==CAN include
@@ -101,8 +106,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <inttypes.h>
+
 CAN_FilterConfTypeDef sFilter;
 CanRxMsgTypeDef RxHeader;
+
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -130,43 +137,43 @@ static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 
-/*----- i2c Write Function -----*/
-void i_write(unsigned position, unsigned int data){
-
-	int count=0;
-	if(data>255){
-		while(data>255){
-			data=data-255;
-			count++;
-		}
-	}
-
-	if(count>0){
-		//for writing to EEPROM
-		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
-		HAL_Delay(5);
-		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
-		HAL_Delay(5);
-	}else{
-		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
-		HAL_Delay(5);
-		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
-	    HAL_Delay(5);
-	}
-}
-
-/*----- i2c Write Function -----*/
-unsigned int i_read(unsigned position){
-
-	int count=0;
-	unsigned int data=0;
-	//for reading to EEPROM
-	HAL_I2C_Mem_Read(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
-	HAL_I2C_Mem_Read(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
-	data=data+(count*255);
-	return data;
-
-}
+///*----- i2c Write Function -----*/
+//void i_write(unsigned position, unsigned int data){
+//
+//	int count=0;
+//	if(data>255){
+//		while(data>255){
+//			data=data-255;
+//			count++;
+//		}
+//	}
+//
+//	if(count>0){
+//		//for writing to EEPROM
+//		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
+//		HAL_Delay(5);
+//		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
+//		HAL_Delay(5);
+//	}else{
+//		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
+//		HAL_Delay(5);
+//		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
+//	    HAL_Delay(5);
+//	}
+//}
+//
+///*----- i2c Write Function -----*/
+//unsigned int i_read(unsigned position){
+//
+//	int count=0;
+//	unsigned int data=0;
+//	//for reading to EEPROM
+//	HAL_I2C_Mem_Read(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
+//	HAL_I2C_Mem_Read(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
+//	data=data+(count*255);
+//	return data;
+//
+//}
 /* USER CODE END PFP */
 
 /* USER CODE BEGIN 0 */
@@ -183,88 +190,88 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
 /*----- ltc6804 Write Configuration Function -----*/
-void ltc6804_wrcfg(uint8_t total_ic,   //The number of ICs being written to
-		               uint8_t config[][6] //A two dimensional array of the configuration data that will be written
-		               )
-		{
-		  const uint8_t BYTES_IN_REG = 6;
-		  const uint8_t CMD_LEN = 4+(8*total_ic);
-		  uint8_t *cmd;
-		  uint16_t cfg_pec;
-		  uint8_t cmd_index; //command counter
+//void ltc6804_wrcfg(uint8_t total_ic,   //The number of ICs being written to
+//		               uint8_t config[][6] //A two dimensional array of the configuration data that will be written
+//		               )
+//		{
+//		  const uint8_t BYTES_IN_REG = 6;
+//		  const uint8_t CMD_LEN = 4+(8*total_ic);
+//		  uint8_t *cmd;
+//		  uint16_t cfg_pec;
+//		  uint8_t cmd_index; //command counter
+//
+//		  cmd = (uint8_t *)malloc(CMD_LEN*sizeof(uint8_t));
+//
+//
+//		  cmd[0] = 0x00;
+//		  cmd[1] = 0x01;
+//		  cmd[2] = 0x3d;
+//		  cmd[3] = 0x6e;
+//
+//
+//		  cmd_index = 4;
+//		  for (uint8_t current_ic = total_ic; current_ic > 0; current_ic--)      		 // Executes for each ltc6811 in daisy chain, this loops starts with
+//		  {
+//		    // The last IC on the stack. The first configuration written is
+//		    // Received by the last IC in the daisy chain
+//
+//		    for (uint8_t current_byte = 0; current_byte < BYTES_IN_REG; current_byte++)	 // Executes for each of the 6 bytes in the CFGR register
+//		    {
+//		      // Current_byte is the byte counter
+//
+//		      cmd[cmd_index] = config[current_ic-1][current_byte];          			 // Adding the config data to the array to be sent
+//		      cmd_index = cmd_index + 1;
+//		    }
+//
+//		    cfg_pec = (uint16_t)pec15(BYTES_IN_REG, &config[current_ic-1][0]);   	     // Calculating the PEC for each ICs configuration register data
+//		    cmd[cmd_index] = (uint8_t)(cfg_pec >> 8);
+//		    cmd[cmd_index + 1] = (uint8_t)cfg_pec;
+//		    cmd_index = cmd_index + 2;
+//		  }
+//
+//
+//		  wakeup_idle1();                                 								 // This will guarantee that the ltc6811 isoSPI port is awake.This command can be removed.
+//
+//		  // Output_low(LTC6811_CS);
+//		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+//		  spi_write_array(CMD_LEN, cmd);
+//
+//		  // Output_high(LTC6811_CS);
+//		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+//		  free(cmd);
+//}
 
-		  cmd = (uint8_t *)malloc(CMD_LEN*sizeof(uint8_t));
+///*----- Scan i2c Addresses -----*/
+//uint8_t retrieveI2Cid(){
+//
+//	uint8_t i;
+//	for(i=0; i<255; i++){
+//
+//			if(HAL_I2C_IsDeviceReady(&hi2c1, i, 1, 10) == HAL_OK){
+//		    //HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_12);
+//			break;
+//			}
+//			return i;
+//	}
+//
+//}
 
+///*----- SPI Read Function -----*/
+//uint8_t spi_read_byte(uint8_t tx_dat)
+//	{
+//	    uint8_t data;
+//
+//	    if ( HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)0xFF, (uint8_t*)&data, 1, HAL_MAX_DELAY) == HAL_OK )
+//	    {
+//	        return(data);
+//	    }
+//	    return(-1);
+//}
 
-		  cmd[0] = 0x00;
-		  cmd[1] = 0x01;
-		  cmd[2] = 0x3d;
-		  cmd[3] = 0x6e;
-
-
-		  cmd_index = 4;
-		  for (uint8_t current_ic = total_ic; current_ic > 0; current_ic--)      		 // Executes for each ltc6811 in daisy chain, this loops starts with
-		  {
-		    // The last IC on the stack. The first configuration written is
-		    // Received by the last IC in the daisy chain
-
-		    for (uint8_t current_byte = 0; current_byte < BYTES_IN_REG; current_byte++)	 // Executes for each of the 6 bytes in the CFGR register
-		    {
-		      // Current_byte is the byte counter
-
-		      cmd[cmd_index] = config[current_ic-1][current_byte];          			 // Adding the config data to the array to be sent
-		      cmd_index = cmd_index + 1;
-		    }
-
-		    cfg_pec = (uint16_t)pec15(BYTES_IN_REG, &config[current_ic-1][0]);   	     // Calculating the PEC for each ICs configuration register data
-		    cmd[cmd_index] = (uint8_t)(cfg_pec >> 8);
-		    cmd[cmd_index + 1] = (uint8_t)cfg_pec;
-		    cmd_index = cmd_index + 2;
-		  }
-
-
-		  wakeup_idle1();                                 								 // This will guarantee that the ltc6811 isoSPI port is awake.This command can be removed.
-
-		  // Output_low(LTC6811_CS);
-		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-		  spi_write_array(CMD_LEN, cmd);
-
-		  // Output_high(LTC6811_CS);
-		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-		  free(cmd);
-}
-
-/*----- Scan i2c Addresses -----*/
-uint8_t retrieveI2Cid(){
-
-	uint8_t i;
-	for(i=0; i<255; i++){
-
-			if(HAL_I2C_IsDeviceReady(&hi2c1, i, 1, 10) == HAL_OK){
-		    //HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_12);
-			break;
-			}
-			return i;
-	}
-
-}
-
-/*----- SPI Read Function -----*/
-uint8_t spi_read_byte(uint8_t tx_dat)
-	{
-	    uint8_t data;
-
-	    if ( HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)0xFF, (uint8_t*)&data, 1, HAL_MAX_DELAY) == HAL_OK )
-	    {
-	        return(data);
-	    }
-	    return(-1);
-}
-
-/*----- Data Lenght Counter -----*/
-int osal_DataLength( char *pString ){
-	  return (int)( strlen( pString ) );
-}
+///*----- Data Lenght Counter -----*/
+//int osal_DataLength( char *pString ){
+//	  return (int)( strlen( pString ) );
+//}
 
 uint16_t crc15Table[256] = {0x0,0xc599, 0xceab, 0xb32, 0xd8cf, 0x1d56, 0x1664, 0xd3fd, 0xf407, 0x319e, 0x3aac,
                             0xff35, 0x2cc8, 0xe951, 0xe263, 0x27fa, 0xad97, 0x680e, 0x633c, 0xa6a5, 0x7558, 0xb0c1,
@@ -291,222 +298,222 @@ uint16_t crc15Table[256] = {0x0,0xc599, 0xceab, 0xb32, 0xd8cf, 0x1d56, 0x1664, 0
                             0x585a, 0x8ba7, 0x4e3e, 0x450c, 0x8095
                             };
 
-/*----- SPI Write Function (?) -----*/
-void spi_write_read(uint8_t tx_Data[],	// Array of data to be written on SPI port
-			        uint8_t tx_len, 	// Length of the tx data arry
-			        uint8_t *rx_data,	// Input: array that will store the data read by the SPI port
-			        uint8_t rx_len 		// Option: number of bytes to be read from the SPI port
-			        ){
-	for (uint8_t i = 0; i < tx_len; i++)
-		  {
-				// spi_write(tx_Data[i]);
-				HAL_SPI_Transmit(&hspi1, (uint8_t*)&tx_Data[i], 1, 100);
-		  }
+///*----- SPI Write Function (?) -----*/
+//void spi_write_read(uint8_t tx_Data[],	// Array of data to be written on SPI port
+//			        uint8_t tx_len, 	// Length of the tx data arry
+//			        uint8_t *rx_data,	// Input: array that will store the data read by the SPI port
+//			        uint8_t rx_len 		// Option: number of bytes to be read from the SPI port
+//			        ){
+//	for (uint8_t i = 0; i < tx_len; i++)
+//		  {
+//				// spi_write(tx_Data[i]);
+//				HAL_SPI_Transmit(&hspi1, (uint8_t*)&tx_Data[i], 1, 100);
+//		  }
+//
+//	for (uint8_t i = 0; i < rx_len; i++)
+//		  {
+//	            HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)0xFF, (uint8_t*)&rx_data[i], 1, 100);
+//		  }
+//}
 
-	for (uint8_t i = 0; i < rx_len; i++)
-		  {
-	            HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)0xFF, (uint8_t*)&rx_data[i], 1, 100);
-		  }
-}
+//uint16_t pec15(uint8_t len,uint8_t* data ){
+//
+//    uint16_t remainder,address;
+//	remainder = 16;					// PEC seed
+//	for (int i = 0; i < len; i++)
+//		{
+//			address = ((remainder >> 7) ^ data[i]) & 0xff;//calculate PEC table address
+//			remainder = (remainder << 8 ) ^ crc15Table[address];
+//		}
+//    return (remainder*2);//The CRC15 has a 0 in the LSB so the final value must be multiplied by 2
+//}
 
-uint16_t pec15(uint8_t len,uint8_t* data ){
+//void wakeup_idle1(){
+//
+//    // output_low(LTC6811_CS);
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+//	spi_read_byte(0xff);
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+//
+//	//HAL_Delay(10);
+//}
 
-    uint16_t remainder,address;
-	remainder = 16;					// PEC seed
-	for (int i = 0; i < len; i++)
-		{
-			address = ((remainder >> 7) ^ data[i]) & 0xff;//calculate PEC table address
-			remainder = (remainder << 8 ) ^ crc15Table[address];
-		}
-    return (remainder*2);//The CRC15 has a 0 in the LSB so the final value must be multiplied by 2
-}
+//void spi_write_array(uint8_t len, 		// Option: Number of bytes to be written on the SPI port
+//                     uint8_t data[] 	// Array of bytes to be written on the SPI port
+//			         )
+//	{
+//		uint8_t ret_val;
+//	    for ( int i = 0; i < len; i++ )
+//		    {
+//		        HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&data[i], &ret_val, 1, 100);
+//		    }
+//}
 
-void wakeup_idle1(){
+//void wakeup_sleep(){
+//
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+//    // cs_low(GPIO_PIN_9);
+//    HAL_SPI_Transmit(&hspi1, 0xFF,1, 0xFF);
+//    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+//    HAL_Delay(1);
+//}
+//
+///*----- Read the raw data from the ltc6811 cell voltage register -----*/
+//void ltc6804_rdcv_reg(uint8_t reg, 			// Determines which cell voltage register is read back
+//			          uint8_t total_ic, 	// The number of ICs in the
+//			          uint8_t data[] 		// An array of the unparsed cell codes
+//			          ){
+//
+//	const uint8_t REG_LEN = 8; //number of bytes in each ICs register + 2 bytes for the PEC
+//	uint8_t cmd[4];
+//	uint16_t cmd_pec;
+//
+//	if (reg == 1)     //1: RDCVA
+//	  {
+//	    cmd[1] = 0x04;
+//	    cmd[0] = 0x00;
+//	  }else if (reg == 2) //2: RDCVB
+//		{
+//		  cmd[1] = 0x06;
+//		  cmd[0] = 0x00;
+//		}else if (reg == 3) //3: RDCVC
+//		  {
+//		    cmd[1] = 0x08;
+//		    cmd[0] = 0x00;
+//		  }else if (reg == 4) //4: RDCVD
+//			{
+//			  cmd[1] = 0x0A;
+//			  cmd[0] = 0x00;
+//			}else if (reg == 5) //4: RDCVE
+//			  {
+//			    cmd[1] = 0x09;
+//			    cmd[0] = 0x00;
+//			  }else if (reg == 6) //4: RDCVF
+//				{
+//				  cmd[1] = 0x0B;
+//				  cmd[0] = 0x00;
+//				}
+//
+//
+//	cmd_pec = pec15(2, cmd);
+//	cmd[2] = (uint8_t)(cmd_pec >> 8);
+//	cmd[3] = (uint8_t)(cmd_pec);
+//
+//	wakeup_idle1(); //This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
+//    // output_low(LTC6811_CS);
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+//	//uint8_t myData[8] = {1, 1, 1, 1, 1, 1, 1, 1};
+//	spi_write_read(cmd,4,data,8);
+//	//HAL_SPI_TransmitReceive(&hspi1,cmd,data,8,100);
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+//	// output_high(LTC6811_CS);
+//}
 
-    // output_low(LTC6811_CS);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-	spi_read_byte(0xff);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-
-	//HAL_Delay(10);
-}
-
-void spi_write_array(uint8_t len, 		// Option: Number of bytes to be written on the SPI port
-                     uint8_t data[] 	// Array of bytes to be written on the SPI port
-			         )
-	{
-		uint8_t ret_val;
-	    for ( int i = 0; i < len; i++ )
-		    {
-		        HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&data[i], &ret_val, 1, 100);
-		    }
-}
-
-void wakeup_sleep(){
-
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-    // cs_low(GPIO_PIN_9);
-    HAL_SPI_Transmit(&hspi1, 0xFF,1, 0xFF);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-    HAL_Delay(1);
-}
-
-/*----- Read the raw data from the ltc6811 cell voltage register -----*/
-void ltc6804_rdcv_reg(uint8_t reg, 			// Determines which cell voltage register is read back
-			          uint8_t total_ic, 	// The number of ICs in the
-			          uint8_t data[] 		// An array of the unparsed cell codes
-			          ){
-
-	const uint8_t REG_LEN = 8; //number of bytes in each ICs register + 2 bytes for the PEC
-	uint8_t cmd[4];
-	uint16_t cmd_pec;
-
-	if (reg == 1)     //1: RDCVA
-	  {
-	    cmd[1] = 0x04;
-	    cmd[0] = 0x00;
-	  }else if (reg == 2) //2: RDCVB
-		{
-		  cmd[1] = 0x06;
-		  cmd[0] = 0x00;
-		}else if (reg == 3) //3: RDCVC
-		  {
-		    cmd[1] = 0x08;
-		    cmd[0] = 0x00;
-		  }else if (reg == 4) //4: RDCVD
-			{
-			  cmd[1] = 0x0A;
-			  cmd[0] = 0x00;
-			}else if (reg == 5) //4: RDCVE
-			  {
-			    cmd[1] = 0x09;
-			    cmd[0] = 0x00;
-			  }else if (reg == 6) //4: RDCVF
-				{
-				  cmd[1] = 0x0B;
-				  cmd[0] = 0x00;
-				}
-
-
-	cmd_pec = pec15(2, cmd);
-	cmd[2] = (uint8_t)(cmd_pec >> 8);
-	cmd[3] = (uint8_t)(cmd_pec);
-
-	wakeup_idle1(); //This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
-    // output_low(LTC6811_CS);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-	//uint8_t myData[8] = {1, 1, 1, 1, 1, 1, 1, 1};
-	spi_write_read(cmd,4,data,8);
-	//HAL_SPI_TransmitReceive(&hspi1,cmd,data,8,100);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-	// output_high(LTC6811_CS);
-}
-
-void ltc6804_adcv(uint8_t MD, 		//!< ADC Conversion Mode
-                  uint8_t DCP, 		//!< Controls if Discharge is permitted during conversion
-                  uint8_t CH 		//!< Sets which Cell channels are converted
-			      ){
-
-	uint8_t cmd[4];
-	uint16_t cmd_pec;
-	uint8_t md_bits;
-
-	md_bits = (MD & 0x02) >> 1;
-	cmd[0] = md_bits + 0x02;
-	md_bits = (MD & 0x01) << 7;
-	cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
-	cmd_pec = pec15(2, cmd);
-
-	cmd[2] = (uint8_t)(cmd_pec >> 8);
-    cmd[3] = (uint8_t)(cmd_pec);
-
-    wakeup_idle1();
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-	spi_write_array(4, cmd);
-	//HAL_SPI_Transmit(&hspi1, cmd, 4,10);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-}
-
-void ltc6804_rdaux_reg(uint8_t reg, 		// Determines which GPIO voltage register is read back
-                       uint8_t total_ic, 	// The number of ICs in the system
-                       uint8_t *data 		// Array of the unparsed auxiliary codes
-			           ){
-
-	const uint8_t REG_LEN = 8; // number of bytes in the register + 2 bytes for the PEC
-	uint8_t cmd[4];
-	uint16_t cmd_pec;
-
-	if (reg == 1)     //Read back auxiliary group A
-	  {
-	    cmd[1] = 0x0C;
-	    cmd[0] = 0x00;
-	  }else if (reg == 2)  //Read back auxiliary group B
-		{
-		  cmd[1] = 0x0e;
-		  cmd[0] = 0x00;
-		}else if (reg == 3)  //Read back auxiliary group B
-		  {
-		    cmd[1] = 0x0D;
-		    cmd[0] = 0x00;
-		  }else if (reg == 4)  //Read back auxiliary group B
-			{
-			  cmd[1] = 0x0F;
-			  cmd[0] = 0x00;
-			}else          //Read back auxiliary group A
-			  {
-			    cmd[1] = 0x0C;
-			    cmd[0] = 0x00;
-			  }
-
-	cmd_pec = pec15(2, cmd);
-	cmd[2] = (uint8_t)(cmd_pec >> 8);
-	cmd[3] = (uint8_t)(cmd_pec);
-
-	wakeup_idle1(); // This will guarantee that the ltc6811 isoSPI port is awake, this command can be removed.
-
-    // Output_low(LTC6811_CS);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-	spi_write_read(cmd,4,data,(REG_LEN*total_ic));
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-	// Output_high(LTC6811_CS);
-}
-
-uint32_t ltc6804_pollAdc(){
-
-	uint32_t counter = 0;
-	uint8_t finished = 0;
-	uint8_t current_time = 0;
-	uint8_t cmd[4];
-	uint16_t cmd_pec;
-
-	cmd[0] = 0x07;
-	cmd[1] = 0x14;
-	cmd_pec = pec15(2, cmd);
-	cmd[2] = (uint8_t)(cmd_pec >> 8);
-	cmd[3] = (uint8_t)(cmd_pec);
-
-	wakeup_idle1(); //This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
-
-	// Output_low(LTC6811_CS);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-	spi_write_array(4,cmd);
-
-	while ((counter<200000)&&(finished == 0)){
-	  uint8_t rx;
-      // Current_time= HAL_SPI_Receive(&hspi1,rx,0xFF,100);
-	  current_time= spi_read_byte(0xFF);
-	  if (current_time>0){
-		finished = 1;
-	  }else{
-		counter = counter + 10;
-	  }
-    }
-
-	// Output_high(LTC6811_CS);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-
-    return(counter);
-}
+//void ltc6804_adcv(uint8_t MD, 		//!< ADC Conversion Mode
+//                  uint8_t DCP, 		//!< Controls if Discharge is permitted during conversion
+//                  uint8_t CH 		//!< Sets which Cell channels are converted
+//			      ){
+//
+//	uint8_t cmd[4];
+//	uint16_t cmd_pec;
+//	uint8_t md_bits;
+//
+//	md_bits = (MD & 0x02) >> 1;
+//	cmd[0] = md_bits + 0x02;
+//	md_bits = (MD & 0x01) << 7;
+//	cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
+//	cmd_pec = pec15(2, cmd);
+//
+//	cmd[2] = (uint8_t)(cmd_pec >> 8);
+//    cmd[3] = (uint8_t)(cmd_pec);
+//
+//    wakeup_idle1();
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+//	spi_write_array(4, cmd);
+//	//HAL_SPI_Transmit(&hspi1, cmd, 4,10);
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+//}
+//
+//void ltc6804_rdaux_reg(uint8_t reg, 		// Determines which GPIO voltage register is read back
+//                       uint8_t total_ic, 	// The number of ICs in the system
+//                       uint8_t *data 		// Array of the unparsed auxiliary codes
+//			           ){
+//
+//	const uint8_t REG_LEN = 8; // number of bytes in the register + 2 bytes for the PEC
+//	uint8_t cmd[4];
+//	uint16_t cmd_pec;
+//
+//	if (reg == 1)     //Read back auxiliary group A
+//	  {
+//	    cmd[1] = 0x0C;
+//	    cmd[0] = 0x00;
+//	  }else if (reg == 2)  //Read back auxiliary group B
+//		{
+//		  cmd[1] = 0x0e;
+//		  cmd[0] = 0x00;
+//		}else if (reg == 3)  //Read back auxiliary group B
+//		  {
+//		    cmd[1] = 0x0D;
+//		    cmd[0] = 0x00;
+//		  }else if (reg == 4)  //Read back auxiliary group B
+//			{
+//			  cmd[1] = 0x0F;
+//			  cmd[0] = 0x00;
+//			}else          //Read back auxiliary group A
+//			  {
+//			    cmd[1] = 0x0C;
+//			    cmd[0] = 0x00;
+//			  }
+//
+//	cmd_pec = pec15(2, cmd);
+//	cmd[2] = (uint8_t)(cmd_pec >> 8);
+//	cmd[3] = (uint8_t)(cmd_pec);
+//
+//	wakeup_idle1(); // This will guarantee that the ltc6811 isoSPI port is awake, this command can be removed.
+//
+//    // Output_low(LTC6811_CS);
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+//	spi_write_read(cmd,4,data,(REG_LEN*total_ic));
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+//	// Output_high(LTC6811_CS);
+//}
+//
+//uint32_t ltc6804_pollAdc(){
+//
+//	uint32_t counter = 0;
+//	uint8_t finished = 0;
+//	uint8_t current_time = 0;
+//	uint8_t cmd[4];
+//	uint16_t cmd_pec;
+//
+//	cmd[0] = 0x07;
+//	cmd[1] = 0x14;
+//	cmd_pec = pec15(2, cmd);
+//	cmd[2] = (uint8_t)(cmd_pec >> 8);
+//	cmd[3] = (uint8_t)(cmd_pec);
+//
+//	wakeup_idle1(); //This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
+//
+//	// Output_low(LTC6811_CS);
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+//	spi_write_array(4,cmd);
+//
+//	while ((counter<200000)&&(finished == 0)){
+//	  uint8_t rx;
+//      // Current_time= HAL_SPI_Receive(&hspi1,rx,0xFF,100);
+//	  current_time= spi_read_byte(0xFF);
+//	  if (current_time>0){
+//		finished = 1;
+//	  }else{
+//		counter = counter + 10;
+//	  }
+//    }
+//
+//	// Output_high(LTC6811_CS);
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+//
+//    return(counter);
+//}
 
 
 /*!  Write the ltc6811 Sctrl register
@@ -523,105 +530,105 @@ Command Code:
 |---------------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
 |WRSCTRL:         |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   1   |   0   |   1   |   0   |   0   |
 */
-void ltc6811_wrsctrl(uint8_t nIC,           //!< number of ICs in the daisy chain
-                     uint8_t sctrl_reg,
-                     uint8_t sctrl[][6]
-                     ){ //0b00010100
-
-	uint8_t cmd[12];
-	uint16_t cmd_pec;
-	uint16_t cmd_pec1;
-	//uint8_t md_bits;
-
-	//md_bits = (MD & 0x02) >> 1;
-	//cmd[0] = md_bits + 0x02;
-	cmd[0]=0x00;
-	//md_bits = (MD & 0x01) << 7;
-	//cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
-	cmd[1]=0b00010100;
-
-	cmd_pec = pec15(2, cmd);
-	cmd[2] = (uint8_t)(cmd_pec >> 8);
-	cmd[3] = (uint8_t)(cmd_pec);
-	cmd[4]= 0b00010001;
-	cmd[5]= 0b00010001;
-	cmd[6]= 0b00010001;
-	cmd[7]= 0b10010001;
-	cmd[8]= 0b00010001;
-	cmd[9]= 0b00011001;
-	cmd_pec1 = pec15(2, cmd);
-	cmd[10] = (uint8_t)(cmd_pec1 >> 8);
-	cmd[11] = (uint8_t)(cmd_pec1);
-	wakeup_idle1();
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-	spi_write_array(12, cmd);
-	//HAL_SPI_Transmit(&hspi1, cmd, 4,10);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-}
-
-/*!  Reads sctrl registers of a ltc6811 daisy chain
-uint8_t r_sctrl[][8] is a two dimensional array that the function stores the read pwm data. The sctrl data for each IC
-is stored in blocks of 8 bytes with the pwm data of the lowest IC on the stack in the first 8 bytes
-block of the array, the second IC in the second 8 byte etc. Below is an table illustrating the array organization:
-@return int8_t, PEC Status.
-0: Data read back has matching PEC
--1: Data read back has incorrect PEC
-Command Code:
--------------
-|CMD[0:1]   |  15   |  14   |  13   |  12   |  11   |  10   |   9   |   8   |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   |
-|-----------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
-|rdsctrl:   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   1   |   0   |   1   |   1   |   0   |
-*/
-uint8_t ltc6811_rdsctrl(uint8_t nIC, 			//!< number of ICs in the daisy chain
-                        uint8_t sctrl_reg,
-                        uint8_t r_sctrl[][8]    //!< a two dimensional array that the function stores the read pwm data
-			                      ){
-
-	uint8_t cmd[12];
-	uint8_t cmd_pec;
-	uint16_t cmd_pec1;
-	uint8_t* d;
-	//uint8_t md_bits;
-
-	for(int i=0;i<nIC;i++){
-	  //md_bits = (MD & 0x02) >> 1;
-	  //cmd[0] = md_bits + 0x02;
-	  cmd[0]=0x00;
-	  //md_bits = (MD & 0x01) << 7;
-	  //cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
-	  cmd[1]=0b00010110;
-
-	  cmd_pec = pec15(2, cmd);
-      cmd[2] = (uint8_t)(cmd_pec >> 8);
-	  cmd[3] = (uint8_t)(cmd_pec);
-
-	  cmd[4]= 0b00010001;
-	  cmd[5]= 0b00010001;
-      cmd[6]= 0b00010001;
-	  cmd[7]= 0b10010001;
-	  cmd[8]= 0b00010001;
-	  cmd[9]= 0b00011001;
-      cmd_pec1 = pec15(2, cmd);
-
-	  cmd[10] = (uint8_t)(cmd_pec1 >> 8);
-	  cmd[11] = (uint8_t)(cmd_pec1);
-
-	  uint8_t* r;
-
-      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-      spi_write_read(cmd,12,r,12);      //  DA CONTROLLARE CON PCB
-	  d[i]=r;
-	  //HAL_SPI_Transmit(&hspi1, cmd, 4,10);
-	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-	}
-}
-
-/*!  Start Sctrl data communication
-This command will start the sctrl pulse communication over the spins
-*/
-void LTC6811_stsctrl(){
-
-}
+//void ltc6811_wrsctrl(uint8_t nIC,           //!< number of ICs in the daisy chain
+//                     uint8_t sctrl_reg,
+//                     uint8_t sctrl[][6]
+//                     ){ //0b00010100
+//
+//	uint8_t cmd[12];
+//	uint16_t cmd_pec;
+//	uint16_t cmd_pec1;
+//	//uint8_t md_bits;
+//
+//	//md_bits = (MD & 0x02) >> 1;
+//	//cmd[0] = md_bits + 0x02;
+//	cmd[0]=0x00;
+//	//md_bits = (MD & 0x01) << 7;
+//	//cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
+//	cmd[1]=0b00010100;
+//
+//	cmd_pec = pec15(2, cmd);
+//	cmd[2] = (uint8_t)(cmd_pec >> 8);
+//	cmd[3] = (uint8_t)(cmd_pec);
+//	cmd[4]= 0b00010001;
+//	cmd[5]= 0b00010001;
+//	cmd[6]= 0b00010001;
+//	cmd[7]= 0b10010001;
+//	cmd[8]= 0b00010001;
+//	cmd[9]= 0b00011001;
+//	cmd_pec1 = pec15(2, cmd);
+//	cmd[10] = (uint8_t)(cmd_pec1 >> 8);
+//	cmd[11] = (uint8_t)(cmd_pec1);
+//	wakeup_idle1();
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+//	spi_write_array(12, cmd);
+//	//HAL_SPI_Transmit(&hspi1, cmd, 4,10);
+//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+//}
+//
+///*!  Reads sctrl registers of a ltc6811 daisy chain
+//uint8_t r_sctrl[][8] is a two dimensional array that the function stores the read pwm data. The sctrl data for each IC
+//is stored in blocks of 8 bytes with the pwm data of the lowest IC on the stack in the first 8 bytes
+//block of the array, the second IC in the second 8 byte etc. Below is an table illustrating the array organization:
+//@return int8_t, PEC Status.
+//0: Data read back has matching PEC
+//-1: Data read back has incorrect PEC
+//Command Code:
+//-------------
+//|CMD[0:1]   |  15   |  14   |  13   |  12   |  11   |  10   |   9   |   8   |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   |
+//|-----------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
+//|rdsctrl:   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   1   |   0   |   1   |   1   |   0   |
+//*/
+//uint8_t ltc6811_rdsctrl(uint8_t nIC, 			//!< number of ICs in the daisy chain
+//                        uint8_t sctrl_reg,
+//                        uint8_t r_sctrl[][8]    //!< a two dimensional array that the function stores the read pwm data
+//			                      ){
+//
+//	uint8_t cmd[12];
+//	uint8_t cmd_pec;
+//	uint16_t cmd_pec1;
+//	uint8_t* d;
+//	//uint8_t md_bits;
+//
+//	for(int i=0;i<nIC;i++){
+//	  //md_bits = (MD & 0x02) >> 1;
+//	  //cmd[0] = md_bits + 0x02;
+//	  cmd[0]=0x00;
+//	  //md_bits = (MD & 0x01) << 7;
+//	  //cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
+//	  cmd[1]=0b00010110;
+//
+//	  cmd_pec = pec15(2, cmd);
+//      cmd[2] = (uint8_t)(cmd_pec >> 8);
+//	  cmd[3] = (uint8_t)(cmd_pec);
+//
+//	  cmd[4]= 0b00010001;
+//	  cmd[5]= 0b00010001;
+//      cmd[6]= 0b00010001;
+//	  cmd[7]= 0b10010001;
+//	  cmd[8]= 0b00010001;
+//	  cmd[9]= 0b00011001;
+//      cmd_pec1 = pec15(2, cmd);
+//
+//	  cmd[10] = (uint8_t)(cmd_pec1 >> 8);
+//	  cmd[11] = (uint8_t)(cmd_pec1);
+//
+//	  uint8_t* r;
+//
+//      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+//      spi_write_read(cmd,12,r,12);      //  DA CONTROLLARE CON PCB
+//	  d[i]=r;
+//	  //HAL_SPI_Transmit(&hspi1, cmd, 4,10);
+//	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+//	}
+//}
+//
+///*!  Start Sctrl data communication
+//This command will start the sctrl pulse communication over the spins
+//*/
+//void LTC6811_stsctrl(){
+//
+//}
 
 
 
@@ -729,20 +736,20 @@ void LTC6811_stsctrl(){
 //		status = HAL_CAN_Receive(&hcan, CAN_FIFO1, 100);
 //
 //		HAL_Delay(1000);
+uint16_t n=569;
 
-
-
-
+  //	MEASUREMENT_NewSample(n);
+  	//can_send();
 	 //wakeup_idle1();
-	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
-	 ltc6804_pollAdc();
+	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL,hspi1);
+	 ltc6804_pollAdc(hspi1);
 	 //HAL_Delay(3);
 	 //wakeup_idle1();
 
 	 for(uint8_t cell_reg = 1; cell_reg<NUM_CV_REG+1; cell_reg++){                  // Executes once for each of the ltc6811 cell voltage registers
 
 		 uint8_t data_counter = 0;
-	     ltc6804_rdcv_reg(cell_reg, TOT_IC, cell_data);
+	     ltc6804_rdcv_reg(cell_reg, TOT_IC, cell_data,hspi1);
 
 	     for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
 
@@ -768,7 +775,7 @@ void LTC6811_stsctrl(){
 	 		 }
 
 	 		 received_pec = (cell_data[data_counter] << 8) + cell_data[data_counter + 1];
-	 		 data_pec = pec15(BYT_IN_REG, &cell_data[current_ic * NUM_RX_BYT]);
+	 		 data_pec = pec15(BYT_IN_REG, &cell_data[current_ic * NUM_RX_BYT], crc15Table);
 	 		 if(received_pec != data_pec){
 	 			 pec_error = -1;
 	 		 }
@@ -970,27 +977,27 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-
- int CAN_Send(int id, uint8_t dataTx[8], int size ){
- HAL_StatusTypeDef status;
-
-  		CanTxMsgTypeDef TxMess;
-  		TxMess.StdId = 0x600 + id; // 0x600 + Node ID
-  		TxMess.DLC = size;
-  		TxMess.IDE = CAN_ID_STD;
-  		TxMess.RTR = CAN_RTR_DATA;
-  		TxMess.Data[0] = dataTx[0];
-  		TxMess.Data[1] = dataTx[1];
-  		TxMess.Data[2] = dataTx[2];
-  		TxMess.Data[3] = dataTx[3];
-  		TxMess.Data[4] = dataTx[4];
-  		TxMess.Data[5] = dataTx[5];
-  		TxMess.Data[6] = dataTx[6];
-  		TxMess.Data[7] = dataTx[7];
-  		hcan.pTxMsg = &TxMess;
-
-  		status = HAL_CAN_Transmit(&hcan, 1000);
- }
+//
+// int CAN_Send(int id, uint8_t dataTx[8], int size ){
+// HAL_StatusTypeDef status;
+//
+//  		CanTxMsgTypeDef TxMess;
+//  		TxMess.StdId = 0x600 + id; // 0x600 + Node ID
+//  		TxMess.DLC = size;
+//  		TxMess.IDE = CAN_ID_STD;
+//  		TxMess.RTR = CAN_RTR_DATA;
+//  		TxMess.Data[0] = dataTx[0];
+//  		TxMess.Data[1] = dataTx[1];
+//  		TxMess.Data[2] = dataTx[2];
+//  		TxMess.Data[3] = dataTx[3];
+//  		TxMess.Data[4] = dataTx[4];
+//  		TxMess.Data[5] = dataTx[5];
+//  		TxMess.Data[6] = dataTx[6];
+//  		TxMess.Data[7] = dataTx[7];
+//  		hcan.pTxMsg = &TxMess;
+//
+//  		status = HAL_CAN_Transmit(&hcan, 1000);
+// }
 /*int CAN_Send(int id, uint8_t dataTx[], int size){
 
 	HAL_StatusTypeDef status;
