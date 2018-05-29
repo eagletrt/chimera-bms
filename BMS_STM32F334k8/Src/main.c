@@ -46,7 +46,7 @@
 #include "eeprom.h"
 #include "can.h"
 #include "ltc68xx.h"
-#include "adc_hv.h"
+#include "LTC1865.h"
 
 /* USER CODE BEGIN Includes */
 
