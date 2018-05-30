@@ -46,68 +46,11 @@
 #include "eeprom.h"
 #include "can.h"
 #include "ltc68xx.h"
-#include "LTC1865.h"
-
-/* USER CODE BEGIN Includes */
-
-//#define MD_422HZ_1KHZ 0
-//#define MD_27KHZ_14KHZ 1
-//#define MD_7KHZ_3KHZ 2
-//#define MD_26HZ_2KHZ 3
-//
-//#define ADC_OPT_ENABLED 1
-//#define ADC_OPT_DISABLED 0
-//
-//#define CELL_CH_ALL 0
-//#define CELL_CH_1and7 1
-//#define CELL_CH_2and8 2
-//#define CELL_CH_3and9 3
-//#define CELL_CH_4and10 4
-//#define CELL_CH_5and11 5
-//#define CELL_CH_6and12 6
-//
-//#define SELFTEST_1 1
-//#define SELFTEST_2 2
-//
-//#define AUX_CH_ALL 0
-//#define AUX_CH_GPIO1 1
-//#define AUX_CH_GPIO2 2
-//#define AUX_CH_GPIO3 3
-//#define AUX_CH_GPIO4 4
-//#define AUX_CH_GPIO5 5
-//#define AUX_CH_VREF2 6
-//
-//#define STAT_CH_ALL 0
-//#define STAT_CH_SOC 1
-//#define STAT_CH_ITEMP 2
-//#define STAT_CH_VREGA 3
-//#define STAT_CH_VREGD 4
-//
-//#define DCP_DISABLED 0
-//#define DCP_ENABLED 1
-//
-//#define PULL_UP_CURRENT 1
-//#define PULL_DOWN_CURRENT 0
-//
-//#define CELL_CHANNELS 12
-//#define AUX_CHANNELS 6
-//#define STAT_CHANNELS 4
-//#define CELL 1
-//#define AUX 2
-//#define STAT 3
-
-
-//#define M24M02DRC_1_DATA_ADDRESS 0x50 // Address of the first 1024 page M24M02DRC EEPROM data buffer, 2048 bits (256 8-bit bytes) per page
-//#define M24M02DRC_1_IDPAGE_ADDRESS 0x58 // Address of the single M24M02DRC lockable ID page of the first EEPROM
-//#define M24M02DRC_2_DATA_ADDRESS 0x54 // Address of the second 1024 page M24M02DRC EEPROM data buffer, 2048 bits (256 8-bit bytes) per page
-//#define M24M02DRC_2_IDPAGE_ADDRESS 0x5C // Address of the single M24M02DRC lockable ID page of the second EEPROM
-
-
-//==CAN include
-
+#include "ltc1865.h"
 #include <string.h>
 #include <stdlib.h>
 #include <inttypes.h>
+
 
 CAN_FilterConfTypeDef sFilter;
 CanRxMsgTypeDef RxHeader;
