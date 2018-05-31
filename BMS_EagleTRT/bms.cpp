@@ -18,7 +18,7 @@ BMS::BMS(QWidget *parent) :
      QGraphicsPixmapItem* item = new QGraphicsPixmapItem(QPixmap::fromImage(image));
      scene->addItem(item);
      ui->EagleImage->show();*/
-    QString filename = "C:/Users/docdo/Documents/BMS_EagleTRT/EagleIm.jpg";
+    QString filename = "../Chimera.jpg";
     QImage image(filename);
     ui->EagleImage->setPixmap(QPixmap::fromImage(image));
 
