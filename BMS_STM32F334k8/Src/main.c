@@ -318,7 +318,7 @@ Command Code:
 
   HAL_CAN_Init(&hcan);
 
-  int TOT_IC=12;
+  int TOT_IC=12; // number of daisy chain
   int CELL_CH=9;
 
   uint8_t NUM_RX_BYT = 8;
@@ -409,7 +409,9 @@ Command Code:
 	 		   	 //Each cell code is received as two bytes and is combined to
 	 		   	 uint16_t parsed_cell = cell_data[data_counter]+(cell_reg-1)+ (cell_data[data_counter + 1] << 8);
 	 		   	 //Because cell voltage codes are two bytes the data counter
-	 		   	 cell_codes[current_cell][current_cell  + ((cell_reg - 1) * CELL_IN_REG)] = parsed_cell;
+	 		   	 cell_codes[current_ic][current_cell  + ((cell_reg - 1) * CELL_IN_REG)] = parsed_cell;
+
+
 
 	 		   	 //valori in V
 	 		   	 data_counter = data_counter + 2;
