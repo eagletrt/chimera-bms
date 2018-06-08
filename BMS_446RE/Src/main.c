@@ -357,7 +357,7 @@ for(i=0; i<255; i++){
 	//Read the raw data from the ltc6811 cell voltage register
 	void ltc6811_rdcv_reg(uint8_t reg, //Determines which cell voltage register is read back
 	                      uint8_t total_ic, //the number of ICs in the
-	                      uint8_t data[] //An array of the unparsed cell codes
+	                      uint8_t *data //An array of the unparsed cell codes
 	                     ){
 
 		 const uint8_t REG_LEN = 8; //number of bytes in each ICs register + 2 bytes for the PEC
@@ -686,7 +686,7 @@ for(i=0; i<255; i++){
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
-  int TOT_IC=12;
+  int TOT_IC=1;
   int CELL_CH=9;
 
    uint8_t NUM_RX_BYT = 8;
@@ -694,13 +694,13 @@ for(i=0; i<255; i++){
     uint8_t CELL_IN_REG = 3;
    uint8_t NUM_CV_REG = 3;
 
-  uint8_t cell_data[8];
+  uint8_t *cell_data = 0;
   uint16_t cell_codes[TOT_IC][CELL_CH];
   uint16_t parsed_cell;
   uint16_t received_pec;
   uint16_t data_pec;
   uint8_t pec_error=0;
-
+  cell_data = (uint8_t*)malloc((NUM_RX_BYT * TOT_IC)*sizeof(uint8_t));
 
   /* USER CODE END 2 */
 
@@ -716,12 +716,12 @@ for(i=0; i<255; i++){
 	  	  ltc6811_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
 	  	  ltc6811_pollAdc();
 	  	  //HAL_Delay(3);
-	  	  //wakeup_idle1();
+	  	  wakeup_idle1();
 
 	   for(uint8_t cell_reg = 1; cell_reg<NUM_CV_REG+1; cell_reg++){                  //executes once for each of the ltc6811 cell voltage registers
 
 		  uint8_t data_counter = 0;
-		  ltc6811_rdcv_reg(cell_reg, TOT_IC, cell_data);
+		  ltc6811_rdcv_reg(cell_reg - 1, TOT_IC, cell_data);
 
 		  	  for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
 
@@ -732,13 +732,14 @@ for(i=0; i<255; i++){
 
 		   	  	   		   //Loops once for each of the 3 cell voltage codes in the register
 		   	  	   		   //Each cell code is received as two bytes and is combined to
-		   	  	   		   uint16_t parsed_cell = cell_data[data_counter]+(cell_reg-1)+ (cell_data[data_counter + 1] << 8);
+		   	  	   		   uint16_t parsed_cell = cell_data[data_counter]+(cell_data[data_counter + 1] << 8);
 		   	  	   		   //Because cell voltage codes are two bytes the data counter
-		   	  	   		   cell_codes[current_cell][current_cell  + ((cell_reg - 1) * CELL_IN_REG)] = parsed_cell;
+		   	  	   		   cell_codes[current_ic][current_cell  + ((cell_reg - 1) * CELL_IN_REG)] = parsed_cell;
 		   	  	   		   //valori in V
+		   	  	   		   float parsed_cell_f = parsed_cell * 0.0001f;
 		   	  	   		   data_counter = data_counter + 2;
-		   	  	   		   uint8_t num[9];
-		   	  	   		   sprintf(num, "%d - ", parsed_cell);
+		   	  	   		   char num[9];
+		   	  	   		   sprintf(num, "%f - ", parsed_cell_f);
 		   	  	   		   HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
 		   	  	   		   HAL_Delay(100);
 		   	  	   	   }
@@ -838,10 +839,10 @@ static void MX_SPI1_Init(void)
   hspi1.Init.Mode = SPI_MODE_MASTER;
   hspi1.Init.Direction = SPI_DIRECTION_2LINES;
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-  hspi1.Init.CLKPolarity = SPI_POLARITY_HIGH;
-  hspi1.Init.CLKPhase = SPI_PHASE_2EDGE;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;

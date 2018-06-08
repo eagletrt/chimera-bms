@@ -66,3 +66,4 @@ void Send2GUI(uint16_t data[12][9],int id,  int size,CAN_HandleTypeDef hcan,floa
 		CAN_Send(id,dataTx,size,hcan);
 
 }
+}
