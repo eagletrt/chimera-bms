@@ -294,17 +294,23 @@ for(i=0; i<255; i++){
 	                    uint8_t *rx_data,//Input: array that will store the data read by the SPI port
 	                    uint8_t rx_len //Option: number of bytes to be read from the SPI port
 	                   ){
+
+		HAL_SPI_Transmit(&hspi1, tx_Data, 4, 100);
+		/*
 		for (uint8_t i = 0; i < tx_len; i++)
 		  {
 	//	    spi_write(tx_Data[i]);
-			 HAL_SPI_Transmit(&hspi1, (uint8_t*)&tx_Data[i], 1, 100);
-		  }
+			 HAL_SPI_Transmit(&hspi1, &tx_Data[i], 1, 100);
+			 char num[9];
+			 	        		 sprintf(num, "%x /" , tx_Data[i]);
+			 	        		 HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
+		  }*/
 
-		  for (uint8_t i = 0; i < rx_len; i++)
+		  /*for (uint8_t i = 0; i < rx_len; i++)
 		  {
 			  HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)0xFF, (uint8_t*)&rx_data[i], 1, 100);
 
-		  }
+		  }*/
 	}
 	 uint16_t pec15(uint8_t len,uint8_t* data )
 		{
@@ -336,6 +342,7 @@ for(i=0; i<255; i++){
 	    for ( int i = 0; i < len; i++ )
 	    {
 	        HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&data[i], &ret_val, 1, 100);
+
 	    }
 	}
 
@@ -366,33 +373,33 @@ for(i=0; i<255; i++){
 
 		  if (reg == 1)     //1: RDCVA
 		  {
-		    cmd[1] = 0x04;
 		    cmd[0] = 0x00;
+		    cmd[1] = 0x04;
 		  }
 		  else if (reg == 2) //2: RDCVB
 		  {
-		    cmd[1] = 0x06;
 		    cmd[0] = 0x00;
+		    cmd[1] = 0x06;
 		  }
 		  else if (reg == 3) //3: RDCVC
 		  {
-		    cmd[1] = 0x08;
 		    cmd[0] = 0x00;
+		    cmd[1] = 0x08;
 		  }
 		  else if (reg == 4) //4: RDCVD
 		  {
-		    cmd[1] = 0x0A;
 		    cmd[0] = 0x00;
+		    cmd[1] = 0x0A;
 		  }
 		  else if (reg == 5) //4: RDCVE
 		  {
-		    cmd[1] = 0x09;
 		    cmd[0] = 0x00;
+		    cmd[1] = 0x09;
 		  }
 		  else if (reg == 6) //4: RDCVF
 		  {
-		    cmd[1] = 0x0B;
 		    cmd[0] = 0x00;
+		    cmd[1] = 0x0B;
 		  }
 
 
@@ -406,6 +413,9 @@ for(i=0; i<255; i++){
 		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
 		  //uint8_t myData[8] = {1, 1, 1, 1, 1, 1, 1, 1};
 		  spi_write_read(cmd,4,data,8);
+		 char num[9];
+		 sprintf(num, "%d - %d - %d - %d ", cmd[0], cmd[1], cmd[2], cmd[3]);
+		 HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
 		  //HAL_SPI_TransmitReceive(&hspi1,cmd,data,8,100);
 		  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
 		 // output_high(LTC6811_CS);
@@ -713,22 +723,22 @@ for(i=0; i<255; i++){
 
   /* USER CODE BEGIN 3 */
 	  //wakeup_idle1();
-	  	  ltc6811_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
-	  	  ltc6811_pollAdc();
+	  	//  ltc6811_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
+	  	//  ltc6811_pollAdc();
 	  	  //HAL_Delay(3);
-	  	  wakeup_idle1();
+	  	//  wakeup_idle1();
 
-	   for(uint8_t cell_reg = 1; cell_reg<NUM_CV_REG+1; cell_reg++){                  //executes once for each of the ltc6811 cell voltage registers
+	   for(uint8_t cell_reg = 1; cell_reg<1+1; cell_reg++){                  //executes once for each of the ltc6811 cell voltage registers
 
 		  uint8_t data_counter = 0;
-		  ltc6811_rdcv_reg(cell_reg - 1, TOT_IC, cell_data);
+		  ltc6811_rdcv_reg(cell_reg , TOT_IC, cell_data);
 
 		  	  for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
 
 		   	  	   //Current_ic is used as the IC counter
 		   	  	   //Loops once for each of the 3 cell voltage codes in the register
 
-		   	  	   	   for(uint8_t current_cell = 0; current_cell < 3; current_cell++) {
+		   	  	   	   for(uint8_t current_cell = 0; current_cell < 1; current_cell++) {
 
 		   	  	   		   //Loops once for each of the 3 cell voltage codes in the register
 		   	  	   		   //Each cell code is received as two bytes and is combined to
