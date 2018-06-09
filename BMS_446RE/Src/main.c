@@ -432,10 +432,12 @@ for(i=0; i<255; i++){
 			uint16_t cmd_pec;
 			uint8_t md_bits;
 
-				md_bits = (MD & 0x02) >> 1;
-				cmd[0] = md_bits + 0x02;
-				md_bits = (MD & 0x01) << 7;
-				cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
+				//md_bits = (MD & 0x02) >> 1;
+				//cmd[0] = md_bits + 0x02;
+				//md_bits = (MD & 0x01) << 7;
+				//cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
+				cmd[0] = 0x83;
+				cmd[1] = 0x60;
 				cmd_pec = pec15(2, cmd);
 
 				cmd[2] = (uint8_t)(cmd_pec >> 8);
@@ -722,11 +724,11 @@ for(i=0; i<255; i++){
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-	  //wakeup_idle1();
-	  	//  ltc6811_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
-	  	//  ltc6811_pollAdc();
-	  	  //HAL_Delay(3);
-	  	//  wakeup_idle1();
+	  wakeup_idle1();
+	  	  ltc6811_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
+	  	  //ltc6811_pollAdc();
+	  	  HAL_Delay(10);
+	  	  //wakeup_idle1();
 
 	   for(uint8_t cell_reg = 1; cell_reg<1+1; cell_reg++){                  //executes once for each of the ltc6811 cell voltage registers
 
