@@ -476,7 +476,7 @@ for(i=0; i<255; i++){
 				//md_bits = (MD & 0x01) << 7;
 				//cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
 
-				cmd[0] = 0x83;
+				cmd[0] = 0x03;
 				cmd[1] = 0X60;
 
 				cmd_pec = pec15(2, cmd);
@@ -824,7 +824,7 @@ for(i=0; i<255; i++){
 //	  	HAL_Delay(5);
 	  	  //wakeup_idle1();
 
-	 // 	ltc6811_fault(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
+//	  	ltc6811_fault(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
 
 
 	   for(uint8_t cell_reg = 1; cell_reg<CELL_IN_REG+1; cell_reg++){                  //executes once for each of the ltc6811 cell voltage registers
@@ -866,6 +866,7 @@ for(i=0; i<255; i++){
 		   	  	   	data_counter = data_counter + 2;
 		   	  	   	HAL_UART_Transmit(&huart2, "\r\n", 2, 100);
 		  	  }
+		  	ltc6811_fault(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
 	   }
   }
   HAL_delay(5);
