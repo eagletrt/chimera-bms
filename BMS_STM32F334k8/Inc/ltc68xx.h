@@ -74,11 +74,35 @@ void spi_write_array(uint8_t len, 		// Option: Number of bytes to be written on 
 					 SPI_HandleTypeDef hspi1
 			         );
 void wakeup_sleep(SPI_HandleTypeDef hspi1);
+void max_min_voltages(uint16_t cell_codes[12][9], uint16_t *max_vol, uint16_t *min_vol, float *average_vol);
+
+void array_voltages(uint16_t *voltages, uint8_t *cell_data);
+float convert_temp(uint16_t volt);
+void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
+				  uint8_t total_ic, 		// The number of ICs in the
+			      uint8_t *rx_data,			// An array of the unparsed cell codes
+				  SPI_HandleTypeDef hspi1
+			          );
 void ltc6804_rdcv_reg(uint8_t ic_n,			// Number of the current ic
 					  uint8_t total_ic, 	// The number of ICs in the
 			          uint8_t data[] ,		// An array of the unparsed cell codes
 					  SPI_HandleTypeDef hspi1
 			          );
+void ltc6804_address_temp_odd(uint8_t MD, 		//!< ADC Conversion Mode
+                  	  	  	  uint8_t DCP, 		//!< Controls if Discharge is permitted during conversion
+							  uint8_t CH ,		//!< Sets which Cell channels are converted
+							  SPI_HandleTypeDef hspi1
+			      	  	  	  );
+void ltc6804_address_temp_even(uint8_t MD, 		//!< ADC Conversion Mode
+                  	  	  	  uint8_t DCP, 		//!< Controls if Discharge is permitted during conversion
+							  uint8_t CH ,		//!< Sets which Cell channels are converted
+							  SPI_HandleTypeDef hspi1
+			      	  	  	  );
+void ltc6804_adcv_temp(uint8_t MD, 		//!< ADC Conversion Mode
+                  uint8_t DCP, 		//!< Controls if Discharge is permitted during conversion
+                  uint8_t CH ,		//!< Sets which Cell channels are converted
+				  SPI_HandleTypeDef hspi1
+			      );
 void ltc6804_adcv(uint8_t MD, 		//!< ADC Conversion Mode
                   uint8_t DCP, 		//!< Controls if Discharge is permitted during conversion
                   uint8_t CH ,		//!< Sets which Cell channels are converted

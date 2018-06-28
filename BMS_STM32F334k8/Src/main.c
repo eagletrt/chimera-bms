@@ -325,7 +325,7 @@ Command Code:
   uint8_t BYT_IN_REG = 6;
   uint8_t CELL_IN_REG = 3;
   uint8_t NUM_CV_REG = 3;
-  uint8_t cell_data[32];
+  uint8_t *cell_data;
   uint16_t cell_codes[TOT_IC][CELL_CH];
   uint16_t parsed_cell;
   uint16_t received_pec;
@@ -387,9 +387,7 @@ Command Code:
 	 //wakeup_idle1();
 
 
-	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-	 //ltc6804_pollAdc(hspi1);
-	 HAL_Delay(10);
+
 	 //wakeup_idle1();
 
 //	 for(uint8_t cell_reg = 1; cell_reg<NUM_CV_REG+1; cell_reg++){                  // Executes once for each of the ltc6811 cell voltage registers
@@ -429,59 +427,43 @@ Command Code:
 //	 		 }
 //
 //	 		 data_counter = data_counter + 2;
-//	 		 HAL_UART_Transmit(&huart2, "\r\n", 2, 100);
+//	 		 HAL_UART_Transmit(&huart2, "\r\n", 2, 100)
 //	     }
 
+  	 /* ----- Voltages ------*/
+  	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+  	 //ltc6804_pollAdc(hspi1);
+  	 HAL_Delay(10);
+	 uint8_t data_counter = 0;
 	 for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
 
-			 uint8_t data_counter = 0;
 			 ltc6804_rdcv_reg(current_ic, TOT_IC, cell_data, hspi1);
-			 //cell_codes[current_ic][current_cell  + ((cell_reg - 1) * CELL_IN_REG)] = parsed_cell;
-
+	 	 	 uint16_t *voltages;
+	 	 	 array_voltages(voltages, cell_data);
+	 	 	 for(int i = 0; i < 9; i++){
+	 	 		 cell_codes[current_ic][i] = voltages[i];
+	 	  	 }
 	 }
+	 uint16_t *max_vol;
+	 uint16_t *min_vol;
+	 float *average_vol;
+	 max_min_voltages(cell_codes, max_vol, min_vol, average_vol);
+	 //Can Messages
+	 /* ----- Temperatures -----*/
 
+	 //odd temp
+	 ltc6804_address_temp_odd(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+	 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+	 HAL_Delay(10);
+	 //ltc6804_rdcv_temp(...);
+	 //convert_temp();
 
-//	 }
-//	 for(uint8_t cell_reg = 1; cell_reg<NUM_CV_REG+1; cell_reg++){                  // Executes once for each of the ltc6811 cell voltage registers
-//
-//			 uint8_t data_counter = 0;
-//		     ltc6804_rdcv_reg(cell_reg, TOT_IC, cell_data,hspi1);
-//
-//		     for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
-//
-//	    	    	 //Current_ic is used as the IC counter
-//	    	 		 //Loops once for each of the 3 cell voltage codes in the register
-//
-//	    	 		 for(uint8_t current_cell = 0; current_cell < 3; current_cell++) {
-//
-//	    	 			 //Loops once for each of the 3 cell voltage codes in the register
-//
-//	    	 		   	 //Each cell code is received as two bytes and is combined to
-//	    	 		   	 uint16_t parsed_cell = cell_data[data_counter]+(cell_reg-1)+ (cell_data[data_counter + 1] << 8);
-//	    	 		   	 //Because cell voltage codes are two bytes the data counter
-//	    	 		   	 cell_codes[current_ic][current_cell  + ((cell_reg - 1) * CELL_IN_REG)] = parsed_cell;
-//
-//
-//
-//	    	 		   	 //valori in V
-//	    	 		   	 data_counter = data_counter + 2;
-//	    	 		   	 uint8_t num[9];
-//	    	 		   	 sprintf(num, "%d - ", parsed_cell);
-//	    	 		   	 HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
-//
-//	    	 		   	 HAL_Delay(100);
-//	    	 		 }
-//
-//	    	 		 received_pec = (cell_data[data_counter] << 8) + cell_data[data_counter + 1];
-//	    	 		 data_pec = pec15(BYT_IN_REG, &cell_data[current_ic * NUM_RX_BYT], crc15Table);
-//	    	 		 if(received_pec != data_pec){
-//	    	 			 pec_error = -1;
-//	    	 		 }
-//
-//	    	 		 data_counter = data_counter + 2;
-//	    	 		 HAL_UART_Transmit(&huart2, "\r\n", 2, 100);
-//	    	     }
-//	 }
+	 //odd temp
+	 ltc6804_address_temp_even(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+	 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+	 HAL_Delay(10);
+	 //ltc6804_rdcv_temp(...);
+	 //convert_temp();
 
  }
 
