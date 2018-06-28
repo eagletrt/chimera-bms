@@ -74,8 +74,8 @@ void spi_write_array(uint8_t len, 		// Option: Number of bytes to be written on 
 					 SPI_HandleTypeDef hspi1
 			         );
 void wakeup_sleep(SPI_HandleTypeDef hspi1);
-void ltc6804_rdcv_reg(uint8_t reg, 			// Determines which cell voltage register is read back
-			          uint8_t total_ic, 	// The number of ICs in the
+void ltc6804_rdcv_reg(uint8_t ic_n,			// Number of the current ic
+					  uint8_t total_ic, 	// The number of ICs in the
 			          uint8_t data[] ,		// An array of the unparsed cell codes
 					  SPI_HandleTypeDef hspi1
 			          );

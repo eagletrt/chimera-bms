@@ -390,32 +390,32 @@ for(i=0; i<255; i++){
 
 		  if (reg == 1)     //1: RDCVA
 		  {
-		    cmd[0] = 0x80;
+		    cmd[0] = reg;
 		    cmd[1] = 0x04;
 		  }
 		  else if (reg == 2) //2: RDCVB
 		  {
-		    cmd[0] = 0x80;
+		    cmd[0] = reg;
 		    cmd[1] = 0x06;
 		  }
 		  else if (reg == 3) //3: RDCVC
 		  {
-		    cmd[0] = 0x80;
+		    cmd[0] = reg;
 		    cmd[1] = 0x08;
 		  }
 		  else if (reg == 4) //4: RDCVD
 		  {
-		    cmd[0] = 0x80;
+		    cmd[0] = reg;
 		    cmd[1] = 0x0A;
 		  }
 		  else if (reg == 5) //4: RDCVE
 		  {
-		    cmd[0] = 0x80;
+		    cmd[0] = reg;
 		    cmd[1] = 0x09;
 		  }
 		  else if (reg == 6) //4: RDCVF
 		  {
-		    cmd[0] = 0x80;
+		    cmd[0] = reg;
 		    cmd[1] = 0x0B;
 		  }
 
