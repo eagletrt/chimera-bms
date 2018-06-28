@@ -449,6 +449,7 @@ Command Code:
 	 float *average_vol;
 	 max_min_voltages(cell_codes, max_vol, min_vol, average_vol);
 	 //Can Messages
+
 	 /* ----- Temperatures -----*/
 
 	 //odd temp
@@ -458,7 +459,7 @@ Command Code:
 	 //ltc6804_rdcv_temp(...);
 	 //convert_temp();
 
-	 //odd temp
+	 //even temp
 	 ltc6804_address_temp_even(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 	 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 	 HAL_Delay(10);
