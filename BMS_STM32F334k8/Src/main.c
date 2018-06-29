@@ -327,6 +327,7 @@ Command Code:
   uint8_t NUM_CV_REG = 3;
   uint8_t *cell_data;
   uint16_t cell_codes[TOT_IC][CELL_CH];
+  uint16_t cell_codes_temp[TOT_IC][CELL_CH];
   uint16_t parsed_cell;
   uint16_t received_pec;
   uint16_t data_pec;
@@ -451,11 +452,22 @@ Command Code:
 	 //Can Messages
 
 	 /* ----- Temperatures -----*/
-
+	 uint16_t *temp = 0;
 	 //odd temp
 	 ltc6804_address_temp_odd(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 	 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 	 HAL_Delay(10);
+	 for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
+		 	 ltc6804_rdcv_reg(current_ic, TOT_IC, cell_data, hspi1);
+		 	 array_temp_odd(temp, cell_data);
+
+		 	 cell_codes_temp[current_ic][0] = temp[0];
+		 	 cell_codes_temp[current_ic][2] = temp[2];
+		 	 cell_codes_temp[current_ic][4] = temp[4];
+		 	 cell_codes_temp[current_ic][6] = temp[6];
+		 	 cell_codes_temp[current_ic][8] = temp[8];
+
+	 }
 	 //ltc6804_rdcv_temp(...);
 	 //convert_temp();
 
@@ -463,8 +475,38 @@ Command Code:
 	 ltc6804_address_temp_even(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 	 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 	 HAL_Delay(10);
-	 //ltc6804_rdcv_temp(...);
-	 //convert_temp();
+	 for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
+	 		 ltc6804_rdcv_reg(current_ic, TOT_IC, cell_data, hspi1);
+	 		 array_temp_even(temp, cell_data);
+
+	 		 cell_codes_temp[current_ic][1] = temp[1];
+	 		 cell_codes_temp[current_ic][3] = temp[3];
+	 		 cell_codes_temp[current_ic][5] = temp[5];
+	 		 cell_codes_temp[current_ic][7] = temp[7];
+
+	 }
+	 uint16_t *max_temp = 0;
+	 float *av_temp = 0;
+	 max_ave_temp(cell_codes_temp, max_temp, av_temp);
+
+	 float **converted_temp;
+	 for(int i = 0; i < 12; i++){
+		 for(int j = 0; j < 9; j++){
+			 converted_temp[i][j] = convert_temp(cell_codes_temp[i][j]);
+		 }
+	 }
+
+	 //CAN MESSAGES
+	 uint16_t tot_vol = total_pack_voltage(cell_codes);
+	 int id = 0;
+	 CAN_Send(id,(uint8_t)max_vol, 8, hcan);
+	 CAN_Send(id,(uint8_t)min_vol, 8, hcan);
+	 CAN_Send(id, tot_vol, 8, hcan);
+	 CAN_Send(id, (tot_vol << 8), 8, hcan);
+	 CAN_Send(id,*max_temp, 8, hcan);
+	 CAN_Send(id,*max_temp << 8, 8, hcan);
+	 CAN_Send(id,(uint16_t)*av_temp, 8, hcan);
+	 CAN_Send(id,(uint16_t)*av_temp << 8, 8, hcan);
 
  }
 

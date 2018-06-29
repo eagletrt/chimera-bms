@@ -77,7 +77,11 @@ void wakeup_sleep(SPI_HandleTypeDef hspi1);
 void max_min_voltages(uint16_t cell_codes[12][9], uint16_t *max_vol, uint16_t *min_vol, float *average_vol);
 
 void array_voltages(uint16_t *voltages, uint8_t *cell_data);
+void array_temp_odd(uint16_t *temp, uint8_t *cell_data);
+void array_temp_even(uint16_t *temp, uint8_t *cell_data);
+void max_ave_temp(uint16_t cell_codes[12][9], uint16_t* max_temp, float *average_temp);
 float convert_temp(uint16_t volt);
+uint16_t total_pack_voltage(uint16_t cell_codes[12][9]);
 void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 				  uint8_t total_ic, 		// The number of ICs in the
 			      uint8_t *rx_data,			// An array of the unparsed cell codes

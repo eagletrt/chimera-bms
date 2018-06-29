@@ -136,7 +136,66 @@ void array_voltages(uint16_t *voltages, uint8_t *cell_data){
 	voltages[7] = cell_data[20] + (cell_data[21] << 8);
 	voltages[8] = cell_data[24] + (cell_data[25] << 8);
 }
+void array_temp_odd(uint16_t *temp, uint8_t *cell_data){
+	temp[0] = cell_data[0] + (cell_data[1] << 8);
+	//temp[1] = cell_data[2] + (cell_data[3] << 8);
+	temp[2] = cell_data[4] + (cell_data[5] << 8);
+	//temp[3] = cell_data[8] + (cell_data[9] << 8);
+	temp[4] = cell_data[10] + (cell_data[11] << 8);
+	//temp[5] = cell_data[16] + (cell_data[17] << 8);
+	temp[6] = cell_data[18] + (cell_data[19] << 8);
+	//temp[7] = cell_data[20] + (cell_data[21] << 8);
+	temp[8] = cell_data[24] + (cell_data[25] << 8);
+}
+void array_temp_even(uint16_t *temp, uint8_t *cell_data){
+	//temp[0] = cell_data[0] + (cell_data[1] << 8);
+	temp[1] = cell_data[2] + (cell_data[3] << 8);
+	//temp[2] = cell_data[4] + (cell_data[5] << 8);
+	temp[3] = cell_data[8] + (cell_data[9] << 8);
+	//temp[4] = cell_data[10] + (cell_data[11] << 8);
+	temp[5] = cell_data[16] + (cell_data[17] << 8);
+	//temp[6] = cell_data[18] + (cell_data[19] << 8);
+	temp[7] = cell_data[20] + (cell_data[21] << 8);
+	//temp[8] = cell_data[24] + (cell_data[25] << 8);
+}
+void max_ave_temp(uint16_t cell_codes[12][9], uint16_t* max_temp, float *average_temp){
+	for(int i = 0; i < 12; i++){
+		for(int j = 0; j < 9; j++){
+			if(i==0 && j==0){
+				*max_temp = cell_codes[i][j];
+				if(*max_temp*0.0001f > 65.00){
+					//SHUT DOWN
+				}
+			}else{
+			if(cell_codes[i][j] > *max_temp){
+					*max_temp = cell_codes[i][j];
+					if(*max_temp*0.0001f > 65.00){
+						//SHUT DOWN
+					}
+				}
+			}
+		}
 
+	}
+
+	// Average
+	uint16_t sum = 0;
+	for(int i = 0; i < 12; i++){
+		for(int j = 0; j < 9; j++){
+			sum = sum + cell_codes[i][j];
+		}
+	}
+	*average_temp = sum*0.0001f / 108;
+}
+uint16_t total_pack_voltage(uint16_t cell_codes[12][9]){
+	uint16_t sum = 0;
+		for(int i = 0; i < 12; i++){
+			for(int j = 0; j < 9; j++){
+				sum = sum + cell_codes[i][j];
+			}
+		}
+	return sum;
+}
 /*----- Read the raw data from the ltc6804 cell temperature register normal-----*/
 void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 				  uint8_t total_ic, 		// The number of ICs in the
@@ -148,7 +207,7 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
-	uint8_t *data;
+	uint8_t *data = 0;
 	ic_n = (uint8_t)0x80 + (2^3)*ic_n;
 
 	// ---- Celle 1, 2, 3
