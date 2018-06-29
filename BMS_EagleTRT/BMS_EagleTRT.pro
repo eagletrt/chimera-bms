@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui printsupport
-
+QT       += serialport
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = BMS_EagleTRT

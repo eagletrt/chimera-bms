@@ -38,6 +38,10 @@ void BMS::createLinePlot(QCustomPlot *plot, QVector<double> x, QVector<double> y
 
     plot->replot();
 }
+/*
+
+
+*/
 
 BMS::~BMS()
 {

@@ -2,7 +2,12 @@
 #define LIVEDATA_H
 
 #include <QDialog>
-
+#include <QMainWindow>
+#include <QtSerialPort/QSerialPort>
+#include "qcustomplot.h"
+#include <QFileInfo>
+#include <QDebug>
+#include <QTextEdit>
 namespace Ui {
 class LiveData;
 }
@@ -12,6 +17,10 @@ class LiveData : public QDialog
     Q_OBJECT
 
 public:
+
+    QSerialPort serial;
+    QString SERIAL_PORT = "/dev/ttyUSB";
+
     int updateFrequency = 50; //Hz
     int updateAfterNValues = 5; //1 = update each time, 2 = update once every 2 values received etc.
     int valuesSinceLastUpdate = 0;
@@ -33,11 +42,17 @@ public:
     int valuesSkipped = 0;
 
     explicit LiveData(QWidget *parent = 0);
+    void addVoltage(int value, QTableWidget *table, int row, int column);
+    void addTemperature(int value, QTableWidget *table, int row, int column);
+    void moveDataToLeft(QVector<double> &arr, int size);
+    void setNewFileName();
+    void writeToFile(QString stringToWrite);
+    void openSerial();
     ~LiveData();
 
 private slots:
     void on_LoadTable_clicked();
-
+    void parseMessage();
 private:
     Ui::LiveData *ui;
 
