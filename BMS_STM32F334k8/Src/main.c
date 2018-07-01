@@ -59,6 +59,7 @@ CanRxMsgTypeDef RxHeader;
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
 
 CAN_HandleTypeDef hcan;
 
@@ -74,6 +75,7 @@ SPI_HandleTypeDef hspi1;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_CAN_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
@@ -133,8 +135,11 @@ static void MX_ADC1_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+	uint32_t Get_Amps_Value(uint32_t *Vout){
+		float VVoutV = (float)Vout[0] * 3.3 / 4095;
+		return MEASUREMENT_ScaleAmps(Vout[0]);
 
-
+	}
 
 uint16_t crc15Table[256] = {0x0,0xc599, 0xceab, 0xb32, 0xd8cf, 0x1d56, 0x1664, 0xd3fd, 0xf407, 0x319e, 0x3aac,
                             0xff35, 0x2cc8, 0xe951, 0xe263, 0x27fa, 0xad97, 0x680e, 0x633c, 0xa6a5, 0x7558, 0xb0c1,
@@ -297,6 +302,7 @@ Command Code:
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_CAN_Init();
   MX_I2C1_Init();
   MX_SPI1_Init();
@@ -336,6 +342,7 @@ Command Code:
   float *av_temp1 = 0;
   float *av_temp2 = 0;
   float *av_temp3 = 0;
+  uint32_t *adcBuffer;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -378,6 +385,13 @@ Command Code:
  	 //QUANDO ARRIVA IL MESSAGGIO CAN TS ON ----> ATTIVA IL TRACTIVE SYSTEM
 
  	 //QUANDO ARRIVA IL MESSAGGIO CAN TS OFF ----> DISATTIVA IL TRACTIVE SYSTEM
+
+ 	HAL_ADC_Start_DMA(&hadc1, (uint32_t*) adcBuffer, 1); // Call DMA for ADC1
+
+ 	HAL_Delay(0.05); // Wait for conversion
+ 	HAL_ADC_Stop_DMA(&hadc1);
+ 	uint32_t Current = GetAmpsValue(adcBuffer);
+
 
   	 /* ----- Voltages ------*/
   	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
@@ -588,7 +602,7 @@ static void MX_ADC1_Init(void)
   sConfig.Channel = ADC_CHANNEL_1;
   sConfig.Rank = ADC_REGULAR_RANK_1;
   sConfig.SingleDiff = ADC_SINGLE_ENDED;
-  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  sConfig.SamplingTime = ADC_SAMPLETIME_7CYCLES_5;
   sConfig.OffsetNumber = ADC_OFFSET_NONE;
   sConfig.Offset = 0;
   if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
@@ -678,6 +692,21 @@ static void MX_SPI1_Init(void)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
+
+}
+
+/** 
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void) 
+{
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
 
 }
 

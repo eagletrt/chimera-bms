@@ -49,6 +49,8 @@
 
 /* Private define ------------------------------------------------------------*/
 
+#define CurrentSensor_Pin GPIO_PIN_0
+#define CurrentSensor_GPIO_Port GPIOA
 #define PrechargeEnded_Pin GPIO_PIN_1
 #define PrechargeEnded_GPIO_Port GPIOA
 #define CS_ADC_PackV_Pin GPIO_PIN_2
