@@ -135,11 +135,7 @@ static void MX_ADC1_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	uint32_t Get_Amps_Value(uint32_t *Vout){
-		float VVoutV = (float)Vout[0] * 3.3 / 4095;
-		return MEASUREMENT_ScaleAmps(Vout[0]);
 
-	}
 
 uint16_t crc15Table[256] = {0x0,0xc599, 0xceab, 0xb32, 0xd8cf, 0x1d56, 0x1664, 0xd3fd, 0xf407, 0x319e, 0x3aac,
                             0xff35, 0x2cc8, 0xe951, 0xe263, 0x27fa, 0xad97, 0x680e, 0x633c, 0xa6a5, 0x7558, 0xb0c1,
@@ -390,7 +386,7 @@ Command Code:
 
  	HAL_Delay(0.05); // Wait for conversion
  	HAL_ADC_Stop_DMA(&hadc1);
- 	uint32_t Current = GetAmpsValue(adcBuffer);
+ 	uint32_t Current = Get_Amps_Value(adcBuffer);
 
 
   	 /* ----- Voltages ------*/

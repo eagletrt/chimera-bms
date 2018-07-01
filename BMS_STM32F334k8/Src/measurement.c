@@ -254,8 +254,8 @@ int MEASUREMENT_GetRatio(void) {
  *
  * Sensor is LEM  HTFS 200-P (Farnell 9135715)
  * SensorOffset = 2.5V = 2068 LSB
- * Vout_Sensor = Vref Â± (1.25Vãƒ»I / 200A )
- * Vout_Sensor = Vref Â± 6.25mR * I
+ * Vout_Sensor = Vref ± (1.25 * I / 200A )
+ * Vout_Sensor = Vref ± 6.25mR * I
  * 1A = 5.1717... LSB
  * I(A) = ADC * 0,193359375 = ADC * 99 / 512
  *
@@ -398,3 +398,9 @@ MEASUREMENT_tHistory MEASUREMENT_GetHistory(int index) {
 		i+= HISTORY_ENTRIES;
 	return history[i];
 }
+
+uint32_t Get_Amps_Value(uint32_t *Vout){
+		float VVoutV = (float)Vout[0] * 3.3 / 4095;
+		return MEASUREMENT_ScaleAmps((int)Vout[0]);
+
+	}

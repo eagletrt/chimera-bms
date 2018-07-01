@@ -53,7 +53,7 @@ typedef struct {
 
 /* Function prototypes -------------------------------------------------*/
 void MEASUREMENT_Init(void);
-inline void MEASUREMENT_NewSample(uint16_t value);
+void MEASUREMENT_NewSample(uint16_t value);
 int MEASUREMENT_GetFrequency(void);
 int MEASUREMENT_GetSlowFilt(void);
 void MEASUREMENT_CopyZoomField(uint8_t target[]);
@@ -62,6 +62,7 @@ int MEASUREMENT_GetMax(void);
 int MEASUREMENT_GetRatio(void);
 int MEASUREMENT_GetRun(void);
 void MEASUREMENT_SaveHistory(void);
+uint32_t Get_Amps_Value(uint32_t *Vout);
 MEASUREMENT_tHistory MEASUREMENT_GetHistory(int index);
 
 
