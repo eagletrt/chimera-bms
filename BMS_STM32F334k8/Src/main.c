@@ -40,7 +40,7 @@
 #include "main.h"
 #include "stm32f3xx_hal.h"
 
-//#include "stm32f3xx_hal_can.h"
+/* USER CODE BEGIN Includes */
 //#include "stm32f4xx_hal_can.h"
 #include "measurement.h"
 #include "eeprom.h"
@@ -64,8 +64,6 @@ I2C_HandleTypeDef hi2c1;
 
 SPI_HandleTypeDef hspi1;
 
-UART_HandleTypeDef huart2;
-
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
 
@@ -77,7 +75,6 @@ static void MX_GPIO_Init(void);
 static void MX_CAN_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
-static void MX_USART2_UART_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -300,7 +297,6 @@ Command Code:
   MX_CAN_Init();
   MX_I2C1_Init();
   MX_SPI1_Init();
-  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
 
   /* SETTING CAN */
@@ -507,12 +503,38 @@ Command Code:
 	 CAN_Send(id,*max_temp << 8, 8, hcan);
 	 CAN_Send(id,(uint16_t)*av_temp, 8, hcan);
 	 CAN_Send(id,(uint16_t)*av_temp << 8, 8, hcan);
+	 for(int i = 0; i < TOT_IC; i++){
+		 for(int j = 0; j < 9; j++){
+			 CAN_Send(id, (uint8_t)cell_codes[i][j], 8, hcan);
+			 CAN_Send(id, (uint8_t)cell_codes[i][j] << 8, 8, hcan);
+			 CAN_Send(id, (uint8_t)cell_codes_temp[i][j], 8, hcan);
+			 CAN_Send(id, (uint8_t)cell_codes_temp[i][j] << 8, 8, hcan);
+		 }
+	 }
 
+	 // GPIO Logic
+	 //Precharge off
+	 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+	 GPIO_PinState ShutDown_Status;
+	 ShutDown_Status = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
+	 if(ShutDown_Status == GPIO_PIN_SET){
+		 uint8_t *totalPack;
+		 uint8_t *tractiveVoltage;
+		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+		 /////////////////////spi_write_read(cmd,4,totalPack,8,hspi1);
+		 	// Output_high
+		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+		 if(totalPack == tractiveVoltage){
+		 // Monitorare Total voltage e tractive system voltage
+		 // Quando sono uguali ---> precharge on
+			 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+		 }
+	 }
  }
 
   /* USER CODE END 3 */
-}
 
+}
 
 /**
   * @brief System Clock Configuration
@@ -652,26 +674,6 @@ static void MX_SPI1_Init(void)
 
 }
 
-/* USART2 init function */
-static void MX_USART2_UART_Init(void)
-{
-
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 38400;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-    _Error_Handler(__FILE__, __LINE__);
-  }
-
-}
-
 /** Configure pins as 
         * Analog 
         * Input 
@@ -689,14 +691,39 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, PrechargeEnded_Pin|CS_ADC_PackV_Pin|CS_6820_Pin|CS_SDCard_Pin 
+                          |TS_ON_Pin|BMS_Fault_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PB5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_5;
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(EEPromWc_GPIO_Port, EEPromWc_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PrechargeEnded_Pin CS_ADC_PackV_Pin CS_6820_Pin CS_SDCard_Pin 
+                           TS_ON_Pin BMS_Fault_Pin */
+  GPIO_InitStruct.Pin = PrechargeEnded_Pin|CS_ADC_PackV_Pin|CS_6820_Pin|CS_SDCard_Pin 
+                          |TS_ON_Pin|BMS_Fault_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SDCard_Det_Pin */
+  GPIO_InitStruct.Pin = SDCard_Det_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(SDCard_Det_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : ShutDownSt_Pin */
+  GPIO_InitStruct.Pin = ShutDownSt_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(ShutDownSt_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : EEPromWc_Pin */
+  GPIO_InitStruct.Pin = EEPromWc_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(EEPromWc_GPIO_Port, &GPIO_InitStruct);
 
 }
 

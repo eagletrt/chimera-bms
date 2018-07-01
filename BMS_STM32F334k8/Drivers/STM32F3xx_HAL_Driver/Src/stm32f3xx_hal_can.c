@@ -1552,16 +1552,6 @@ static HAL_StatusTypeDef CAN_Transmit_IT(CAN_HandleTypeDef* hcan)
   return HAL_OK;
 }
 
-/*=================USER CODE CAN=============
-HAL_StatusTypeDef HAL_CAN_AddTxMessage(CAN_HandleTypeDef *hcan, CanTxMsgTypeDef *pHeader, uint8_t aData[], uint32_t *pTxMailbox){}
-uint32_t HAL_CAN_GetTxMailboxesFreeLevel(CAN_HandleTypeDef *hcan){}
-uint32_t HAL_CAN_IsTxMessagePending(CAN_HandleTypeDef *hcan, uint32_t TxMailboxes){}
-uint32_t HAL_CAN_GetRxFifoFillLevel(CAN_HandleTypeDef *hcan, uint32_t RxFifo){}
-HAL_StatusTypeDef HAL_CAN_GetRxMessage(CAN_HandleTypeDef *hcan, uint32_t RxFifo, CanRxMsgTypeDef *pHeader, uint8_t aData[]){}
-*/
-
-
-
 /**
   * @brief  Receives a correct CAN frame.
   * @param  hcan       Pointer to a CAN_HandleTypeDef structure that contains

@@ -49,6 +49,25 @@
 
 /* Private define ------------------------------------------------------------*/
 
+#define PrechargeEnded_Pin GPIO_PIN_1
+#define PrechargeEnded_GPIO_Port GPIOA
+#define CS_ADC_PackV_Pin GPIO_PIN_2
+#define CS_ADC_PackV_GPIO_Port GPIOA
+#define CS_6820_Pin GPIO_PIN_3
+#define CS_6820_GPIO_Port GPIOA
+#define CS_SDCard_Pin GPIO_PIN_4
+#define CS_SDCard_GPIO_Port GPIOA
+#define SDCard_Det_Pin GPIO_PIN_5
+#define SDCard_Det_GPIO_Port GPIOA
+#define ShutDownSt_Pin GPIO_PIN_6
+#define ShutDownSt_GPIO_Port GPIOA
+#define EEPromWc_Pin GPIO_PIN_0
+#define EEPromWc_GPIO_Port GPIOB
+#define TS_ON_Pin GPIO_PIN_9
+#define TS_ON_GPIO_Port GPIOA
+#define BMS_Fault_Pin GPIO_PIN_10
+#define BMS_Fault_GPIO_Port GPIOA
+
 /* ########################## Assert Selection ############################## */
 /**
   * @brief Uncomment the line below to expanse the "assert_param" macro in the 
