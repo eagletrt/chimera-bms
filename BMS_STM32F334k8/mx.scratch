@@ -9,8 +9,6 @@
 
 <filestoremove>
     <file>
-    <name>..\Drivers\STM32F3xx_HAL_Driver\Src\stm32f3xx_hal_uart.c</name>
-    <name>..\Drivers\STM32F3xx_HAL_Driver\Src\stm32f3xx_hal_uart_ex.c</name>
     </file>
 </filestoremove>
 
@@ -32,7 +30,7 @@
     	<board>custom</board>
 			
     <usedDebug>true</usedDebug>
-    	<debugprobe></debugprobe>
+    	<debugprobe>swd</debugprobe>
     <optimization>6</optimization>
     <icfloc>0</icfloc>
     <Adefines>

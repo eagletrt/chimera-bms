@@ -58,6 +58,8 @@ CanRxMsgTypeDef RxHeader;
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
+
 CAN_HandleTypeDef hcan;
 
 I2C_HandleTypeDef hi2c1;
@@ -75,6 +77,7 @@ static void MX_GPIO_Init(void);
 static void MX_CAN_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_ADC1_Init(void);
 
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
@@ -297,6 +300,7 @@ Command Code:
   MX_CAN_Init();
   MX_I2C1_Init();
   MX_SPI1_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
   /* SETTING CAN */
@@ -328,7 +332,10 @@ Command Code:
   uint16_t received_pec;
   uint16_t data_pec;
   uint8_t pec_error=0;
-
+  int counterCicle = 0;
+  float *av_temp1 = 0;
+  float *av_temp2 = 0;
+  float *av_temp3 = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -341,91 +348,36 @@ Command Code:
   /* USER CODE BEGIN 3 */
 
 
-  	  uint8_t TxData[8];
-  	  TxData[0] = 1;
-  	  TxData[1] = 2;
-  	  TxData[2] = 3;
-  	  TxData[3] = 4;
-  	  TxData[4] = 5;
-  	  TxData[5] = 6;
-  	  TxData[6] = 7;
-  	  TxData[7] = 8;
 
-  	  //SICCOME NON FUNZIONA --> CAN_Send(0x64, TxData, 8);
-  	  /*int idsave;
-  	  uint8_t RxData[8];
-  	  idsave = CAN_Receive(RxData, 8);
-  	  */
+  	int id = 0;
 
-  	  //SEND
-//  	  	HAL_StatusTypeDef status;
-//
-//  		CanTxMsgTypeDef TxMess;
-//  		TxMess.StdId = 0x600 + 1; // 0x600 + Node ID
-//  		TxMess.DLC = 0x0;
-//  		TxMess.IDE = CAN_ID_STD;
-//  		TxMess.RTR = 0;
-//  		hcan.pTxMsg = &TxMess;
-//  		status = HAL_CAN_Transmit(&hcan, 1000);
-  	  //Receive
-//  		CanRxMsgTypeDef RxMess;
-//  		RxMess.FIFONumber = CAN_FIFO1;
-//		RxMess.FMI = 14;
-//		RxMess.StdId =  0x580 + 1; // 0x580 + Node ID
-//		RxMess.DLC = 0;
-//		RxMess.RTR = 0;
-//		RxMess.IDE = CAN_ID_STD;
-//		hcan.pRxMsg = &RxMess;
-//		status = HAL_CAN_Receive(&hcan, CAN_FIFO1, 100);
-//
-//		HAL_Delay(1000);
+ 	 // GPIO Logic
+ 	 //Precharge off
+ 	// HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+ 	 GPIO_PinState ShutDown_Status;
+ 	 ShutDown_Status = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
+ 	 if(ShutDown_Status == GPIO_PIN_SET){
+ 		 uint8_t *totalPack;
+ 		 uint8_t *tractiveVoltage;
+ 		 while(totalPack != tractiveVoltage){
+ 			 menu_1_read_single_ended(hspi1, tractiveVoltage, totalPack);
+ 		 }
+ 		 // Monitorare Total voltage e tractive system voltage
+ 		 // Quando sono uguali ---> precharge on
+ 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+ 		 HAL_Delay(1);
+ 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+ 	 }
 
+ 	 if(ShutDown_Status == GPIO_PIN_RESET){
+ 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+ 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
+ 		 //CAN SEND TS OFF
+ 	 }
 
-	 //wakeup_idle1();
+ 	 //QUANDO ARRIVA IL MESSAGGIO CAN TS ON ----> ATTIVA IL TRACTIVE SYSTEM
 
-
-
-	 //wakeup_idle1();
-
-//	 for(uint8_t cell_reg = 1; cell_reg<NUM_CV_REG+1; cell_reg++){                  // Executes once for each of the ltc6811 cell voltage registers
-//
-//		 uint8_t data_counter = 0;
-//	     ltc6804_rdcv_reg(cell_reg, TOT_IC, cell_data,hspi1);
-
-//	     for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
-//
-//	    	 //Current_ic is used as the IC counter
-//	 		 //Loops once for each of the 3 cell voltage codes in the register
-//
-//	 		 for(uint8_t current_cell = 0; current_cell < 3; current_cell++) {
-//
-//	 			 //Loops once for each of the 3 cell voltage codes in the register
-//
-//	 		   	 //Each cell code is received as two bytes and is combined to
-//	 		   	 uint16_t parsed_cell = cell_data[data_counter]+(cell_reg-1)+ (cell_data[data_counter + 1] << 8);
-//	 		   	 //Because cell voltage codes are two bytes the data counter
-//	 		   	 cell_codes[current_ic][current_cell  + ((cell_reg - 1) * CELL_IN_REG)] = parsed_cell;
-//
-//
-//
-//	 		   	 //valori in V
-//	 		   	 data_counter = data_counter + 2;
-//	 		   	 uint8_t num[9];
-//	 		   	 sprintf(num, "%d - ", parsed_cell);
-//	 		   	 HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
-//
-//	 		   	 HAL_Delay(100);
-//	 		 }
-//
-//	 		 received_pec = (cell_data[data_counter] << 8) + cell_data[data_counter + 1];
-//	 		 data_pec = pec15(BYT_IN_REG, &cell_data[current_ic * NUM_RX_BYT], crc15Table);
-//	 		 if(received_pec != data_pec){
-//	 			 pec_error = -1;
-//	 		 }
-//
-//	 		 data_counter = data_counter + 2;
-//	 		 HAL_UART_Transmit(&huart2, "\r\n", 2, 100)
-//	     }
+ 	 //QUANDO ARRIVA IL MESSAGGIO CAN TS OFF ----> DISATTIVA IL TRACTIVE SYSTEM
 
   	 /* ----- Voltages ------*/
   	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
@@ -481,10 +433,28 @@ Command Code:
 	 		 cell_codes_temp[current_ic][7] = temp[7];
 
 	 }
+	 // Controllo Temperatura massima
 	 uint16_t *max_temp = 0;
-	 float *av_temp = 0;
-	 max_ave_temp(cell_codes_temp, max_temp, av_temp);
+	 if(counterCicle % 3 == 0){
+		 max_ave_temp(cell_codes_temp, max_temp, av_temp1);
+	 }
+	 if(counterCicle % 3 == 1){
+	 	 max_ave_temp(cell_codes_temp, max_temp, av_temp2);
+	 }
+	 if(counterCicle % 3 == 2){
+	 	 max_ave_temp(cell_codes_temp, max_temp, av_temp3);
+	 }
+	 float average = 0;
+	 if(counterCicle > 2){
 
+	 average = (*av_temp1 + *av_temp2 + *av_temp3)/3;
+
+
+
+	 if(average < 60 && *max_vol*0.0001f < 4.20 && *min_vol*0.0001f > 2.80){
+		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
+	 }
+	 }
 	 float **converted_temp;
 	 for(int i = 0; i < 12; i++){
 		 for(int j = 0; j < 9; j++){
@@ -494,15 +464,14 @@ Command Code:
 
 	 //CAN MESSAGES
 	 uint16_t tot_vol = total_pack_voltage(cell_codes);
-	 int id = 0;
+
 	 CAN_Send(id,(uint8_t)max_vol, 8, hcan);
 	 CAN_Send(id,(uint8_t)min_vol, 8, hcan);
 	 CAN_Send(id, tot_vol, 8, hcan);
 	 CAN_Send(id, (tot_vol << 8), 8, hcan);
 	 CAN_Send(id,*max_temp, 8, hcan);
 	 CAN_Send(id,*max_temp << 8, 8, hcan);
-	 CAN_Send(id,(uint16_t)*av_temp, 8, hcan);
-	 CAN_Send(id,(uint16_t)*av_temp << 8, 8, hcan);
+	 CAN_Send(id,(uint8_t)average, 8, hcan);
 	 for(int i = 0; i < TOT_IC; i++){
 		 for(int j = 0; j < 9; j++){
 			 CAN_Send(id, (uint8_t)cell_codes[i][j], 8, hcan);
@@ -512,24 +481,8 @@ Command Code:
 		 }
 	 }
 
-	 // GPIO Logic
-	 //Precharge off
-	 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-	 GPIO_PinState ShutDown_Status;
-	 ShutDown_Status = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
-	 if(ShutDown_Status == GPIO_PIN_SET){
-		 uint8_t *totalPack;
-		 uint8_t *tractiveVoltage;
-		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-		 /////////////////////spi_write_read(cmd,4,totalPack,8,hspi1);
-		 	// Output_high
-		 HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-		 if(totalPack == tractiveVoltage){
-		 // Monitorare Total voltage e tractive system voltage
-		 // Quando sono uguali ---> precharge on
-			 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-		 }
-	 }
+
+	 counterCicle = counterCicle + 1;
  }
 
   /* USER CODE END 3 */
@@ -552,7 +505,9 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = 16;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
@@ -562,17 +517,18 @@ void SystemClock_Config(void)
     */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
   {
     _Error_Handler(__FILE__, __LINE__);
   }
 
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C1;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_ADC12;
+  PeriphClkInit.Adc12ClockSelection = RCC_ADC12PLLCLK_DIV1;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
@@ -591,15 +547,66 @@ void SystemClock_Config(void)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 }
 
+/* ADC1 init function */
+static void MX_ADC1_Init(void)
+{
+
+  ADC_MultiModeTypeDef multimode;
+  ADC_ChannelConfTypeDef sConfig;
+
+    /**Common config 
+    */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
+  hadc1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion = 1;
+  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
+  hadc1.Init.LowPowerAutoWait = DISABLE;
+  hadc1.Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+    /**Configure the ADC multi-mode 
+    */
+  multimode.Mode = ADC_MODE_INDEPENDENT;
+  if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+    /**Configure Regular Channel 
+    */
+  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SingleDiff = ADC_SINGLE_ENDED;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  sConfig.OffsetNumber = ADC_OFFSET_NONE;
+  sConfig.Offset = 0;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
+}
+
 /* CAN init function */
 static void MX_CAN_Init(void)
 {
 
   hcan.Instance = CAN;
-  hcan.Init.Prescaler = 16;
+  hcan.Init.Prescaler = 4;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SJW = CAN_SJW_1TQ;
-  hcan.Init.BS1 = CAN_BS1_1TQ;
+  hcan.Init.BS1 = CAN_BS1_6TQ;
   hcan.Init.BS2 = CAN_BS2_1TQ;
   hcan.Init.TTCM = DISABLE;
   hcan.Init.ABOM = DISABLE;
@@ -660,7 +667,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -691,8 +698,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, PrechargeEnded_Pin|CS_ADC_PackV_Pin|CS_6820_Pin|CS_SDCard_Pin 
-                          |TS_ON_Pin|BMS_Fault_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, PrechargeEnded_Pin|TS_ON_Pin|BMS_Fault_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOA, CS_ADC_PackV_Pin|CS_6820_Pin|CS_SDCard_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(EEPromWc_GPIO_Port, EEPromWc_Pin, GPIO_PIN_RESET);

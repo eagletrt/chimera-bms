@@ -46,13 +46,13 @@ static int32_t LTC1867_offset_unipolar_code = 0;        //!< Ideal unipolar offs
  //! @return void
  void LTC1865_read(//uint8_t cs,           //!< Chip Select Pin
                    uint16_t adc_command,  //!< Channel address, config bits ORed together
-                   uint16_t *adc_code ,   //!< Returns code read from ADC (from previous conversion)
+                   uint8_t *adc_code ,   //!< Returns code read from ADC (from previous conversion)
  				  SPI_HandleTypeDef hspi1
  );
  float LTC1867_unipolar_code_to_voltage(uint16_t adc_code,
  										float LTC1867_lsb,
  										int32_t LTC1867_offset_unipolar_code);
- void menu_1_read_single_ended(SPI_HandleTypeDef hspi1);
+ void menu_1_read_single_ended(SPI_HandleTypeDef hspi1, uint8_t *tractive, uint8_t *totpack);
  void menu_2_read_differential(SPI_HandleTypeDef hspi1);
 
 

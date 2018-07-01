@@ -58,9 +58,9 @@ uint16_t pec15(uint8_t len,uint8_t* data,uint16_t crcTable[] ){
 void wakeup_idle1(SPI_HandleTypeDef hspi1){
 
     // output_low(LTC6811_CS);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 	spi_read_byte(0xff,hspi1);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
 	//HAL_Delay(10);
 }
@@ -79,10 +79,10 @@ void spi_write_array(uint8_t len, 		// Option: Number of bytes to be written on 
 
 void wakeup_sleep(SPI_HandleTypeDef hspi1){
 
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
     // cs_low(GPIO_PIN_9);
     HAL_SPI_Transmit(&hspi1, 0xFF,1, 0xFF);
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
     HAL_Delay(1);
 }
 void max_min_voltages(uint16_t cell_codes[12][9], uint16_t* max_vol, uint16_t *min_vol, float *average_vol){
@@ -91,26 +91,16 @@ void max_min_voltages(uint16_t cell_codes[12][9], uint16_t* max_vol, uint16_t *m
 		for(int j = 0; j < 9; j++){
 			if(i==0 && j==0){
 				*max_vol = cell_codes[i][j];
-				if(*max_vol*0.0001f > 4.20){
-					//SHUT DOWN
-				}
 				*min_vol = cell_codes[i][j];
-				if(*min_vol*0.0001f < 2.80){
-					//SHUT DOWN
-				}
+
 			}else{
 				if(cell_codes[i][j] < *min_vol){
 					*min_vol = cell_codes[i][j];
-					if(*min_vol*0.0001f < 2.80){
-						//SHUT DOWN
-					}
 				}
 				if(cell_codes[i][j] > *max_vol){
 					*max_vol = cell_codes[i][j];
-					if(*max_vol*0.0001f > 4.20){
-						//SHUT DOWN
-					}
 				}
+
 			}
 
 		}
@@ -163,15 +153,11 @@ void max_ave_temp(uint16_t cell_codes[12][9], uint16_t* max_temp, float *average
 		for(int j = 0; j < 9; j++){
 			if(i==0 && j==0){
 				*max_temp = cell_codes[i][j];
-				if(*max_temp*0.0001f > 65.00){
-					//SHUT DOWN
-				}
+
 			}else{
 			if(cell_codes[i][j] > *max_temp){
 					*max_temp = cell_codes[i][j];
-					if(*max_temp*0.0001f > 65.00){
-						//SHUT DOWN
-					}
+
 				}
 			}
 		}
@@ -220,10 +206,10 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 		//write_read del gruppo
 		wakeup_idle1(hspi1); 			//This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 		// Output_low
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 		spi_write_read(cmd,4,data,8,hspi1);
 		// Output_high
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 		for(int i = 0; i < 8; i++){
 			rx_data[i] = data[i];
 		}
@@ -237,10 +223,10 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 		//write_read del gruppo
 		wakeup_idle1(hspi1); 			//This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 		// Output_low
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 		spi_write_read(cmd,4,data,8,hspi1);
 		// Output_high
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 		for(int i = 0; i < 8; i++){
 				rx_data[i + 8] = data[i];
 		}
@@ -254,10 +240,10 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 	    //write_read del gruppo
 	    wakeup_idle1(hspi1); 			//This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 	    // Output_low
-	    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+	    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 	    spi_write_read(cmd,4,data,8,hspi1);
 	    // Output_high
-	    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+	    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 		for(int i = 0; i < 8; i++){
 				rx_data[i + 16] = data[i];
 		}
@@ -271,10 +257,10 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 		//write_read del gruppo
 		wakeup_idle1(hspi1); 			//This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 		// Output_low
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 		spi_write_read(cmd,4,data,8,hspi1);
 		// Output_high
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 		for(int i = 0; i < 8; i++){
 				rx_data[i + 24] = data[i];
 		}
@@ -303,10 +289,10 @@ void ltc6804_rdcv_reg(uint8_t ic_n,				// Number of the current ic
 		//write_read del gruppo
 		wakeup_idle1(hspi1); 			//This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 		// Output_low
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 		spi_write_read(cmd,4,data,8,hspi1);
 		// Output_high
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 		for(int i = 0; i < 8; i++){
 			rx_data[i] = data[i];
 		}
@@ -320,10 +306,10 @@ void ltc6804_rdcv_reg(uint8_t ic_n,				// Number of the current ic
 		//write_read del gruppo
 		wakeup_idle1(hspi1); 			//This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 		// Output_low
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 		spi_write_read(cmd,4,data,8,hspi1);
 		// Output_high
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 		for(int i = 0; i < 8; i++){
 				rx_data[i + 8] = data[i];
 		}
@@ -337,10 +323,10 @@ void ltc6804_rdcv_reg(uint8_t ic_n,				// Number of the current ic
 	    //write_read del gruppo
 	    wakeup_idle1(hspi1); 			//This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 	    // Output_low
-	    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+	    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 	    spi_write_read(cmd,4,data,8,hspi1);
 	    // Output_high
-	    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+	    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 		for(int i = 0; i < 8; i++){
 				rx_data[i + 16] = data[i];
 		}
@@ -354,10 +340,10 @@ void ltc6804_rdcv_reg(uint8_t ic_n,				// Number of the current ic
 		//write_read del gruppo
 		wakeup_idle1(hspi1); 			//This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 		// Output_low
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 		spi_write_read(cmd,4,data,8,hspi1);
 		// Output_high
-		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 		for(int i = 0; i < 8; i++){
 				rx_data[i + 24] = data[i];
 		}
@@ -437,10 +423,10 @@ void ltc6804_address_temp_odd(uint8_t MD, 		//!< ADC Conversion Mode
     cmd[3] = (uint8_t)(cmd_pec);
 
     wakeup_idle1(hspi1);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 	spi_write_array(4, cmd, hspi1);
 	//HAL_SPI_Transmit(&hspi1, cmd, 4,10);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
 	uint8_t cfng[8];
 	cfng[0] = 0x00;
@@ -476,10 +462,10 @@ void ltc6804_address_temp_even(uint8_t MD, 		//!< ADC Conversion Mode
     cmd[3] = (uint8_t)(cmd_pec);
 
     wakeup_idle1(hspi1);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 	spi_write_array(4, cmd, hspi1);
 	//HAL_SPI_Transmit(&hspi1, cmd, 4,10);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
 	uint8_t cfng[8];
 	cfng[0] = 0x00;
@@ -520,10 +506,10 @@ void ltc6804_adcv_temp(uint8_t MD, 		//!< ADC Conversion Mode
     cmd[3] = (uint8_t)(cmd_pec);
 
     wakeup_idle1(hspi1);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 	spi_write_array(4, cmd, hspi1);
 	//HAL_SPI_Transmit(&hspi1, cmd, 4,10);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 }
 void ltc6804_adcv(uint8_t MD, 		//!< ADC Conversion Mode
                   uint8_t DCP, 		//!< Controls if Discharge is permitted during conversion
@@ -548,10 +534,10 @@ void ltc6804_adcv(uint8_t MD, 		//!< ADC Conversion Mode
     cmd[3] = (uint8_t)(cmd_pec);
 
     wakeup_idle1(hspi1);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 	spi_write_array(4, cmd, hspi1);
 	//HAL_SPI_Transmit(&hspi1, cmd, 4,10);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 }
 
 
@@ -573,7 +559,7 @@ uint32_t ltc6804_pollAdc(SPI_HandleTypeDef hspi1){
 	wakeup_idle1(hspi1); //This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 
 	// Output_low(LTC6811_CS);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 	spi_write_array(4,cmd,hspi1);
 
 	while ((counter<200000)&&(finished == 0)){
@@ -588,7 +574,7 @@ uint32_t ltc6804_pollAdc(SPI_HandleTypeDef hspi1){
     }
 
 	// Output_high(LTC6811_CS);
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
     return(counter);
 }

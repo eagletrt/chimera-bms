@@ -12,12 +12,12 @@
 
 
 // Reads the ADC  and returns 16-bit data
-void LTC1865_read(uint16_t adc_command, uint16_t *adc_code, SPI_HandleTypeDef hspi1)
+void LTC1865_read(uint16_t adc_command, uint8_t *adc_code, SPI_HandleTypeDef hspi1)
 {
   //spi_transfer_word(cs, (uint16_t)(adc_command<<8), adc_code);
-
-  HAL_SPI_TransmitReceive(&hspi1, adc_command<<16, adc_code, 1, 100);
-
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_RESET);
+  HAL_SPI_TransmitReceive(&hspi1, adc_command<<8, adc_code, 1, 100);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, GPIO_PIN_SET);
 
 }
 
@@ -39,88 +39,26 @@ void LTC1865_read(uint16_t adc_command, uint16_t *adc_code, SPI_HandleTypeDef hs
 //  adc_voltage=((float)(adc_code+LTC1867_offset_bipolar_code))*LTC1867_lsb*sign; //! 2) Calculate voltage from ADC code, lsb, offset.
 //  return(adc_voltage);
 //}
-void menu_1_read_single_ended(SPI_HandleTypeDef hspi1){
+void menu_1_read_single_ended(SPI_HandleTypeDef hspi1, uint8_t *tractive, uint8_t *totpack){
 
   uint8_t user_command;
   uint8_t adc_command;                             // The LTC1865 command byte
-  uint16_t adc_code = 0;                           // The LTC1865 code
-  float adc_voltage;                               // The LTC1865 voltage
-  while (1)
-  {
-//    if (uni_bi_polar == LTC1867_UNIPOLAR_MODE)
-//     // Serial.println(F("Single-Ended, Unipolar mode:"));
-//    else
-//     // Serial.println(F("Single-Ended, Bipolar mode:"));
-//
-////    Serial.println(F("*************************"));            // Display single-ended menu
-////    Serial.println();
-////    Serial.println(F("0-CH0"));
-////    Serial.println(F("1-CH1"));
-////    Serial.println(F("2-CH2"));
-////    Serial.println(F("3-CH3"));
-////    Serial.println(F("4-CH4"));
-////    Serial.println(F("5-CH5"));
-////    Serial.println(F("6-CH6"));
-////    Serial.println(F("7-CH7"));
-////    Serial.println(F("8-ALL"));
-////    Serial.println(F("m-Main Menu"));
-////    Serial.print(F("Enter a Command: "));
-
-//    user_command = read_int();                                 // Read the single command
-//    if (user_command == 'm')
-//      return;
-
-    //Serial.println(user_command);
-
-//    if (user_command == 8)
-//    {
-      //Serial.println(F("ALL"));
+  uint8_t *adc_code;                           // The LTC1865 code
+  //float adc_voltage;                               // The LTC1865 voltage
+   /*
       adc_command = BUILD_COMMAND_SINGLE_ENDED[0] | uni_bi_polar;   // Build ADC command for channel 0
-      LTC1865_read(adc_command, &adc_code,hspi1);             // Throws out last reading
-      HAL_delay(100);
+      LTC1865_read(adc_command, adc_code,hspi1);             // Throws out last reading
+     */ HAL_delay(100);
       uint8_t x;                                                    //!< iteration variable
     for (x = 0; x <= 1; x++)                                      // Read all channels in single-ended mode
       {
         adc_command = BUILD_COMMAND_SINGLE_ENDED[x] | uni_bi_polar;
-        LTC1865_read(adc_command, &adc_code, hspi1);
-    //    if (uni_bi_polar == LTC1867_UNIPOLAR_MODE)
-          adc_voltage = LTC1865_unipolar_code_to_voltage(adc_code, LTC1867_lsb, LTC1867_offset_unipolar_code);
-//        else
-//          adc_voltage = LTC1865_bipolar_code_to_voltage(adc_code, LTC1867_lsb, LTC1867_offset_bipolar_code);
-//        Serial.print(F("  ****"));
-//        Serial.print(F("CH"));
-//        Serial.print(x);
-//        Serial.print(F(": "));
-//        Serial.print(adc_voltage, 4);
-//        Serial.println(F("V"));
-//        Serial.println();
+        LTC1865_read(adc_command, adc_code[x], hspi1);
+
      }
-//    }
-//    else
-//    {
-//      adc_command = BUILD_COMMAND_SINGLE_ENDED[user_command] | uni_bi_polar;
-////      Serial.println();
-////      Serial.print(F("ADC Command: B"));
-////      Serial.println(adc_command, BIN);
-////      LTC1867_read(LTC1867_CS, adc_command, &adc_code); // Throws out last reading
-//      delay(100);
-//      LTC1867_read( adc_command, &adc_code, hspi1);
-////      Serial.print(F("Received Code: 0x"));
-////      Serial.println(adc_code, HEX);
-//
-//      if (uni_bi_polar == LTC1867_UNIPOLAR_MODE)
-//        adc_voltage = LTC1867_unipolar_code_to_voltage(adc_code, LTC1867_lsb, LTC1867_offset_unipolar_code);
-//      else
-//        adc_voltage = LTC1867_bipolar_code_to_voltage(adc_code, LTC1867_lsb, LTC1867_offset_bipolar_code);
-////      Serial.print(F("  ****"));
-////      Serial.print(F("CH"));
-////      Serial.print(user_command);
-////      Serial.print(F(": "));
-////      Serial.print(adc_voltage, 4);
-////      Serial.println(F("V"));
-////      Serial.println();
-//    }
-  }
+    *tractive = adc_code[0];
+    *totpack = adc_code[1];
+
 }
 
 //! Read channels in differential mode
