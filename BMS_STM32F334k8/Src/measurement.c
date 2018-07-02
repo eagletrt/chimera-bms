@@ -400,6 +400,7 @@ MEASUREMENT_tHistory MEASUREMENT_GetHistory(int index) {
 }
 
 uint32_t Get_Amps_Value(uint32_t *Vout){
+		//MEASUREMENT_NewSample((uint16_t)*Vout);
 		float VVoutV = (float)Vout[0] * 3.3 / 4095;
 		return MEASUREMENT_ScaleAmps((int)Vout[0]);
 
