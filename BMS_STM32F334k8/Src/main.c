@@ -343,6 +343,8 @@ Command Code:
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  float offset=Current_Calibration_Offset(hadc1);
+
   while (1)
   {
 
@@ -386,7 +388,7 @@ Command Code:
 
  	HAL_Delay(0.05); // Wait for conversion
  	HAL_ADC_Stop_DMA(&hadc1);
- 	uint32_t Current = Get_Amps_Value(adcBuffer);
+ 	uint32_t Current = Get_Amps_Value(adcBuffer,(uint16_t)offset);
 
 
   	 /* ----- Voltages ------*/

@@ -9,7 +9,8 @@
 #define MEASUREMENT_H_
 /* includes  ---------------------------------------------------------*/
 #include <stdint.h>
-
+#include "stm32f3xx_hal.h"
+#include "stm32f3xx_hal_adc.h"
 #define SAMPLING_FRQ 100000 // ADC sampling frequency
 #define SAMPLING_TIME 10 // ADC sampling time in µs
 
@@ -62,8 +63,10 @@ int MEASUREMENT_GetMax(void);
 int MEASUREMENT_GetRatio(void);
 int MEASUREMENT_GetRun(void);
 void MEASUREMENT_SaveHistory(void);
-uint32_t Get_Amps_Value(uint32_t *Vout);
+uint32_t Get_Amps_Value(uint32_t *Vout,uint16_t offset);
+static int MEASUREMENT_ScaleAmps1(int rawval,uint16_t sensor_offset);
+static int MEASUREMENT_ScaleAmps(int rawval);
 MEASUREMENT_tHistory MEASUREMENT_GetHistory(int index);
-
+float Current_Calibration_Offset(ADC_HandleTypeDef hadc1);
 
 #endif /* MEASUREMENT_H_ */
