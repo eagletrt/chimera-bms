@@ -408,7 +408,7 @@ float Current_Calibration_Offset(ADC_HandleTypeDef hadc1){
 	uint32_t sum=0;
 	for(int i=0;i<10;i++){
 
-<<<<<<< HEAD
+
 	HAL_ADC_Start_DMA(&hadc1, adcBuffer[i], 1);
 	sum=sum+adcBuffer[i];
 	HAL_Delay(20);
@@ -418,9 +418,10 @@ float Current_Calibration_Offset(ADC_HandleTypeDef hadc1){
 	return offset;
 }
 uint32_t Get_Amps_Value(uint32_t *Vout,uint16_t offset){
-=======
-uint32_t Get_Amps_Value(uint32_t *Vout){
->>>>>>> 594fe3abe34ee1125d96496891c9e0c9d3c856ae
+
+
+
+
 		float VVoutV = (float)Vout[0] * 3.3 / 4095;
 		return MEASUREMENT_ScaleAmps1((int)Vout[0], offset);
 
