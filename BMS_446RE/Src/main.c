@@ -42,6 +42,7 @@
 
 /* USER CODE BEGIN Includes */
 
+
 #define MD_422HZ_1KHZ 0
 #define MD_27KHZ_14KHZ 1
 #define MD_7KHZ_3KHZ 2
@@ -95,8 +96,9 @@
 #define M24M02DRC_2_IDPAGE_ADDRESS 0x5C // Address of the single M24M02DRC lockable ID page of the second EEPROM
 /* USER CODE END Includes */
 
-
 /* Private variables ---------------------------------------------------------*/
+CAN_HandleTypeDef hcan1;
+
 I2C_HandleTypeDef hi2c1;
 
 SPI_HandleTypeDef hspi1;
@@ -105,59 +107,17 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
+#include "stm32f4xx_hal_can.h"
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
-static void MX_SPI1_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_CAN1_Init(void);
+static void MX_SPI1_Init(void);
 
-
-
-
-void i_write(unsigned position, unsigned int data){         //i2c write
-	int count=0;
-	if(data>255){
-		while(data>255){
-
-			data=data-255;
-			count++;
-		}
-
-	}
-
-	if(count>0){
-		//for writing to EEPROM
-		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
-		HAL_Delay(5);
-		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
-		HAL_Delay(5);
-
-	}else{
-
-		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
-		HAL_Delay(5);
-		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
-	    HAL_Delay(5);
-
-	}
-}
-
-
-unsigned int i_read(unsigned position){                   //i2c read
-
-	int count=0;
-	unsigned int data=0;
-	//for reading to EEPROM
-	HAL_I2C_Mem_Read(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
-	HAL_I2C_Mem_Read(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
-	data=data+(count*255);
-	return data;
-
-}
 /* USER CODE BEGIN PFP */
 /* Private function prototypes -----------------------------------------------*/
 
@@ -254,9 +214,10 @@ for(i=0; i<255; i++){
 	{
 	    uint8_t data;
 
-	    if ( HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)0xFF, (uint8_t*)&data, 1, HAL_MAX_DELAY) == HAL_OK )
+	    if ( HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&tx_dat, (uint8_t*)&data, 1, HAL_MAX_DELAY) == HAL_OK )
 	    {
-	        return(data);
+
+	    return(data);
 	    }
 
 
@@ -265,7 +226,8 @@ for(i=0; i<255; i++){
 	int osal_DataLength( char *pString ){
 	  return (int)( strlen( pString ) );
 	}
-	uint16_t crc15Table[256] = {0x0,0xc599, 0xceab, 0xb32, 0xd8cf, 0x1d56, 0x1664, 0xd3fd, 0xf407, 0x319e, 0x3aac,
+	uint16_t CRC15Poly = 0x4599;
+	uint16_t crc15Table[256] ;/*= {0x0,0xc599, 0xceab, 0xb32, 0xd8cf, 0x1d56, 0x1664, 0xd3fd, 0xf407, 0x319e, 0x3aac,
 	                               0xff35, 0x2cc8, 0xe951, 0xe263, 0x27fa, 0xad97, 0x680e, 0x633c, 0xa6a5, 0x7558, 0xb0c1,
 	                               0xbbf3, 0x7e6a, 0x5990, 0x9c09, 0x973b, 0x52a2, 0x815f, 0x44c6, 0x4ff4, 0x8a6d, 0x5b2e,
 	                               0x9eb7, 0x9585, 0x501c, 0x83e1, 0x4678, 0x4d4a, 0x88d3, 0xaf29, 0x6ab0, 0x6182, 0xa41b,
@@ -288,10 +250,10 @@ for(i=0; i<255; i++){
 	                               0x1ca, 0xd237, 0x17ae, 0x1c9c, 0xd905, 0xfeff, 0x3b66, 0x3054, 0xf5cd, 0x2630, 0xe3a9, 0xe89b,
 	                               0x2d02, 0xa76f, 0x62f6, 0x69c4, 0xac5d, 0x7fa0, 0xba39, 0xb10b, 0x7492, 0x5368, 0x96f1, 0x9dc3,
 	                               0x585a, 0x8ba7, 0x4e3e, 0x450c, 0x8095
-	                                         };
-	void spi_write_read(uint8_t tx_Data[],//array of data to be written on SPI port
+	                                         }*/
+	void spi_write_read(uint8_t *tx_Data,//array of data to be written on SPI port
 	                    uint8_t tx_len, //length of the tx data arry
-	                    uint8_t *rx_data,//Input: array that will store the data read by the SPI port
+	                    uint8_t rx_data[],//Input: array that will store the data read by the SPI port
 	                    uint8_t rx_len //Option: number of bytes to be read from the SPI port
 	                   ){
 
@@ -301,24 +263,40 @@ for(i=0; i<255; i++){
 //			 	        		 sprintf(num, "%x /" , rx_data);
 //			 	        		 HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
 
-		for (uint8_t i = 0; i < tx_len; i++)
-		  {
+
 	         //spi_write(tx_Data[i]);
-			 HAL_SPI_Transmit(&hspi1, (uint8_t*)&tx_Data[i], 1, 100);
-			 char num[9];
+			 HAL_SPI_Transmit(&hspi1, tx_Data, 1, 100);
+			for (uint8_t i = 0; i < tx_len; i++)
+		  { char num[9];
 			 sprintf(num, "%x /" , tx_Data[i]);
 			 HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
 		  }
 
-		  for (uint8_t i = 0; i < rx_len; i++)
-		  {
-			HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&tx_Data[i], (uint8_t*)&rx_data[i], 1, 100);
-			char num[9];
+//		  for (uint8_t i = 0; i < rx_len; i++)
+//		  {
+			HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&tx_Data, (uint8_t*)&rx_data,8,100);
+			for (uint8_t i = 0; i < rx_len; i++)
+				  {
+				char num[8];
 		    sprintf(num, "%x /" , rx_data[i]);
-			HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
+		    HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
 		  }
 	}
-	 uint16_t pec15(uint8_t len,uint8_t* data )
+	void initPecTable(){
+		for(int i = 0; i<256; i++){
+			uint16_t remainder = i << 7;
+			for(int bit = 0; bit <0; --bit){
+				if(remainder & 0x4000){
+					remainder = ((remainder << 1));
+					remainder = (remainder^CRC15Poly);
+				}else{
+					remainder = ((remainder << 1));
+				}
+			}
+			crc15Table[i] = remainder & 0xFFFF;
+		}
+	}
+	 uint16_t pec15(uint8_t len,uint8_t* data)
 		{
 		 uint16_t remainder,address;
 		remainder = 16;//PEC seed
@@ -330,38 +308,41 @@ for(i=0; i<255; i++){
 		return (remainder*2);//The CRC15 has a 0 in the LSB so the final value must be multiplied by 2
 		}
 
+	 void spi_write_array(uint8_t len, // Option: Number of bytes to be written on the SPI port
+	 	                     uint8_t data[] //Array of bytes to be written on the SPI port
+	 	                    )
+	 	{
+	 		uint8_t ret_val;
+//	 	    for ( int i = 0; i < len; i++ )
+//	 	    {
+	 	        HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&data, (uint8_t*)&ret_val, len, 100);
+	 //	        char num[9];
+	 //	        sprintf(num, "[%d] %x /" ,i, ret_val);
+	 //	        HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
 
+
+
+	 	   // }
+	 //	    char num[9];
+	 //		        sprintf(num, "---------");
+	 //		        HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
+
+
+
+	 	}
 	void wakeup_idle1()
 	{
 	 // output_low(LTC6811_CS);
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-		spi_read_byte(0xff);
+		//HAL_SPI_Transmit(&hspi1, 0xff, 1, 100);
+		//spi_write_array(1, 0xff);
+		uint8_t dat= 0xff;
+		spi_read_byte(dat);
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
 
-	  //HAL_Delay(10);
+	//  HAL_Delay(10);
 	}
-	void spi_write_array(uint8_t len, // Option: Number of bytes to be written on the SPI port
-	                     uint8_t data[] //Array of bytes to be written on the SPI port
-	                    )
-	{
-		uint8_t ret_val;
-	    for ( int i = 0; i < len; i++ )
-	    {
-	        HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&data[i], &ret_val, 1, 100);
-//	        char num[9];
-//	        sprintf(num, "[%d] %x /" ,i, ret_val);
-//	        HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
 
-
-
-	    }
-//	    char num[9];
-//		        sprintf(num, "---------");
-//		        HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
-
-
-
-	}
 
 	void wakeup_sleep()
 
@@ -373,9 +354,9 @@ for(i=0; i<255; i++){
 
 
 		   HAL_SPI_Transmit(&hspi1, 0xFF,1, 0xFF);
-
+		   //HAL_Delay(4);
 		   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-	  HAL_Delay(1);
+
 	}
 
 	//Read the raw data from the ltc6811 cell voltage register
@@ -390,32 +371,32 @@ for(i=0; i<255; i++){
 
 		  if (reg == 1)     //1: RDCVA
 		  {
-		    cmd[0] = reg;
+		    cmd[0] = 0x80;
 		    cmd[1] = 0x04;
 		  }
 		  else if (reg == 2) //2: RDCVB
 		  {
-		    cmd[0] = reg;
+		    cmd[0] = 0x80;
 		    cmd[1] = 0x06;
 		  }
 		  else if (reg == 3) //3: RDCVC
 		  {
-		    cmd[0] = reg;
+		    cmd[0] = 0x80;
 		    cmd[1] = 0x08;
 		  }
 		  else if (reg == 4) //4: RDCVD
 		  {
-		    cmd[0] = reg;
+		    cmd[0] = 0x80;
 		    cmd[1] = 0x0A;
 		  }
 		  else if (reg == 5) //4: RDCVE
 		  {
-		    cmd[0] = reg;
+		    cmd[0] = 0x80;
 		    cmd[1] = 0x09;
 		  }
 		  else if (reg == 6) //4: RDCVF
 		  {
-		    cmd[0] = reg;
+		    cmd[0] = 0x80;
 		    cmd[1] = 0x0B;
 		  }
 
@@ -423,13 +404,23 @@ for(i=0; i<255; i++){
 		  cmd_pec = pec15(2, cmd);
 		  cmd[2] = (uint8_t)(cmd_pec >> 8);
 		  cmd[3] = (uint8_t)(cmd_pec);
-
+//		  cmd[4] = 0x00;
+//		  cmd[5] = 0x00;
+//		  cmd[6] = 0x00;
+//		  cmd[7] = 0x00;
 		  wakeup_idle1(); //This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 
 		 // output_low(LTC6811_CS);
 		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
 		//  uint8_t myData[8] = {1, 1, 1, 1, 1, 1, 1, 1};
 		  spi_write_read(cmd,4,data,8);
+//		  for (uint8_t i = 0; i < 8; i++)
+//		 		  {
+//
+//		 			char num[9];
+//		 		    sprintf(num, "%x /" , data[i]);
+//		 		    HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
+//		 		  }
 		 // HAL_SPI_Transmit(&hspi1,data,8,100);
 	  //HAL_SPI_TransmitReceive(&hspi1,cmd,data,8,100);
 //	  char num1[9];
@@ -471,13 +462,13 @@ for(i=0; i<255; i++){
 			uint16_t cmd_pec;
 			uint8_t md_bits;
 
-				//md_bits = (MD & 0x02) >> 1;
-				//cmd[0] = md_bits + 0x02;
-				//md_bits = (MD & 0x01) << 7;
-				//cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
+				md_bits = (MD & 0x02) >> 1;
+				cmd[0] = md_bits + 0x02;
+				md_bits = (MD & 0x01) << 7;
+				cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
 
-				cmd[0] = 0x03;
-				cmd[1] = 0X60;
+				//cmd[0] = 0x03;
+				//cmd[1] = 0X60;
 
 				cmd_pec = pec15(2, cmd);
 
@@ -775,8 +766,9 @@ for(i=0; i<255; i++){
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
-  MX_SPI1_Init();
   MX_I2C1_Init();
+  MX_CAN1_Init();
+  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
 
   int TOT_IC=1;
@@ -785,40 +777,43 @@ for(i=0; i<255; i++){
    uint8_t NUM_RX_BYT = 8;
     uint8_t BYT_IN_REG = 6;
     uint8_t CELL_IN_REG = 3;
-   uint8_t NUM_CV_REG = 3;
+   uint8_t NUM_CV_REG = 4;
 
-  uint8_t *cell_data = 0;
+  uint8_t *cell_data;
   uint8_t cell_codes[TOT_IC][CELL_CH];
   uint16_t parsed_cell;
   uint16_t received_pec;
   uint16_t data_pec;
   uint8_t pec_error=0;
   cell_data = (uint8_t*)malloc((NUM_RX_BYT * TOT_IC)*sizeof(uint8_t));
+  uint8_t data_counter = 0;
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  initPecTable();
   while (1)
   {
 
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
-	  wakeup_idle1();
-
-
+	 //wakeup_idle1();
+	//  wakeup_sleep();
+      HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 	  HAL_Delay(1);
 
 	  char num[9];
 	  sprintf(num, "111111111 ");
 	  HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
 	  	  ltc6811_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
- 	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-	  	  //ltc6811_pollAdc();
+ 	//HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+	  	  ltc6811_pollAdc();
+	  	wakeup_idle1();
 	  	  HAL_Delay(10);
 //	  	HAL_Delay(5);
-//	  	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+	  	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
 //		HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
 //
 //	  	HAL_Delay(5);
@@ -826,22 +821,21 @@ for(i=0; i<255; i++){
 
 //	  	ltc6811_fault(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
 
+	   for(uint8_t cell_reg = 1; cell_reg<NUM_CV_REG+1; cell_reg++){                  //executes once for each of the ltc6811 cell voltage registers
+		   data_counter = 0;
 
-	   for(uint8_t cell_reg = 1; cell_reg<CELL_IN_REG+1; cell_reg++){                  //executes once for each of the ltc6811 cell voltage registers
-
-		  uint8_t data_counter = 0;
 		  ltc6811_rdcv_reg(cell_reg , TOT_IC, cell_data);
 
 		  	  for(uint8_t current_ic = 0 ; current_ic < 1; current_ic++){
 
-		   	  	   //Current_ic is used as the IC counter
-		   	  	   //Loops once for each of the 3 cell voltage codes in the register
+		   	  	   // is used as the IC counter
+		   	  	   //Loops oncCurrent_ice for each of the 3 cell voltage codes in the register
 
-		   	  	   	   for(uint8_t current_cell = 0; current_cell < NUM_CV_REG; current_cell++) {
+		   	  	   	   for(uint8_t current_cell = 0; current_cell < CELL_IN_REG; current_cell++) {
 
 		   	  	   		   //Loops once for each of the 3 cell voltage codes in the register
 		   	  	   		   //Each cell code is received as two bytes and is combined to
-		   	  	   	uint8_t parsed_cell = cell_data[data_counter]+(cell_data[data_counter + 1] << 8);
+		   	  	   	parsed_cell = cell_data[data_counter]+(cell_data[data_counter + 1] << 8);
 
 //		   	  	   	 	 	 	 	 	 	   char num1[9];
 //		   	  	   			   	  	   		   sprintf(num1, "%x - ", parsed_cell);
@@ -849,14 +843,14 @@ for(i=0; i<255; i++){
 		   	  	   		   //Because cell voltage codes are two bytes the data counter
 		   	  	   		   cell_codes[current_ic][current_cell  + ((cell_reg - 1) * CELL_IN_REG)] = parsed_cell;
 		   	  	   		   //valori in V
-		   	  	   		   float parsed_cell_f = parsed_cell * 0.0001f*(GetMSB(parsed_cell)+GetLSB(parsed_cell));
+		   	  	   		   float parsed_cell_f = parsed_cell * 0.0001f;//*(GetMSB(parsed_cell)+GetLSB(parsed_cell));
 
 		   	  	   		   data_counter = data_counter + 2;
 
-//		   	  	   		   char num[9];
-//		   	  	   		   sprintf(num, "%f - ", parsed_cell_f);
-//		   	  	   		   HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
-		   	  	   		   HAL_Delay(100);
+		   	  	   		   char num[9];
+		   	  	   		   sprintf(num, "%f - ", parsed_cell_f);
+		   	  	   		   HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
+
 		   	  	   	   }
 		   	  	   	received_pec = (cell_data[data_counter] << 8) + cell_data[data_counter + 1];
 		   	  	   	data_pec = pec15(BYT_IN_REG, &cell_data[current_ic * NUM_RX_BYT]);
@@ -865,11 +859,12 @@ for(i=0; i<255; i++){
 		   	  	   		}
 		   	  	   	data_counter = data_counter + 2;
 		   	  	   	HAL_UART_Transmit(&huart2, "\r\n", 2, 100);
+		   	  	HAL_Delay(100);
 		  	  }
-		  	ltc6811_fault(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
+		  	//ltc6811_fault(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL);
 	   }
   }
-  HAL_delay(5);
+
   /* USER CODE END 3 */
 
 }
@@ -925,6 +920,29 @@ void SystemClock_Config(void)
 
   /* SysTick_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+}
+
+/* CAN1 init function */
+static void MX_CAN1_Init(void)
+{
+
+  hcan1.Instance = CAN1;
+  hcan1.Init.Prescaler = 16;
+  hcan1.Init.Mode = CAN_MODE_NORMAL;
+  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_1TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
+  hcan1.Init.TimeTriggeredMode = DISABLE;
+  hcan1.Init.AutoBusOff = DISABLE;
+  hcan1.Init.AutoWakeUp = DISABLE;
+  hcan1.Init.AutoRetransmission = DISABLE;
+  hcan1.Init.ReceiveFifoLocked = DISABLE;
+  hcan1.Init.TransmitFifoPriority = DISABLE;
+  if (HAL_CAN_Init(&hcan1) != HAL_OK)
+  {
+    _Error_Handler(__FILE__, __LINE__);
+  }
+
 }
 
 /* I2C1 init function */
@@ -1007,7 +1025,17 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : LED_Pin */
+  GPIO_InitStruct.Pin = LED_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB6 */
   GPIO_InitStruct.Pin = GPIO_PIN_6;
