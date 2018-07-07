@@ -41,7 +41,7 @@
 #include "stm32f3xx_hal.h"
 
 /* USER CODE BEGIN Includes */
-//#include "stm32f4xx_hal_can.h"
+
 #include "measurement.h"
 #include "eeprom.h"
 #include "can.h"
@@ -67,75 +67,9 @@ I2C_HandleTypeDef hi2c1;
 
 SPI_HandleTypeDef hspi1;
 
+
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_DMA_Init(void);
-static void MX_CAN_Init(void);
-static void MX_I2C1_Init(void);
-static void MX_SPI1_Init(void);
-static void MX_ADC1_Init(void);
-
-/* USER CODE BEGIN PFP */
-/* Private function prototypes -----------------------------------------------*/
-
-///*----- i2c Write Function -----*/
-//void i_write(unsigned position, unsigned int data){
-//
-//	int count=0;
-//	if(data>255){
-//		while(data>255){
-//			data=data-255;
-//			count++;
-//		}
-//	}
-//
-//	if(count>0){
-//		//for writing to EEPROM
-//		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
-//		HAL_Delay(5);
-//		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
-//		HAL_Delay(5);
-//	}else{
-//		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
-//		HAL_Delay(5);
-//		HAL_I2C_Mem_Write(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
-//	    HAL_Delay(5);
-//	}
-//}
-//
-///*----- i2c Write Function -----*/
-//unsigned int i_read(unsigned position){
-//
-//	int count=0;
-//	unsigned int data=0;
-//	//for reading to EEPROM
-//	HAL_I2C_Mem_Read(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position, 0xFF, (uint8_t*)&count,1,1);
-//	HAL_I2C_Mem_Read(&hi2c1,M24M02DRC_1_DATA_ADDRESS, position+1, 0xFF, (uint8_t*)&data,1,1);
-//	data=data+(count*255);
-//	return data;
-//
-//}
-/* USER CODE END PFP */
-
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
-/**
-  * @brief  The application entry point.
-  *
-  * @retval None
-  */
-int main(void)
-{
-  /* USER CODE BEGIN 1 */
-
 
 uint16_t crc15Table[256] = {0x0,0xc599, 0xceab, 0xb32, 0xd8cf, 0x1d56, 0x1664, 0xd3fd, 0xf407, 0x319e, 0x3aac,
                             0xff35, 0x2cc8, 0xe951, 0xe263, 0x27fa, 0xad97, 0x680e, 0x633c, 0xa6a5, 0x7558, 0xb0c1,
@@ -162,119 +96,66 @@ uint16_t crc15Table[256] = {0x0,0xc599, 0xceab, 0xb32, 0xd8cf, 0x1d56, 0x1664, 0
                             0x585a, 0x8ba7, 0x4e3e, 0x450c, 0x8095
                             };
 
-/*!  Write the ltc6811 Sctrl register
-This command will write the pwm registers of the ltc6811-1s
-connected in a daisy chain stack. The pwm is written in descending
-order so the last device's pwm is written first.
-The function will calculate the needed PEC codes for the write data
-and then transmit data to the ICs on a daisy chain.
-Command Code:
--------------
-|               |                           CMD[0]                              |                            CMD[1]                             |
-|---------------|---------------------------------------------------------------|---------------------------------------------------------------|
-|CMD[0:1]       |  15   |  14   |  13   |  12   |  11   |  10   |   9   |   8   |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   |
-|---------------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
-|WRSCTRL:         |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   1   |   0   |   1   |   0   |   0   |
-*/
-//void ltc6811_wrsctrl(uint8_t nIC,           //!< number of ICs in the daisy chain
-//                     uint8_t sctrl_reg,
-//                     uint8_t sctrl[][6]
-//                     ){ //0b00010100
-//
-//	uint8_t cmd[12];
-//	uint16_t cmd_pec;
-//	uint16_t cmd_pec1;
-//	//uint8_t md_bits;
-//
-//	//md_bits = (MD & 0x02) >> 1;
-//	//cmd[0] = md_bits + 0x02;
-//	cmd[0]=0x00;
-//	//md_bits = (MD & 0x01) << 7;
-//	//cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
-//	cmd[1]=0b00010100;
-//
-//	cmd_pec = pec15(2, cmd);
-//	cmd[2] = (uint8_t)(cmd_pec >> 8);
-//	cmd[3] = (uint8_t)(cmd_pec);
-//	cmd[4]= 0b00010001;
-//	cmd[5]= 0b00010001;
-//	cmd[6]= 0b00010001;
-//	cmd[7]= 0b10010001;
-//	cmd[8]= 0b00010001;
-//	cmd[9]= 0b00011001;
-//	cmd_pec1 = pec15(2, cmd);
-//	cmd[10] = (uint8_t)(cmd_pec1 >> 8);
-//	cmd[11] = (uint8_t)(cmd_pec1);
-//	wakeup_idle1();
-//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-//	spi_write_array(12, cmd);
-//	//HAL_SPI_Transmit(&hspi1, cmd, 4,10);
-//	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-//}
-//
-///*!  Reads sctrl registers of a ltc6811 daisy chain
-//uint8_t r_sctrl[][8] is a two dimensional array that the function stores the read pwm data. The sctrl data for each IC
-//is stored in blocks of 8 bytes with the pwm data of the lowest IC on the stack in the first 8 bytes
-//block of the array, the second IC in the second 8 byte etc. Below is an table illustrating the array organization:
-//@return int8_t, PEC Status.
-//0: Data read back has matching PEC
-//-1: Data read back has incorrect PEC
-//Command Code:
-//-------------
-//|CMD[0:1]   |  15   |  14   |  13   |  12   |  11   |  10   |   9   |   8   |   7   |   6   |   5   |   4   |   3   |   2   |   1   |   0   |
-//|-----------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|-------|
-//|rdsctrl:   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   0   |   1   |   0   |   1   |   1   |   0   |
-//*/
-//uint8_t ltc6811_rdsctrl(uint8_t nIC, 			//!< number of ICs in the daisy chain
-//                        uint8_t sctrl_reg,
-//                        uint8_t r_sctrl[][8]    //!< a two dimensional array that the function stores the read pwm data
-//			                      ){
-//
-//	uint8_t cmd[12];
-//	uint8_t cmd_pec;
-//	uint16_t cmd_pec1;
-//	uint8_t* d;
-//	//uint8_t md_bits;
-//
-//	for(int i=0;i<nIC;i++){
-//	  //md_bits = (MD & 0x02) >> 1;
-//	  //cmd[0] = md_bits + 0x02;
-//	  cmd[0]=0x00;
-//	  //md_bits = (MD & 0x01) << 7;
-//	  //cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
-//	  cmd[1]=0b00010110;
-//
-//	  cmd_pec = pec15(2, cmd);
-//      cmd[2] = (uint8_t)(cmd_pec >> 8);
-//	  cmd[3] = (uint8_t)(cmd_pec);
-//
-//	  cmd[4]= 0b00010001;
-//	  cmd[5]= 0b00010001;
-//      cmd[6]= 0b00010001;
-//	  cmd[7]= 0b10010001;
-//	  cmd[8]= 0b00010001;
-//	  cmd[9]= 0b00011001;
-//      cmd_pec1 = pec15(2, cmd);
-//
-//	  cmd[10] = (uint8_t)(cmd_pec1 >> 8);
-//	  cmd[11] = (uint8_t)(cmd_pec1);
-//
-//	  uint8_t* r;
-//
-//      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_RESET);
-//      spi_write_read(cmd,12,r,12);      //  DA CONTROLLARE CON PCB
-//	  d[i]=r;
-//	  //HAL_SPI_Transmit(&hspi1, cmd, 4,10);
-//	  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
-//	}
-//}
-//
-///*!  Start Sctrl data communication
-//This command will start the sctrl pulse communication over the spins
-//*/
-//void LTC6811_stsctrl(){
-//
-//}
+int TOT_IC=12; // number of daisy chain
+ int CELL_CH=9;
+
+ uint8_t NUM_RX_BYT = 8;
+ uint8_t BYT_IN_REG = 6;
+ uint8_t CELL_IN_REG = 3;
+ uint8_t NUM_CV_REG = 3;
+ uint8_t *cell_data;
+ uint16_t **cell_codes;
+ uint16_t **cell_codes_temp;
+ uint16_t parsed_cell;
+ uint16_t received_pec;
+ uint16_t data_pec;
+ uint8_t pec_error=0;
+ int counterCicle = 0;
+ float *av_temp1 = 0;
+ float *av_temp2 = 0;
+ float *av_temp3 = 0;
+ uint32_t *adcBuffer;
+
+ uint8_t *totalPack;
+  		 uint8_t *tractiveVoltage;
+
+  		 uint16_t *max_vol;
+  			 uint16_t *min_vol;
+  			 float *average_vol;
+
+  			uint16_t *temp = 0;
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
+static void MX_CAN_Init(void);
+static void MX_I2C1_Init(void);
+static void MX_SPI1_Init(void);
+static void MX_ADC1_Init(void);
+
+/* USER CODE BEGIN PFP */
+/* Private function prototypes -----------------------------------------------*/
+
+
+/* USER CODE END PFP */
+
+/* USER CODE BEGIN 0 */
+
+/* USER CODE END 0 */
+
+/**
+  * @brief  The application entry point.
+  *
+  * @retval None
+  */
+int main(void)
+{
+  /* USER CODE BEGIN 1 */
+
+
+
 
 
 
@@ -320,25 +201,7 @@ Command Code:
 
   HAL_CAN_Init(&hcan);
 
-  int TOT_IC=12; // number of daisy chain
-  int CELL_CH=9;
 
-  uint8_t NUM_RX_BYT = 8;
-  uint8_t BYT_IN_REG = 6;
-  uint8_t CELL_IN_REG = 3;
-  uint8_t NUM_CV_REG = 3;
-  uint8_t *cell_data;
-  uint16_t cell_codes[TOT_IC][CELL_CH];
-  uint16_t cell_codes_temp[TOT_IC][CELL_CH];
-  uint16_t parsed_cell;
-  uint16_t received_pec;
-  uint16_t data_pec;
-  uint8_t pec_error=0;
-  int counterCicle = 0;
-  float *av_temp1 = 0;
-  float *av_temp2 = 0;
-  float *av_temp3 = 0;
-  uint32_t *adcBuffer;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -361,24 +224,23 @@ Command Code:
  	// HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
  	 GPIO_PinState ShutDown_Status;
  	 ShutDown_Status = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
- 	 if(ShutDown_Status == GPIO_PIN_SET){
- 		 uint8_t *totalPack;
- 		 uint8_t *tractiveVoltage;
- 		 while(totalPack != tractiveVoltage){
- 			 menu_1_read_single_ended(hspi1, tractiveVoltage, totalPack);
- 		 }
- 		 // Monitorare Total voltage e tractive system voltage
- 		 // Quando sono uguali ---> precharge on
- 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
- 		 HAL_Delay(1);
- 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
- 	 }
-
- 	 if(ShutDown_Status == GPIO_PIN_RESET){
- 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
- 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
- 		 //CAN SEND TS OFF
- 	 }
+// 	 if(ShutDown_Status == GPIO_PIN_SET){
+//
+// 		 while(totalPack != tractiveVoltage){
+// 			 menu_1_read_single_ended(hspi1, tractiveVoltage, totalPack);
+// 		 }
+// 		 // Monitorare Total voltage e tractive system voltage
+// 		 // Quando sono uguali ---> precharge on
+// 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+// 		 HAL_Delay(1);
+// 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+// 	 }
+//
+// 	 if(ShutDown_Status == GPIO_PIN_RESET){
+// 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+// 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
+// 		 //CAN SEND TS OFF
+// 	 }
 
  	 //QUANDO ARRIVA IL MESSAGGIO CAN TS ON ----> ATTIVA IL TRACTIVE SYSTEM
 
@@ -405,14 +267,12 @@ Command Code:
 	 	 		 cell_codes[current_ic][i] = voltages[i];
 	 	  	 }
 	 }
-	 uint16_t *max_vol;
-	 uint16_t *min_vol;
-	 float *average_vol;
+
 	 max_min_voltages(cell_codes, max_vol, min_vol, average_vol);
 	 //Can Messages
 
 	 /* ----- Temperatures -----*/
-	 uint16_t *temp = 0;
+
 	 //odd temp
 	 ltc6804_address_temp_odd(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 	 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);

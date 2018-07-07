@@ -48,7 +48,8 @@ void menu_1_read_single_ended(SPI_HandleTypeDef hspi1, uint8_t *tractive, uint8_
    /*
       adc_command = BUILD_COMMAND_SINGLE_ENDED[0] | uni_bi_polar;   // Build ADC command for channel 0
       LTC1865_read(adc_command, adc_code,hspi1);             // Throws out last reading
-     */ HAL_delay(100);
+     */
+  HAL_Delay(100);
       uint8_t x;                                                    //!< iteration variable
     for (x = 0; x <= 1; x++)                                      // Read all channels in single-ended mode
       {
