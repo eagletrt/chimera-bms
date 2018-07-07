@@ -32,16 +32,16 @@ void spi_write_read(uint8_t tx_Data[],	// Array of data to be written on SPI por
 			        uint8_t rx_len,	// Option: number of bytes to be read from the SPI port
 					SPI_HandleTypeDef hspi1
 			        ){
-	for (uint8_t i = 0; i < tx_len; i++)
-		  {
+//	for (uint8_t i = 0; i < tx_len; i++)
+//		  {
 				// spi_write(tx_Data[i]);
-				HAL_SPI_Transmit(&hspi1, (uint8_t*)&tx_Data[i], 1, 100);
-		  }
+				HAL_SPI_Transmit(&hspi1, (uint8_t*)&tx_Data, 1, 100);
+		//  }
 
-	for (uint8_t i = 0; i < rx_len; i++)
-		  {
-	            HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)0xFF, (uint8_t*)&rx_data[i], 1, 100);
-		  }
+//	for (uint8_t i = 0; i < rx_len; i++)
+//		  {
+	            HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)0xFF, (uint8_t*)&rx_data, 1, 100);
+		  //}
 }
 
 uint16_t pec15(uint8_t len,uint8_t* data,uint16_t crcTable[] ){
@@ -71,10 +71,10 @@ void spi_write_array(uint8_t len, 		// Option: Number of bytes to be written on 
 			         )
 	{
 		uint8_t ret_val;
-	    for ( int i = 0; i < len; i++ )
-		    {
-		        HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&data[i], &ret_val, 1, 100);
-		    }
+//	    for ( int i = 0; i < len; i++ )
+//		    {
+		HAL_SPI_TransmitReceive(&hspi1, (uint8_t*)&data, (uint8_t*)&ret_val, 1, 100);
+		    //}
 }
 
 void wakeup_sleep(SPI_HandleTypeDef hspi1){

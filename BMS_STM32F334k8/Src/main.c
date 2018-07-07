@@ -224,23 +224,23 @@ int main(void)
  	// HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
  	 GPIO_PinState ShutDown_Status;
  	 ShutDown_Status = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_6);
-// 	 if(ShutDown_Status == GPIO_PIN_SET){
-//
-// 		 while(totalPack != tractiveVoltage){
-// 			 menu_1_read_single_ended(hspi1, tractiveVoltage, totalPack);
-// 		 }
-// 		 // Monitorare Total voltage e tractive system voltage
-// 		 // Quando sono uguali ---> precharge on
-// 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-// 		 HAL_Delay(1);
-// 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-// 	 }
-//
-// 	 if(ShutDown_Status == GPIO_PIN_RESET){
-// 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-// 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
-// 		 //CAN SEND TS OFF
-// 	 }
+ 	 if(ShutDown_Status == GPIO_PIN_SET){
+
+ 		 while(totalPack != tractiveVoltage){
+ 			 menu_1_read_single_ended(hspi1, tractiveVoltage, totalPack);
+ 		 }
+ 		 // Monitorare Total voltage e tractive system voltage
+ 		 // Quando sono uguali ---> precharge on
+ 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+ 		 HAL_Delay(1);
+ 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+ 	 }
+
+ 	 if(ShutDown_Status == GPIO_PIN_RESET){
+ 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+ 		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
+ 		 //CAN SEND TS OFF
+ 	 }
 
  	 //QUANDO ARRIVA IL MESSAGGIO CAN TS ON ----> ATTIVA IL TRACTIVE SYSTEM
 
