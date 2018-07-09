@@ -57,7 +57,7 @@
 #define STAT 3
 
 
-uint16_t crcTable[256];
+
 
 uint8_t spi_read_byte(uint8_t tx_dat,SPI_HandleTypeDef hspi1);
 int osal_DataLength( char *pString );
@@ -90,8 +90,8 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 void ltc6804_rdcv_reg(uint8_t ic_n,			// Number of the current ic
 					  uint8_t total_ic, 	// The number of ICs in the
 			          uint8_t data[] ,		// An array of the unparsed cell codes
-					  SPI_HandleTypeDef hspi1
-			          );
+					  SPI_HandleTypeDef hspi1,
+					  UART_HandleTypeDef huart1);
 void ltc6804_address_temp_odd(uint8_t MD, 		//!< ADC Conversion Mode
                   	  	  	  uint8_t DCP, 		//!< Controls if Discharge is permitted during conversion
 							  uint8_t CH ,		//!< Sets which Cell channels are converted

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Project>
-<ProjectName>C:\Users\docdo\Documents\GitHub\eagle-bms\BMS_STM32F334K8\\BMS_STM32F334K8</ProjectName>
+<ProjectName>C:\Users\Utente\Documents\GitHub\eagle-bms\BMS_STM32F334k8\\BMS_STM32F334k8</ProjectName>
 <ProjectNature>C</ProjectNature> 
 <CMSIS>..\Drivers\CMSIS</CMSIS>
-<HAL_Driver>C:\Users\docdo\STM32Cube\Repository\STM32Cube_FW_F3_V1.9.0\Drivers\CMSIS</HAL_Driver>
+<HAL_Driver>C:\Users\Utente\STM32Cube\Repository\STM32Cube_FW_F3_V1.9.0\Drivers\CMSIS</HAL_Driver>
 <Toolchain>SW4STM32</Toolchain>
 <Version>0</Version>
 
@@ -22,7 +22,7 @@
 
 <configs>
   <config>
-    <name>BMS_STM32F334K8</name>				
+    <name>BMS_STM32F334k8</name>				
     <device>STM32F334K8Tx</device>		 
     <heapSize>0x200</heapSize>
     <stackSize>0x400</stackSize>

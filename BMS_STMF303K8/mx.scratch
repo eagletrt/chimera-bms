@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Project>
-<ProjectName>C:\Users\docdo\Documents\GitHub\eagle-bms\BMS_STMF303K8\\BMS_STMF303K8</ProjectName>
+<ProjectName>C:\Users\Utente\Documents\GitHub\eagle-bms\BMS_STMF303K8\\BMS_STMF303K8</ProjectName>
 <ProjectNature>C</ProjectNature> 
 <CMSIS>..\Drivers\CMSIS</CMSIS>
-<HAL_Driver>C:\Users\docdo\STM32Cube\Repository\STM32Cube_FW_F3_V1.9.1\Drivers\CMSIS</HAL_Driver>
+<HAL_Driver>C:\Users\Utente\STM32Cube\Repository\STM32Cube_FW_F3_V1.9.1\Drivers\CMSIS</HAL_Driver>
 <Toolchain>SW4STM32</Toolchain>
 <Version>0</Version>
 
