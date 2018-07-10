@@ -162,12 +162,12 @@ int main(void)
 
   	int id = 0;
 
- 	 // GPIO Logic
+ 	 // GPIO Logica
  	 //Precharge off
   	HAL_Delay(500);
   	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET); 	//BMS fault high
-// 	HAL_Delay(10000);
-// 	HAL_Delay(10000);
+	HAL_Delay(10000);
+	HAL_Delay(10000);
   	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);		//PRECHARGE
   	HAL_Delay(1);
   	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
