@@ -78,7 +78,7 @@ int TOT_IC=1; // number of daisy chain
  uint8_t CELL_IN_REG = 3;
  uint8_t NUM_CV_REG = 3;
  uint8_t cell_data[32];
- uint16_t cell_codes[12][9];
+ uint16_t cell_voltages[12][9];
  uint16_t cell_codes_temp[12][9];
  uint16_t parsed_cell;
  uint16_t received_pec;
@@ -253,17 +253,17 @@ int main(void)
 
 	 	 	 array_voltages(voltages, cell_data);
 	 	 	 for(int i = 0; i < 9; i++){
-	 	 		 cell_codes[current_ic][i] = voltages[i];
+	 	 		 cell_voltages[current_ic][i] = voltages[i];
 	 	  	 }
-	 	 	  parsed1 = cell_codes[current_ic][0]* 0.0000001f*(GetMSB(voltages[0])+GetLSB(voltages[0]));
-	 	 	  parsed2 = cell_codes[current_ic][1]* 0.0000001f*(GetMSB(voltages[1])+GetLSB(voltages[1]));
-	 	 	  parsed3 = cell_codes[current_ic][2]* 0.0000001f*(GetMSB(voltages[2])+GetLSB(voltages[2]));
-	 	 	  parsed4 = cell_codes[current_ic][3]* 0.0000001f*(GetMSB(voltages[3])+GetLSB(voltages[3]));
-	 	 	  parsed5 = cell_codes[current_ic][4]* 0.0000001f*(GetMSB(voltages[4])+GetLSB(voltages[4]));
-	 	 	  parsed6 = cell_codes[current_ic][5]* 0.0000001f*(GetMSB(voltages[5])+GetLSB(voltages[5]));
-	 	 	  parsed7 = cell_codes[current_ic][6]* 0.0000001f*(GetMSB(voltages[6])+GetLSB(voltages[6]));
-	 	 	  parsed8 = cell_codes[current_ic][7]* 0.0000001f*(GetMSB(voltages[7])+GetLSB(voltages[7]));
-	 	 	  parsed9 = cell_codes[current_ic][8]* 0.0000001f*(GetMSB(voltages[8])+GetLSB(voltages[8]));
+	 	 	  parsed1 = cell_voltages[current_ic][0]* 0.0000001f*(GetMSB(voltages[0])+GetLSB(voltages[0]));
+	 	 	  parsed2 = cell_voltages[current_ic][1]* 0.0000001f*(GetMSB(voltages[1])+GetLSB(voltages[1]));
+	 	 	  parsed3 = cell_voltages[current_ic][2]* 0.0000001f*(GetMSB(voltages[2])+GetLSB(voltages[2]));
+	 	 	  parsed4 = cell_voltages[current_ic][3]* 0.0000001f*(GetMSB(voltages[3])+GetLSB(voltages[3]));
+	 	 	  parsed5 = cell_voltages[current_ic][4]* 0.0000001f*(GetMSB(voltages[4])+GetLSB(voltages[4]));
+	 	 	  parsed6 = cell_voltages[current_ic][5]* 0.0000001f*(GetMSB(voltages[5])+GetLSB(voltages[5]));
+	 	 	  parsed7 = cell_voltages[current_ic][6]* 0.0000001f*(GetMSB(voltages[6])+GetLSB(voltages[6]));
+	 	 	  parsed8 = cell_voltages[current_ic][7]* 0.0000001f*(GetMSB(voltages[7])+GetLSB(voltages[7]));
+	 	 	  parsed9 = cell_voltages[current_ic][8]* 0.0000001f*(GetMSB(voltages[8])+GetLSB(voltages[8]));
 
 	 }
 
