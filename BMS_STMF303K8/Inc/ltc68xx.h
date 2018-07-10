@@ -85,7 +85,8 @@ uint16_t total_pack_voltage(uint16_t cell_codes[12][9]);
 void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 				  uint8_t total_ic, 		// The number of ICs in the
 			      uint8_t *rx_data,			// An array of the unparsed cell codes
-				  SPI_HandleTypeDef hspi1
+				  SPI_HandleTypeDef hspi1,
+				  UART_HandleTypeDef huart1
 			          );
 void ltc6804_rdcv_reg(uint8_t ic_n,			// Number of the current ic
 					  uint8_t total_ic, 	// The number of ICs in the

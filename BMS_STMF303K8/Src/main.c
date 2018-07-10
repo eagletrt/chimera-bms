@@ -272,11 +272,11 @@ int main(void)
 //		 /* ----- Temperatures -----*/
 //
 //		 //odd temp
-//		 ltc6804_address_temp_odd(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-//		 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-//		 HAL_Delay(10);
-//		 for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
-//			 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
+		 ltc6804_address_temp_odd(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+		 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+		 HAL_Delay(10);
+		 for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
+			 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1,huart2);
 //			 	 array_temp_odd(temp, cell_data);
 //
 //			 	 cell_codes_temp[current_ic][0] = temp[0];
@@ -285,17 +285,17 @@ int main(void)
 //			 	 cell_codes_temp[current_ic][6] = temp[6];
 //			 	 cell_codes_temp[current_ic][8] = temp[8];
 //
-//		 }
+		 }
 //
 //		 //ltc6804_rdcv_temp(...);
 //		 //convert_temp();
 //
 //		 //even temp
-//		 ltc6804_address_temp_even(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-//		 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-//		 HAL_Delay(10);
-//		 for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
-//			 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
+		 ltc6804_address_temp_even(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+		 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+		 HAL_Delay(10);
+		 for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
+			 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1, huart2);
 //		 		 array_temp_even(temp, cell_data);
 //
 //		 		 cell_codes_temp[current_ic][1] = temp[1];
@@ -303,7 +303,7 @@ int main(void)
 //		 		 cell_codes_temp[current_ic][5] = temp[5];
 //		 		 cell_codes_temp[current_ic][7] = temp[7];
 //
-//		 }
+		 }
 //		 // Controllo Temperatura massima
 //		 uint16_t *max_temp = 0;
 //		 if(counterCicle % 3 == 0){
