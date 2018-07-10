@@ -78,8 +78,8 @@ int TOT_IC=1; // number of daisy chain
  uint8_t CELL_IN_REG = 3;
  uint8_t NUM_CV_REG = 3;
  uint8_t cell_data[32];
- uint16_t cell_voltages[12][9];
- uint16_t cell_codes_temp[12][9];
+ float cell_voltages[108];
+  uint16_t cell_codes_temp[1][9];
  uint16_t parsed_cell;
  uint16_t received_pec;
  uint16_t data_pec;
@@ -243,119 +243,132 @@ int main(void)
 
 
   	 /* ----- Voltages ------*/
-  	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-  	 //ltc6804_pollAdc(hspi1);
-  	 HAL_Delay(10);
-	 uint8_t data_counter = 0;
-	 for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
+  		  	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+  		  	 HAL_Delay(10);
+  			 uint8_t data_counter = 0;
+  			 for(uint8_t current_ic = 7 ; current_ic < TOT_IC; current_ic++){
 
-			 ltc6804_rdcv_reg(current_ic, TOT_IC, cell_data, hspi1);
+  					 ltc6804_rdcv_reg(current_ic, TOT_IC, cell_data, hspi1);
 
-	 	 	 array_voltages(voltages, cell_data);
-	 	 	 for(int i = 0; i < 9; i++){
-	 	 		 cell_voltages[current_ic][i] = voltages[i];
-	 	  	 }
-	 	 	  parsed1 = cell_voltages[current_ic][0]* 0.0000001f*(GetMSB(voltages[0])+GetLSB(voltages[0]));
-	 	 	  parsed2 = cell_voltages[current_ic][1]* 0.0000001f*(GetMSB(voltages[1])+GetLSB(voltages[1]));
-	 	 	  parsed3 = cell_voltages[current_ic][2]* 0.0000001f*(GetMSB(voltages[2])+GetLSB(voltages[2]));
-	 	 	  parsed4 = cell_voltages[current_ic][3]* 0.0000001f*(GetMSB(voltages[3])+GetLSB(voltages[3]));
-	 	 	  parsed5 = cell_voltages[current_ic][4]* 0.0000001f*(GetMSB(voltages[4])+GetLSB(voltages[4]));
-	 	 	  parsed6 = cell_voltages[current_ic][5]* 0.0000001f*(GetMSB(voltages[5])+GetLSB(voltages[5]));
-	 	 	  parsed7 = cell_voltages[current_ic][6]* 0.0000001f*(GetMSB(voltages[6])+GetLSB(voltages[6]));
-	 	 	  parsed8 = cell_voltages[current_ic][7]* 0.0000001f*(GetMSB(voltages[7])+GetLSB(voltages[7]));
-	 	 	  parsed9 = cell_voltages[current_ic][8]* 0.0000001f*(GetMSB(voltages[8])+GetLSB(voltages[8]));
-
-	 }
-
-	 //max_min_voltages(cell_codes, max_vol, min_vol, average_vol);
-	 //Can Messages
-
-	 /* ----- Temperatures -----*/
-/*
-	 //odd temp
-	 ltc6804_address_temp_odd(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-	 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-	 HAL_Delay(10);
-	 for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
-		 	 ltc6804_rdcv_reg(current_ic, TOT_IC, cell_data, hspi1);
-		 	 array_temp_odd(temp, cell_data);
-
-		 	 cell_codes_temp[current_ic][0] = temp[0];
-		 	 cell_codes_temp[current_ic][2] = temp[2];
-		 	 cell_codes_temp[current_ic][4] = temp[4];
-		 	 cell_codes_temp[current_ic][6] = temp[6];
-		 	 cell_codes_temp[current_ic][8] = temp[8];
-
-	 }
-	 //ltc6804_rdcv_temp(...);
-	 //convert_temp();
-
-	 //even temp
-	 ltc6804_address_temp_even(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-	 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-	 HAL_Delay(10);
-	 for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
-	 		 ltc6804_rdcv_reg(current_ic, TOT_IC, cell_data, hspi1);
-	 		 array_temp_even(temp, cell_data);
-
-	 		 cell_codes_temp[current_ic][1] = temp[1];
-	 		 cell_codes_temp[current_ic][3] = temp[3];
-	 		 cell_codes_temp[current_ic][5] = temp[5];
-	 		 cell_codes_temp[current_ic][7] = temp[7];
-
-	 }
-	 // Controllo Temperatura massima
-	 uint16_t *max_temp = 0;
-	 if(counterCicle % 3 == 0){
-		 max_ave_temp(cell_codes_temp, max_temp, av_temp1);
-	 }
-	 if(counterCicle % 3 == 1){
-	 	 max_ave_temp(cell_codes_temp, max_temp, av_temp2);
-	 }
-	 if(counterCicle % 3 == 2){
-	 	 max_ave_temp(cell_codes_temp, max_temp, av_temp3);
-	 }
-	 float average = 0;
-	 if(counterCicle > 2){
-
-	 average = (*av_temp1 + *av_temp2 + *av_temp3)/3;
+  			 	 	 array_voltages(voltages, cell_data);
 
 
 
-	 if(average < 60 && *max_vol*0.0001f < 4.20 && *min_vol*0.0001f > 2.80){
-		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
-	 }
-	 }
-	 float **converted_temp;
-	 for(int i = 0; i < 12; i++){
-		 for(int j = 0; j < 9; j++){
-			 converted_temp[i][j] = convert_temp(cell_codes_temp[i][j]);
-		 }
-	 }
+//  			 	 	char num[2];
+//  			 	 	sprintf(num, "\n");
+  			 	 //	HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
+  			 	 	 for(int i = 0; i < 9; i++){
+//  			 	 		 char v[32];
+//  			 	 		 sprintf(v, "%d - ",voltages[i]);
+//  			 	 		 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
+  			 	 		 cell_voltages[current_ic*9+i] = voltages[i]*0.0001f;
+  			 	  	 }
 
-	 //CAN MESSAGES
-	 uint16_t tot_vol = total_pack_voltage(cell_codes);
 
-	 CAN_Send(id,(uint8_t)max_vol, 8, hcan);
-	 CAN_Send(id,(uint8_t)min_vol, 8, hcan);
-	 CAN_Send(id, tot_vol, 8, hcan);
-	 CAN_Send(id, (tot_vol << 8), 8, hcan);
-	 CAN_Send(id,*max_temp, 8, hcan);
-	 CAN_Send(id,*max_temp << 8, 8, hcan);
-	 CAN_Send(id,(uint8_t)average, 8, hcan);
-	 for(int i = 0; i < TOT_IC; i++){
-		 for(int j = 0; j < 9; j++){
-			 CAN_Send(id, (uint8_t)cell_codes[i][j], 8, hcan);
-			 CAN_Send(id, (uint8_t)cell_codes[i][j] << 8, 8, hcan);
-			 CAN_Send(id, (uint8_t)cell_codes_temp[i][j], 8, hcan);
-			 CAN_Send(id, (uint8_t)cell_codes_temp[i][j] << 8, 8, hcan);
-		 }
-	 }
 
-*/
-	 counterCicle = counterCicle + 1;
- }
+  			 }
+  			 //char num[8];
 
+  	//		 max_min_voltages(cell_codes, max_vol, min_vol, average_vol);
+  	//		 //Can Messages
+  	//
+  	//		 /* ----- Temperatures -----*/
+  	//
+  	//		 //odd temp
+  			 HAL_Delay(1000);
+  			 ltc6804_address_temp_odd(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+  			 HAL_Delay(1000);
+  			 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+  			 HAL_Delay(10);
+  			 for(uint8_t current_ic = 7 ; current_ic < TOT_IC; current_ic++){
+  				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
+  				 	 array_temp_odd(temp, cell_data);
+
+  				 	 cell_codes_temp[current_ic][0] = temp[0];
+  				 	 cell_codes_temp[current_ic][2] = temp[2];
+  				 	 cell_codes_temp[current_ic][4] = temp[4];
+  				 	 cell_codes_temp[current_ic][6] = temp[6];
+  				 	 cell_codes_temp[current_ic][8] = temp[8];
+
+  			 }
+
+  			 //
+  	//		 //ltc6804_rdcv_temp(...);
+  	//		 convert_temp();
+  	//
+  	//		 //even temp
+  			 HAL_Delay(1000);
+  			 ltc6804_address_temp_even(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+  			 HAL_Delay(1000);
+  			 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+  			 HAL_Delay(10);
+  			 for(uint8_t current_ic = 7 ; current_ic < TOT_IC; current_ic++){
+  				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
+  			 		 array_temp_even(temp, cell_data);
+
+  			 		 cell_codes_temp[current_ic][1] = temp[1];
+  			 		 cell_codes_temp[current_ic][3] = temp[3];
+  			 		 cell_codes_temp[current_ic][5] = temp[5];
+  			 		 cell_codes_temp[current_ic][7] = temp[7];
+
+  			 }
+//  			 for(int i = 0; i < 9; i++){
+//  					 char v[32];
+//  					 sprintf(v, "%x - ",cell_codes_temp[7][i]);
+//  					 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
+//  					 }
+  	//		 // Controllo Temperatura massima
+  	//		 uint16_t *max_temp = 0;
+  	//		 if(counterCicle % 3 == 0){
+  	//			 max_ave_temp(cell_codes_temp, max_temp, av_temp1);
+  	//		 }
+  	//		 if(counterCicle % 3 == 1){
+  	//		 	 max_ave_temp(cell_codes_temp, max_temp, av_temp2);
+  	//		 }
+  	//		 if(counterCicle % 3 == 2){
+  	//		 	 max_ave_temp(cell_codes_temp, max_temp, av_temp3);
+  	//		 }
+  	//		 float average = 0;
+  	//		 if(counterCicle > 2){
+  	//
+  	//		 average = (*av_temp1 + *av_temp2 + *av_temp3)/3;
+  	//
+  	//
+  	//
+  	//		 if(average < 60 && *max_vol*0.0001f < 4.20 && *min_vol*0.0001f > 2.80){
+  	//			 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
+  	//		 }
+  	//		 }
+  	//		 float **converted_temp;
+  	//		 for(int i = 0; i < 12; i++){
+  	//			 for(int j = 0; j < 9; j++){
+  	//				 converted_temp[i][j] = convert_temp(cell_codes_temp[i][j]);
+  	//			 }
+  	//		 }
+  	//
+  	//		 //CAN MESSAGES
+  	//		 uint16_t tot_vol = total_pack_voltage(cell_codes);
+  	////
+  	////		 CAN_Send(id,(uint8_t)max_vol, 8, hcan);
+  	////		 CAN_Send(id,(uint8_t)min_vol, 8, hcan);
+  	////		 CAN_Send(id, tot_vol, 8, hcan);
+  	////		 CAN_Send(id, (tot_vol << 8), 8, hcan);
+  	////		 CAN_Send(id,*max_temp, 8, hcan);
+  	////		 CAN_Send(id,*max_temp << 8, 8, hcan);
+  	////		 CAN_Send(id,(uint8_t)average, 8, hcan);
+  	////		 for(int i = 0; i < TOT_IC; i++){
+  	////			 for(int j = 0; j < 9; j++){
+  	////				 CAN_Send(id, (uint8_t)cell_codes[i][j], 8, hcan);
+  	////				 CAN_Send(id, (uint8_t)cell_codes[i][j] << 8, 8, hcan);
+  	////				 CAN_Send(id, (uint8_t)cell_codes_temp[i][j], 8, hcan);
+  	////				 CAN_Send(id, (uint8_t)cell_codes_temp[i][j] << 8, 8, hcan);
+  	////			 }
+  	////		 }
+  	//
+
+  			 counterCicle = counterCicle + 1;
+  			 HAL_Delay(500);
+  	  }
   /* USER CODE END 3 */
 
 }
