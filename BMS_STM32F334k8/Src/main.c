@@ -70,16 +70,16 @@ SPI_HandleTypeDef hspi1;
 /* Private variables ---------------------------------------------------------*/
 
 
-int TOT_IC=1; // number of daisy chain
- int CELL_CH=9;
+int TOT_IC=8; // number of daisy chain
+int CELL_CH=9;
 
  uint8_t NUM_RX_BYT = 8;
  uint8_t BYT_IN_REG = 6;
  uint8_t CELL_IN_REG = 3;
  uint8_t NUM_CV_REG = 3;
  uint8_t cell_data[32];
- float cell_voltages[108];
-  uint16_t cell_codes_temp[1][9];
+ uint16_t cell_voltages[108];
+ uint16_t cell_temps[108];
  uint16_t parsed_cell;
  uint16_t received_pec;
  uint16_t data_pec;
@@ -99,7 +99,7 @@ int TOT_IC=1; // number of daisy chain
  float *av_temp2 = 0;
  float *av_temp3 = 0;
  uint32_t *adcBuffer;
-
+ float gigi[9];
  uint8_t *totalPack;
   		 uint8_t *tractiveVoltage;
 
@@ -107,7 +107,7 @@ int TOT_IC=1; // number of daisy chain
   			 uint16_t *min_vol;
   			 float *average_vol;
 
-  			uint16_t *temp = 0;
+  			uint16_t temp[9];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -246,7 +246,7 @@ int main(void)
   		  	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
   		  	 HAL_Delay(10);
   			 uint8_t data_counter = 0;
-  			 for(uint8_t current_ic = 7 ; current_ic < TOT_IC; current_ic++){
+  			 for(uint8_t current_ic = 7; current_ic < TOT_IC; current_ic++){
 
   					 ltc6804_rdcv_reg(current_ic, TOT_IC, cell_data, hspi1);
 
@@ -261,7 +261,7 @@ int main(void)
 //  			 	 		 char v[32];
 //  			 	 		 sprintf(v, "%d - ",voltages[i]);
 //  			 	 		 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
-  			 	 		 cell_voltages[current_ic*9+i] = voltages[i]*0.0001f;
+  			 	 		 cell_voltages[current_ic*9+i] = voltages[i];
   			 	  	 }
 
 
@@ -269,54 +269,57 @@ int main(void)
   			 }
   			 //char num[8];
 
-  	//		 max_min_voltages(cell_codes, max_vol, min_vol, average_vol);
+  			 max_min_voltages(cell_voltages, max_vol, min_vol, average_vol);
   	//		 //Can Messages
   	//
   	//		 /* ----- Temperatures -----*/
   	//
   	//		 //odd temp
-  			 HAL_Delay(1000);
+
   			 ltc6804_address_temp_odd(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-  			 HAL_Delay(1000);
+  			 HAL_Delay(1);
   			 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
   			 HAL_Delay(10);
   			 for(uint8_t current_ic = 7 ; current_ic < TOT_IC; current_ic++){
   				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
   				 	 array_temp_odd(temp, cell_data);
 
-  				 	 cell_codes_temp[current_ic][0] = temp[0];
-  				 	 cell_codes_temp[current_ic][2] = temp[2];
-  				 	 cell_codes_temp[current_ic][4] = temp[4];
-  				 	 cell_codes_temp[current_ic][6] = temp[6];
-  				 	 cell_codes_temp[current_ic][8] = temp[8];
+  				 	 cell_temps[current_ic*9+0] = (uint16_t)(convert_temp(temp[0])*100);
+  				 	 cell_temps[current_ic*9+2] = (uint16_t)(convert_temp(temp[2])*100);
+  				 	 cell_temps[current_ic*9+4] = (uint16_t)(convert_temp(temp[4])*100);
+  				 	 cell_temps[current_ic*9+6] = (uint16_t)(convert_temp(temp[6])*100);
+  				 	 cell_temps[current_ic*9+8] = (uint16_t)(convert_temp(temp[8])*100);
 
   			 }
+
 
   			 //
   	//		 //ltc6804_rdcv_temp(...);
   	//		 convert_temp();
   	//
   	//		 //even temp
-  			 HAL_Delay(1000);
   			 ltc6804_address_temp_even(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-  			 HAL_Delay(1000);
+  			 HAL_Delay(1);
   			 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
   			 HAL_Delay(10);
-  			 for(uint8_t current_ic = 7 ; current_ic < TOT_IC; current_ic++){
+  			 for(uint8_t current_ic = 7; current_ic < TOT_IC; current_ic++){
   				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
   			 		 array_temp_even(temp, cell_data);
 
-  			 		 cell_codes_temp[current_ic][1] = temp[1];
-  			 		 cell_codes_temp[current_ic][3] = temp[3];
-  			 		 cell_codes_temp[current_ic][5] = temp[5];
-  			 		 cell_codes_temp[current_ic][7] = temp[7];
+  			 		 cell_temps[current_ic*9+1] = (uint16_t)(convert_temp(temp[1])*100);
+  			 		 cell_temps[current_ic*9+3] = (uint16_t)(convert_temp(temp[3])*100);
+  			 		 cell_temps[current_ic*9+5] = (uint16_t)(convert_temp(temp[5])*100);
+  			 		 cell_temps[current_ic*9+7] = (uint16_t)(convert_temp(temp[7])*100);
 
   			 }
+  			ltc6804_stop_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 //  			 for(int i = 0; i < 9; i++){
 //  					 char v[32];
-//  					 sprintf(v, "%x - ",cell_codes_temp[7][i]);
+//  					 sprintf(v, "%x - ",cell_temps[7][i]);
 //  					 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
 //  					 }
+
+
   	//		 // Controllo Temperatura massima
   	//		 uint16_t *max_temp = 0;
   	//		 if(counterCicle % 3 == 0){
@@ -360,8 +363,8 @@ int main(void)
   	////			 for(int j = 0; j < 9; j++){
   	////				 CAN_Send(id, (uint8_t)cell_codes[i][j], 8, hcan);
   	////				 CAN_Send(id, (uint8_t)cell_codes[i][j] << 8, 8, hcan);
-  	////				 CAN_Send(id, (uint8_t)cell_codes_temp[i][j], 8, hcan);
-  	////				 CAN_Send(id, (uint8_t)cell_codes_temp[i][j] << 8, 8, hcan);
+  	////				 CAN_Send(id, (uint8_t)cell_temps[i][j], 8, hcan);
+  	////				 CAN_Send(id, (uint8_t)cell_temps[i][j] << 8, 8, hcan);
   	////			 }
   	////		 }
   	//
@@ -582,8 +585,11 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, PrechargeEnded_Pin|CS_ADC_PackV_Pin|CS_6820_Pin|CS_SDCard_Pin 
-                          |TS_ON_Pin|BMS_Fault_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOA, PrechargeEnded_Pin|CS_6820_Pin|CS_SDCard_Pin|TS_ON_Pin 
+                          |BMS_Fault_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(CS_ADC_PackV_GPIO_Port, CS_ADC_PackV_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(EEPromWc_GPIO_Port, EEPromWc_Pin, GPIO_PIN_SET);

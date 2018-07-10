@@ -79,7 +79,7 @@ const int CELL_CH=9;
  uint8_t NUM_CV_REG = 3;
  uint8_t cell_data[9];
  float cell_voltages[108];
- uint16_t cell_codes_temp[1][9];
+ uint16_t cell_temps[1][9];
  uint16_t parsed_cell;
  uint16_t received_pec;
  uint16_t data_pec;
@@ -283,11 +283,11 @@ int main(void)
 			 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1,huart2);
 			 	 array_temp_odd(temp, cell_data);
 
-			 	 cell_codes_temp[current_ic][0] = temp[0];
-			 	 cell_codes_temp[current_ic][2] = temp[2];
-			 	 cell_codes_temp[current_ic][4] = temp[4];
-			 	 cell_codes_temp[current_ic][6] = temp[6];
-			 	 cell_codes_temp[current_ic][8] = temp[8];
+			 	 cell_temps[current_ic][0] = temp[0];
+			 	 cell_temps[current_ic][2] = temp[2];
+			 	 cell_temps[current_ic][4] = temp[4];
+			 	 cell_temps[current_ic][6] = temp[6];
+			 	 cell_temps[current_ic][8] = temp[8];
 
 		 }
 
@@ -305,10 +305,10 @@ int main(void)
 			 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1, huart2);
 		 		 array_temp_even(temp, cell_data);
 
-		 		 cell_codes_temp[current_ic][1] = temp[1];
-		 		 cell_codes_temp[current_ic][3] = temp[3];
-		 		 cell_codes_temp[current_ic][5] = temp[5];
-		 		 cell_codes_temp[current_ic][7] = temp[7];
+		 		 cell_temps[current_ic][1] = temp[1];
+		 		 cell_temps[current_ic][3] = temp[3];
+		 		 cell_temps[current_ic][5] = temp[5];
+		 		 cell_temps[current_ic][7] = temp[7];
 
 		 }
 //		 for(int i = 0; i < 9; i++){
@@ -319,7 +319,7 @@ int main(void)
 
 		 float gigi[9];
 		 for(int i = 0; i < 9; i++){
-				 gigi[i] = convert_temp(cell_codes_temp[7][i]);
+				 gigi[i] = convert_temp(cell_temps[7][i]);
 				 char v[50];
 				 				 sprintf(v, "%.2f - ",gigi[i]);
 				 				 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);

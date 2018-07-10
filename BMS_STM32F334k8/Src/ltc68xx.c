@@ -107,32 +107,30 @@ void wakeup_sleep(SPI_HandleTypeDef hspi1){
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
     HAL_Delay(1);
 }
-void max_min_voltages(uint16_t cell_codes[12][9], uint16_t* max_vol, uint16_t *min_vol, float *average_vol){
+void max_min_voltages(uint16_t cell_codes[108], uint16_t* max_vol, uint16_t *min_vol, float *average_vol){
 
-	for(int i = 0; i < 12; i++){
-		for(int j = 0; j < 9; j++){
-			if(i==0 && j==0){
-				*max_vol = cell_codes[i][j];
-				*min_vol = cell_codes[i][j];
+	for(int i = 0; i < 108; i++){
+		//for(int j = 0; j < 9; j++){
+			if(i==0){
+				*max_vol = cell_codes[i];
+				*min_vol = cell_codes[i];
 
 			}else{
-				if(cell_codes[i][j] < *min_vol){
-					*min_vol = cell_codes[i][j];
+				if(cell_codes[i] < *min_vol){
+					*min_vol = cell_codes[i];
 				}
-				if(cell_codes[i][j] > *max_vol){
-					*max_vol = cell_codes[i][j];
+				if(cell_codes[i] > *max_vol){
+					*max_vol = cell_codes[i];
 				}
 
 			}
 
-		}
+
 	}
 	// Average
 	uint16_t sum = 0;
-	for(int i = 0; i < 12; i++){
-		for(int j = 0; j < 9; j++){
-			sum = sum + cell_codes[i][j];
-		}
+	for(int i = 0; i < 108; i++){
+		sum = sum + cell_codes[i];
 	}
 	*average_vol = sum*0.0001f / 108;
 }
@@ -148,7 +146,7 @@ void array_voltages(uint16_t *voltages, uint8_t *cell_data){
 	voltages[7] = cell_data[20] + (cell_data[21] << 8);
 	voltages[8] = cell_data[24] + (cell_data[25] << 8);
 }
-void array_temp_odd(uint16_t *temp, uint8_t *cell_data){
+void array_temp_odd(uint16_t temp[9], uint8_t cell_data[9]){
 	temp[0] = cell_data[0] + (cell_data[1] << 8);
 	//temp[1] = cell_data[2] + (cell_data[3] << 8);
 	temp[2] = cell_data[4] + (cell_data[5] << 8);
@@ -159,7 +157,7 @@ void array_temp_odd(uint16_t *temp, uint8_t *cell_data){
 	//temp[7] = cell_data[20] + (cell_data[21] << 8);
 	temp[8] = cell_data[24] + (cell_data[25] << 8);
 }
-void array_temp_even(uint16_t *temp, uint8_t *cell_data){
+void array_temp_even(uint16_t temp[9], uint8_t cell_data[9]){
 	//temp[0] = cell_data[0] + (cell_data[1] << 8);
 	temp[1] = cell_data[2] + (cell_data[3] << 8);
 	//temp[2] = cell_data[4] + (cell_data[5] << 8);
@@ -170,37 +168,31 @@ void array_temp_even(uint16_t *temp, uint8_t *cell_data){
 	temp[7] = cell_data[20] + (cell_data[21] << 8);
 	//temp[8] = cell_data[24] + (cell_data[25] << 8);
 }
-void max_ave_temp(uint16_t cell_codes[12][9], uint16_t* max_temp, float *average_temp){
-	for(int i = 0; i < 12; i++){
-		for(int j = 0; j < 9; j++){
-			if(i==0 && j==0){
-				*max_temp = cell_codes[i][j];
-
+void max_ave_temp(uint16_t cell_codes[108], uint16_t* max_temp, float *average_temp){
+	for(int i = 0; i < 108; i++){
+		if(i==0){
+			*max_temp = cell_codes[i];
 			}else{
-			if(cell_codes[i][j] > *max_temp){
-					*max_temp = cell_codes[i][j];
-
-				}
+			if(cell_codes[i] > *max_temp){
+					*max_temp = cell_codes[i];
+			}
 			}
 		}
 
-	}
+
 
 	// Average
 	uint16_t sum = 0;
-	for(int i = 0; i < 12; i++){
-		for(int j = 0; j < 9; j++){
-			sum = sum + cell_codes[i][j];
-		}
+	for(int i = 0; i < 108; i++){
+		sum = sum + cell_codes[i];
 	}
+
 	*average_temp = sum*0.0001f / 108;
 }
-uint16_t total_pack_voltage(uint16_t cell_codes[12][9]){
+uint16_t total_pack_voltage(uint16_t cell_codes[108]){
 	uint16_t sum = 0;
-		for(int i = 0; i < 12; i++){
-			for(int j = 0; j < 9; j++){
-				sum = sum + cell_codes[i][j];
-			}
+		for(int i = 0; i < 108; i++){
+			sum = sum + cell_codes[i];
 		}
 	return sum;
 }
@@ -242,7 +234,7 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 
 
 				HAL_SPI_Receive(&hspi1, data, 8, 100);
-//
+
 //				for(int i = 0; i < 8; i++){
 //
 //
@@ -373,8 +365,10 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 void ltc6804_rdcv_reg(uint8_t ic_n,				// Number of the current ic
 					  uint8_t total_ic, 		// The number of ICs in the
 			          uint8_t rx_data[9],			// An array of the unparsed cell codes
-					  SPI_HandleTypeDef hspi1){
-//const uint8_t REG_LEN = 8; //number of bytes in each ICs register + 2 bytes for the PEC
+					  SPI_HandleTypeDef hspi1
+						){
+
+	const uint8_t REG_LEN = 8; //number of bytes in each ICs register + 2 bytes for the PEC
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
 	uint8_t data[9];
@@ -667,10 +661,52 @@ void ltc6804_address_temp_even(uint8_t MD, 		//!< ADC Conversion Mode
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
 }
+
+void ltc6804_stop_temp(uint8_t MD, 		//!< ADC Conversion Mode
+                  	  	  	  uint8_t DCP, 		//!< Controls if Discharge is permitted during conversion
+							  uint8_t CH ,		//!< Sets which Cell channels are converted
+							  SPI_HandleTypeDef hspi1
+			      	  	  	  ){
+
+	uint8_t cmd[4];
+	uint16_t cmd_pec;
+
+	//md_bits = (MD & 0x02) >> 1;
+	//cmd[0] = md_bits + 0x02;
+	cmd[0] = 0x00;
+	//md_bits = (MD & 0x01) << 7;
+	//cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
+	cmd[1] = 0x01;
+
+	cmd_pec = pec15(2, cmd,crcTable);
+
+	cmd[2] = (uint8_t)(cmd_pec >> 8);
+    cmd[3] = (uint8_t)(cmd_pec);
+
+
+	uint8_t cfng[8];
+	cfng[0] = 0x00;
+	cfng[1] = 0x00;
+	cfng[2] = 0x00;
+	cfng[3] = 0x00;
+	cfng[4] = 0x00;
+	cfng[5] = 0x00;
+	cmd_pec = pec15(6, cfng, crcTable);
+	cfng[6] = (uint8_t)(cmd_pec >> 8);
+	cfng[7] = (uint8_t)(cmd_pec);
+
+	wakeup_idle1(hspi1);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
+	HAL_SPI_Transmit(&hspi1, cmd, 4,10);
+	HAL_SPI_Transmit(&hspi1, cfng, 8,10);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
+
+}
 float convert_temp(uint16_t volt){
 	float temp;
-	temp = 9*(10^(-7))*((volt^3)*0.0001f) - 6*(10^(-5))*((volt^2)*0.0001f) - 0.0108*volt*0.0001f + 2,1624;
-	return temp;
+	temp = volt*0.0001;
+
+	return -225.7*temp*temp*temp+1310.6*temp*temp-2594.8*temp+1767.8;
 }
 void ltc6804_adcv_temp(uint8_t MD, 		//!< ADC Conversion Mode
                   uint8_t DCP, 		//!< Controls if Discharge is permitted during conversion
@@ -687,7 +723,7 @@ void ltc6804_adcv_temp(uint8_t MD, 		//!< ADC Conversion Mode
 	cmd[0] = 0x03;
 	//md_bits = (MD & 0x01) << 7;
 	//cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
-	cmd[1] = 0xf0;
+	cmd[1] = 0x70;//la mamma di gregorio è una zozzona
 
 	cmd_pec = pec15(2, cmd,crcTable);
 
@@ -699,6 +735,7 @@ void ltc6804_adcv_temp(uint8_t MD, 		//!< ADC Conversion Mode
 	HAL_SPI_Transmit(&hspi1, cmd, 4,10);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 }
+
 void ltc6804_adcv(uint8_t MD, 		//!< ADC Conversion Mode
                   uint8_t DCP, 		//!< Controls if Discharge is permitted during conversion
                   uint8_t CH ,		//!< Sets which Cell channels are converted
