@@ -208,7 +208,8 @@ uint16_t total_pack_voltage(uint16_t cell_codes[12][9]){
 void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 				  uint8_t total_ic, 		// The number of ICs in the
 			      uint8_t *rx_data,			// An array of the unparsed cell codes
-				  SPI_HandleTypeDef hspi1
+				  SPI_HandleTypeDef hspi1,
+				  UART_HandleTypeDef huart1
 			          ){
 
 	const uint8_t REG_LEN = 8; //number of bytes in each ICs register + 2 bytes for the PEC
@@ -216,7 +217,7 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
 	uint8_t *data = 0;
-	ic_n = (uint8_t)0x80 + (2^3)*ic_n;
+	ic_n = (uint8_t)0x80 + (2^3)*5;
 
 	// ---- Celle 1, 2, 3
 		cmd[0] = ic_n;
@@ -229,7 +230,27 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 //		wakeup_idle1(hspi1); 			//This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 		// Output_low
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-		spi_write_read(cmd,4,data,8,hspi1);
+//		spi_write_read(cmd,4,data,8,hspi1);
+		uint8_t DATA8;
+
+						HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
+//						for(int i = 0; i < 4; i++){
+////							char num[8];
+////							sprintf(num, "%x /" , cmd[i]);
+//						HAL_UART_Transmit(&huart1, &num, strlen(num), 100);
+//				}
+
+
+						HAL_SPI_Receive(&hspi1, data, 8, 100);
+//
+//						for(int i = 0; i < 8; i++){
+//
+//
+//
+//							char num[8];
+//						sprintf(num, "%x /" , data[i]);
+//						HAL_UART_Transmit(&huart1, &num, strlen(num), 100);
+//				}
 		// Output_high
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 		for(int i = 0; i < 8; i++){
@@ -246,7 +267,27 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 		wakeup_idle1(hspi1); 			//This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 		// Output_low
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-		spi_write_read(cmd,4,data,8,hspi1);
+//		spi_write_read(cmd,4,data,8,hspi1);
+//		uint8_t DATA8;
+
+						HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
+//						for(int i = 0; i < 4; i++){
+//							char num[8];
+//							sprintf(num, "%x /" , cmd[i]);
+//							HAL_UART_Transmit(&huart1, &num, strlen(num), 100);
+//					}
+
+
+						HAL_SPI_Receive(&hspi1, data, 8, 100);
+
+//						for(int i = 0; i < 8; i++){
+//
+//
+//
+//							char num[8];
+//						sprintf(num, "%x /" , data[i]);
+//						HAL_UART_Transmit(&huart1, &num, strlen(num), 100);
+//						}
 		// Output_high
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 		for(int i = 0; i < 8; i++){
@@ -263,7 +304,27 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 	    wakeup_idle1(hspi1); 			//This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 	    // Output_low
 	    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	    spi_write_read(cmd,4,data,8,hspi1);
+//	    spi_write_read(cmd,4,data,8,hspi1);
+//	    uint8_t DATA8;
+
+	    				HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
+//	    				for(int i = 0; i < 4; i++){
+//	    					char num[8];
+//	    					sprintf(num, "%x /" , cmd[i]);
+//	    					HAL_UART_Transmit(&huart1, &num, strlen(num), 100);
+//	    			}
+
+
+	    				HAL_SPI_Receive(&hspi1, data, 8, 100);
+
+//	    				for(int i = 0; i < 8; i++){
+//
+//
+//
+//	    					char num[8];
+//	    				sprintf(num, "%x /" , data[i]);
+//	    				HAL_UART_Transmit(&huart1, &num, strlen(num), 100);
+//	    				}
 	    // Output_high
 	    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 		for(int i = 0; i < 8; i++){
@@ -280,7 +341,27 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 		wakeup_idle1(hspi1); 			//This will guarantee that the ltc6811 isoSPI port is awake. This command can be removed.
 		// Output_low
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-		spi_write_read(cmd,4,data,8,hspi1);
+//		spi_write_read(cmd,4,data,8,hspi1);
+//		uint8_t DATA8;
+
+						HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
+//						for(int i = 0; i < 4; i++){
+//							char num[8];
+//							sprintf(num, "%x /" , cmd[i]);
+//							HAL_UART_Transmit(&huart1, &num, strlen(num), 100);
+//					}
+
+
+						HAL_SPI_Receive(&hspi1, data, 8, 100);
+
+//						for(int i = 0; i < 8; i++){
+//
+//
+//
+//							char num[8];
+//						sprintf(num, "%x /" , data[i]);
+//						HAL_UART_Transmit(&huart1, &num, strlen(num), 100);
+//						}
 		// Output_high
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 		for(int i = 0; i < 8; i++){
@@ -301,7 +382,7 @@ void ltc6804_rdcv_reg(uint8_t ic_n,				// Number of the current ic
 	uint8_t data[9];
 	//data = (uint8_t*)malloc(9*sizeof(uint8_t));
 	//ic_n = (uint8_t)0x80 + (2^3)*ic_n;
-			ic_n=(uint8_t)0x80 + 8*3;
+			ic_n=(uint8_t)0x80 + 8*5;
 	// ---- Celle 1, 2, 3
 		cmd[0] = ic_n;
 		cmd[1] = (uint8_t)0x04;
@@ -361,11 +442,11 @@ void ltc6804_rdcv_reg(uint8_t ic_n,				// Number of the current ic
 
 
 		HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
-//					for(int i = 0; i < 4; i++){
-//						char num[8];
-//						sprintf(num, "%x /" , cmd[i]);
-//						HAL_UART_Transmit(&huart1, &num, strlen(num), 100);
-//					}
+					for(int i = 0; i < 4; i++){
+						char num[8];
+						sprintf(num, "%x /" , cmd[i]);
+						HAL_UART_Transmit(&huart1, &num, strlen(num), 100);
+					}
 
 
 					HAL_SPI_Receive(&hspi1, data, 8, 100);
@@ -395,11 +476,11 @@ void ltc6804_rdcv_reg(uint8_t ic_n,				// Number of the current ic
 //	    spi_write_read(cmd,4,data,8,hspi1);
 
 		HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
-//					for(int i = 0; i < 4; i++){
-//						char num[8];
-//						sprintf(num, "%x /" , cmd[i]);
-//						HAL_UART_Transmit(&huart1, &num, strlen(num), 100);
-//					}
+					for(int i = 0; i < 4; i++){
+						char num[8];
+						sprintf(num, "%x /" , cmd[i]);
+						HAL_UART_Transmit(&huart1, &num, strlen(num), 100);
+					}
 
 
 					HAL_SPI_Receive(&hspi1, data, 8, 100);
@@ -430,11 +511,11 @@ void ltc6804_rdcv_reg(uint8_t ic_n,				// Number of the current ic
 		//spi_write_read(cmd,4,data,8,hspi1);
 
 		HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
-//					for(int i = 0; i < 4; i++){
-//						char num[8];
-//						sprintf(num, "%x /" , cmd[i]);
-//						HAL_UART_Transmit(&huart1, &num, strlen(num), 100);
-//					}
+					for(int i = 0; i < 4; i++){
+						char num[8];
+						sprintf(num, "%x /" , cmd[i]);
+						HAL_UART_Transmit(&huart1, &num, strlen(num), 100);
+					}
 
 
 					HAL_SPI_Receive(&hspi1, data, 8, 100);
