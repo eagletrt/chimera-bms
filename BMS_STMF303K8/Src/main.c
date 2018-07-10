@@ -97,7 +97,7 @@ const int CELL_CH=9;
   			 uint16_t *min_vol;
   			 float *average_vol;
 
-  			uint16_t *temp = 0;
+  			uint16_t temp[9];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -257,9 +257,9 @@ int main(void)
 		 	 	sprintf(num, "\n");
 		 	 	HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
 		 	 	 for(int i = 0; i < 9; i++){
-		 	 		 char v[32];
-		 	 		 sprintf(v, "%d - ",voltages[i]);
-		 	 		 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
+//		 	 		 char v[32];
+//		 	 		 sprintf(v, "%d - ",voltages[i]);
+//		 	 		 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
 		 	 		 cell_voltages[current_ic*9+i] = voltages[i]*0.0001f;
 		 	  	 }
 
@@ -274,9 +274,9 @@ int main(void)
 //		 /* ----- Temperatures -----*/
 //
 //		 //odd temp
-		 HAL_Delay(1000);
+//		 HAL_Delay(1000);
 		 ltc6804_address_temp_odd(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-		 HAL_Delay(1000);
+//		 HAL_Delay(1000);
 		 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 		 HAL_Delay(10);
 		 for(uint8_t current_ic = 7 ; current_ic < TOT_IC; current_ic++){
@@ -296,9 +296,9 @@ int main(void)
 //		 convert_temp();
 //
 //		 //even temp
-		 HAL_Delay(1000);
+//		 HAL_Delay(1000);
 		 ltc6804_address_temp_even(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-		 HAL_Delay(1000);
+//		 HAL_Delay(1000);
 		 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 		 HAL_Delay(10);
 		 for(uint8_t current_ic = 7 ; current_ic < TOT_IC; current_ic++){
@@ -311,11 +311,19 @@ int main(void)
 		 		 cell_codes_temp[current_ic][7] = temp[7];
 
 		 }
+//		 for(int i = 0; i < 9; i++){
+//				 char v[50];
+//				 sprintf(v, "%d - ",cell_codes_temp[7][i]);
+//				 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
+//				 }
+
+		 float gigi[9];
 		 for(int i = 0; i < 9; i++){
-				 char v[32];
-				 sprintf(v, "%x - ",cell_codes_temp[7][i]);
-				 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
-				 }
+				 gigi[i] = convert_temp(cell_codes_temp[7][i]);
+				 char v[50];
+				 				 sprintf(v, "%.2f - ",gigi[i]);
+				 				 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
+		 }
 //		 // Controllo Temperatura massima
 //		 uint16_t *max_temp = 0;
 //		 if(counterCicle % 3 == 0){

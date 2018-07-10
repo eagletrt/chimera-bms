@@ -148,7 +148,7 @@ void array_voltages(uint16_t *voltages, uint8_t *cell_data){
 	voltages[7] = cell_data[20] + (cell_data[21] << 8);
 	voltages[8] = cell_data[24] + (cell_data[25] << 8);
 }
-void array_temp_odd(uint16_t *temp, uint8_t *cell_data){
+void array_temp_odd(uint16_t temp[9], uint8_t cell_data[9]){
 	temp[0] = cell_data[0] + (cell_data[1] << 8);
 	//temp[1] = cell_data[2] + (cell_data[3] << 8);
 	temp[2] = cell_data[4] + (cell_data[5] << 8);
@@ -159,7 +159,7 @@ void array_temp_odd(uint16_t *temp, uint8_t *cell_data){
 	//temp[7] = cell_data[20] + (cell_data[21] << 8);
 	temp[8] = cell_data[24] + (cell_data[25] << 8);
 }
-void array_temp_even(uint16_t *temp, uint8_t *cell_data){
+void array_temp_even(uint16_t temp[9], uint8_t cell_data[9]){
 	//temp[0] = cell_data[0] + (cell_data[1] << 8);
 	temp[1] = cell_data[2] + (cell_data[3] << 8);
 	//temp[2] = cell_data[4] + (cell_data[5] << 8);
@@ -243,7 +243,7 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 
 
 				HAL_SPI_Receive(&hspi1, data, 8, 100);
-//
+
 //				for(int i = 0; i < 8; i++){
 //
 //
@@ -672,8 +672,9 @@ void ltc6804_address_temp_even(uint8_t MD, 		//!< ADC Conversion Mode
 }
 float convert_temp(uint16_t volt){
 	float temp;
-	temp = 9*(10^(-7))*((volt^3)*0.0001f) - 6*(10^(-5))*((volt^2)*0.0001f) - 0.0108*volt*0.0001f + 2,1624;
-	return temp;
+	temp = volt*0.0001;
+
+	return -225.7*temp*temp*temp+1310.6*temp*temp-2594.8*temp+1767.8;
 }
 void ltc6804_adcv_temp(uint8_t MD, 		//!< ADC Conversion Mode
                   uint8_t DCP, 		//!< Controls if Discharge is permitted during conversion
@@ -690,7 +691,7 @@ void ltc6804_adcv_temp(uint8_t MD, 		//!< ADC Conversion Mode
 	cmd[0] = 0x03;
 	//md_bits = (MD & 0x01) << 7;
 	//cmd[1] =  md_bits + 0x60 + (DCP<<4) + CH;
-	cmd[1] = 0xf0;
+	cmd[1] = 0x70;//la mamma di gregorio è una zozzona
 
 	cmd_pec = pec15(2, cmd,crcTable);
 

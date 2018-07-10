@@ -77,8 +77,8 @@ void wakeup_sleep(SPI_HandleTypeDef hspi1);
 void max_min_voltages(uint16_t cell_codes[12][9], uint16_t *max_vol, uint16_t *min_vol, float *average_vol);
 
 void array_voltages(uint16_t *voltages, uint8_t *cell_data);
-void array_temp_odd(uint16_t *temp, uint8_t *cell_data);
-void array_temp_even(uint16_t *temp, uint8_t *cell_data);
+void array_temp_odd(uint16_t temp[9], uint8_t cell_data[9]);
+void array_temp_even(uint16_t temp[9], uint8_t cell_data[9]);
 void max_ave_temp(uint16_t cell_codes[12][9], uint16_t* max_temp, float *average_temp);
 float convert_temp(uint16_t volt);
 uint16_t total_pack_voltage(uint16_t cell_codes[12][9]);
