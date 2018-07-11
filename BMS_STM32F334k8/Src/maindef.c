@@ -51,6 +51,16 @@
 //#include <stdlib.h>
 //#include <inttypes.h>
 //
+//#define CAN_ID_PACK 0xAA
+//
+//#define CAN_ID_STOP 0x04
+//#define CAN_ID_TOTVOL 0x01
+//#define CAN_ID_ERROR 0x08
+//#define CAN_ID_TS_ON 0x03
+//#define CAN_ID_INIT 0x02
+//#define CAN_ID_CURRENT 0x05
+//#define CAN_ID_TEMP 0x06
+//#define CAN_ID_MAX_TEMP 0x07
 //
 //CAN_FilterConfTypeDef sFilter;
 //CanRxMsgTypeDef RxHeader;
@@ -101,6 +111,7 @@
 // uint32_t *adcBuffer;
 // float gigi[9];
 // uint8_t *totalPack;
+// uint32_t Current;
 //  		 uint8_t *tractiveVoltage;
 //
 //  		 uint16_t *max_vol;
@@ -206,7 +217,6 @@
 //
 //
 //
-//  	int id = 0;
 //
 // 	 // GPIO Logic
 // 	 //Precharge off
@@ -349,28 +359,23 @@
 //  	//			 }
 //  	//		 }
 //  	//
-//  	//		 //CAN MESSAGES
-//  	//		 uint16_t tot_vol = total_pack_voltage(cell_codes);
-//  	////
-//  	////		 CAN_Send(id,(uint8_t)max_vol, 8, hcan);
-//  	////		 CAN_Send(id,(uint8_t)min_vol, 8, hcan);
-//  	////		 CAN_Send(id, tot_vol, 8, hcan);
-//  	////		 CAN_Send(id, (tot_vol << 8), 8, hcan);
-//  	////		 CAN_Send(id,*max_temp, 8, hcan);
-//  	////		 CAN_Send(id,*max_temp << 8, 8, hcan);
-//  	////		 CAN_Send(id,(uint8_t)average, 8, hcan);
-//  	////		 for(int i = 0; i < TOT_IC; i++){
-//  	////			 for(int j = 0; j < 9; j++){
-//  	////				 CAN_Send(id, (uint8_t)cell_codes[i][j], 8, hcan);
-//  	////				 CAN_Send(id, (uint8_t)cell_codes[i][j] << 8, 8, hcan);
-//  	////				 CAN_Send(id, (uint8_t)cell_temps[i][j], 8, hcan);
-//  	////				 CAN_Send(id, (uint8_t)cell_temps[i][j] << 8, 8, hcan);
-//  	////			 }
-//  	////		 }
-//  	//
+//  	//CAN MESSAGES
+//  			 uint16_t tot_vol = total_pack_voltage(cell_voltages);
 //
-//  			 counterCicle = counterCicle + 1;
-//  			 HAL_Delay(500);
+//  	//		 CAN_Send(id,(uint8_t)max_vol, 8, hcan);
+//  	////		 CAN_Send(id,(uint8_t)min_vol, 8, hcan);
+//
+//  			 CAN_Send(CAN_ID_PACK,CAN_ID_TOTVOL,tot_vol , 8, hcan);
+//
+//  			// CAN_Send(CAN_ID_PACK, CAN_ID_ERROR,error, 8, hcan);
+//  			 CAN_Send(CAN_ID_PACK, CAN_ID_CURRENT,(uint8_t)Current, 8, hcan);
+//
+//  			//CAN_Send(CAN_ID_PACK,CAN_ID_INIT,tot_vol , 8, hcan);
+//  			//CAN_Send(CAN_ID_PACK,CAN_ID_TS_ON,tot_vol , 8, hcan);
+//  			//CAN_Send(CAN_ID_PACK,CAN_ID_STOP,tot_vol , 8, hcan);
+//
+//  		//	 CAN_Send(id,(uint8_t)average, 8, hcan);
+//
 //  	  }
 //  /* USER CODE END 3 */
 //
