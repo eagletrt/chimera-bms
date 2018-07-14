@@ -202,6 +202,7 @@ void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic
 				  uint8_t total_ic, 		// The number of ICs in the
 			      uint8_t rx_data[9],			// An array of the unparsed cell codes
 				  SPI_HandleTypeDef hspi1
+
 			          ){
 
 

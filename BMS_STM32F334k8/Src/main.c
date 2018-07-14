@@ -375,7 +375,8 @@ int main(void)
 
   		//	 CAN_Send(id,(uint8_t)average, 8, hcan);
 
-  	  }
+  counterCicle = counterCicle + 1;
+  }
   /* USER CODE END 3 */
 
 }
