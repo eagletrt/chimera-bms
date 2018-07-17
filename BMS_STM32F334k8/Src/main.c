@@ -278,7 +278,7 @@ int main(void)
   			 }
   			 //char num[8];
 
-  			 max_min_voltages(cell_voltages, max_vol, min_vol, average_vol);
+//  			 max_min_voltages(cell_voltages, max_vol, min_vol, average_vol);
   	//		 //Can Messages
   	//
   	//		 /* ----- Temperatures -----*/
