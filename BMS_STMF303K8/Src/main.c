@@ -51,7 +51,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#define TOT_IC 5 // number of daisy chain
+#define TOT_IC 12 // number of daisy chain
 #define CELL_CH 9
 #define NUM_RX_BYT 8u
 #define BYT_IN_REG 6u
@@ -78,22 +78,23 @@ UART_HandleTypeDef huart2;
  uint8_t cell_data[9];
  float cell_voltages[108];
  uint16_t cell_temps[108];
+
  uint16_t parsed_cell;
  uint16_t received_pec;
  uint16_t data_pec;
  uint8_t pec_error=0;
  int counterCicle = 0;
- float *av_temp1 = 0;
- float *av_temp2 = 0;
- float *av_temp3 = 0;
- uint32_t *adcBuffer;
+ float av_temp1 = 0;
+ float av_temp2 = 0;
+ float av_temp3 = 0;
+ uint32_t adcBuffer;
 
- uint8_t *totalPack;
-  		 uint8_t *tractiveVoltage;
+ uint8_t totalPack;
+  		 uint8_t tractiveVoltage;
 
-  		 uint16_t *max_vol;
-  			 uint16_t *min_vol;
-  			 float *average_vol;
+  		 uint16_t max_vol;
+  			 uint16_t min_vol;
+  			 float average_vol;
 
   			uint16_t temp[9];
 /* USER CODE END PV */
@@ -243,10 +244,10 @@ int main(void)
 	  	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 	  	 HAL_Delay(10);
 		 uint8_t data_counter = 0;
-		 for(uint8_t current_ic = 4; current_ic < TOT_IC; current_ic++){
+		 for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++){
 
 				 ltc6804_rdcv_reg(current_ic, TOT_IC, cell_data, hspi1);
-				 HAL_Delay(500);
+				// HAL_Delay(500);
 		 	 	 array_voltages(voltages, cell_data);
 
 
@@ -271,52 +272,65 @@ int main(void)
 //
 //		 /* ----- Temperatures -----*/
 //
-			 ltc6804_address_temp_odd(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-			 HAL_Delay(10);
-			 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-			 HAL_Delay(10);
-			 for(uint8_t current_ic = 4; current_ic < TOT_IC; current_ic++){
-				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
-				 HAL_Delay(500);
-				 	 array_temp_odd(temp, cell_data);
+		 ltc6804_address_temp_odd(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+		 			// HAL_Delay(10);
+		 			 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+		 			 HAL_Delay(10);
+		 			 for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++){
+		 				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
+		 				 //HAL_Delay(500);
+		 				 	 array_temp_odd(temp, cell_data);
 
-				 	 cell_temps[current_ic*9+0] = (uint16_t)(convert_temp(temp[0])*100);
-				 	 cell_temps[current_ic*9+2] = (uint16_t)(convert_temp(temp[2])*100);
-				 	 cell_temps[current_ic*9+4] = (uint16_t)(convert_temp(temp[4])*100);
-				 	 cell_temps[current_ic*9+6] = (uint16_t)(convert_temp(temp[6])*100);
-				 	 cell_temps[current_ic*9+8] = (uint16_t)(convert_temp(temp[8])*100);
+		 				 	 cell_temps[current_ic*9+0] = (uint16_t)(convert_temp(temp[0])*100);
+		 				 	 cell_temps[current_ic*9+2] = (uint16_t)(convert_temp(temp[2])*100);
+		 				 	 cell_temps[current_ic*9+4] = (uint16_t)(convert_temp(temp[4])*100);
+		 				 	 cell_temps[current_ic*9+6] = (uint16_t)(convert_temp(temp[6])*100);
+		 				 	 cell_temps[current_ic*9+8] = (uint16_t)(convert_temp(temp[8])*100);
 
-			 }
-
-
-			 //
+		 			 }
+		 //
 	//		 //ltc6804_rdcv_temp(...);
 	//		 convert_temp();
 	//
 	//		 //even temp
 			 ltc6804_address_temp_even(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-			 HAL_Delay(10);
+			 //HAL_Delay(10);
 			 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 			 HAL_Delay(10);
-			 for(uint8_t current_ic = 4; current_ic < TOT_IC; current_ic++){
+			 for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++){
 				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
-				 HAL_Delay(500);
+				 //HAL_Delay(500);
 				 array_temp_even(temp, cell_data);
 
 			 		 cell_temps[current_ic*9+1] = (uint16_t)(convert_temp(temp[1])*100);
 			 		 cell_temps[current_ic*9+3] = (uint16_t)(convert_temp(temp[3])*100);
 			 		 cell_temps[current_ic*9+5] = (uint16_t)(convert_temp(temp[5])*100);
 			 		 cell_temps[current_ic*9+7] = (uint16_t)(convert_temp(temp[7])*100);
-
+//			 		for(int i = 0; i < 9; i++){
+//			 		 char v[32];
+//			 					  					 sprintf(v, "%d - ",temp[i]);
+//			 					 					 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
+//			 		}
 			 }
-			 for(int i = 36; i < 45; i++){
-			 					 char v[32];
+
+
+
+
+
+			 for(int i = 0; i < 108; i++){
+				 if(i%9 == 0){
+					 char num[2];
+
+				 			 		 	 	sprintf(num, "\r\n");
+				 			 		 	 	HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
+				 }
+				 			 		 	 	char v[32];
 			  					 sprintf(v, "%d - ",cell_temps[i]);
 			 					 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
 			  					 }
 
 			 ltc6804_stop_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-			 	 HAL_Delay(500);
+			 	 //HAL_Delay(500);
 //		 // Controllo Temperatura massima
 //		 uint16_t *max_temp = 0;
 //		 if(counterCicle % 3 == 0){
@@ -367,7 +381,7 @@ int main(void)
 //
 
 		 counterCicle = counterCicle + 1;
-		 HAL_Delay(500);
+		// HAL_Delay(500);
   }
   /* USER CODE END 3 */
 
