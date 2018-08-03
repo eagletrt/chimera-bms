@@ -187,7 +187,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   uint16_t voltages[9];
- // voltages = (uint16_t*)malloc(9*sizeof(uint16_t));
+//  *cell_temps = (uint16_t*)malloc(9*sizeof(uint16_t));
 //  cell_data = (uint8_t*)malloc(9*sizeof(uint8_t));
 //  cell_codes = (uint16_t*)malloc(9*12*sizeof(uint16_t));
 
@@ -272,6 +272,11 @@ int main(void)
 //
 //		 /* ----- Temperatures -----*/
 //
+uint16_t temp0, temp1, temp2, temp3;
+temp0 = 0;
+temp1 = 0;
+temp2 = 0;
+temp3 = 0;
 		 ltc6804_address_temp_odd(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 		 			// HAL_Delay(10);
 		 			 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
@@ -280,14 +285,22 @@ int main(void)
 		 				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
 		 				 //HAL_Delay(500);
 		 				 	 array_temp_odd(temp, cell_data);
+		 				 	if(current_ic == 0){
+		 				 		temp0 = (uint16_t)(convert_temp(temp[0])*100);
+		 				 		temp2 = (uint16_t)(convert_temp(temp[2])*100);
+		 				 	}
+		 				 	 if(current_ic != 0){
+		 				 		 cell_temps[current_ic*9+0] = (uint16_t)(convert_temp(temp[0])*100);
+		 				 		 cell_temps[current_ic*9+2] = (uint16_t)(convert_temp(temp[2])*100);
+		 				 	 }
 
-		 				 	 cell_temps[current_ic*9+0] = (uint16_t)(convert_temp(temp[0])*100);
-		 				 	 cell_temps[current_ic*9+2] = (uint16_t)(convert_temp(temp[2])*100);
 		 				 	 cell_temps[current_ic*9+4] = (uint16_t)(convert_temp(temp[4])*100);
 		 				 	 cell_temps[current_ic*9+6] = (uint16_t)(convert_temp(temp[6])*100);
 		 				 	 cell_temps[current_ic*9+8] = (uint16_t)(convert_temp(temp[8])*100);
 
 		 			 }
+//		 			 cell_temps[0] = temp0;
+//		 			 cell_temps[2] = temp2;
 		 //
 	//		 //ltc6804_rdcv_temp(...);
 	//		 convert_temp();
@@ -301,9 +314,17 @@ int main(void)
 				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
 				 //HAL_Delay(500);
 				 array_temp_even(temp, cell_data);
+				 if(current_ic == 0){
+				 	 temp1 = (uint16_t)(convert_temp(temp[1])*100);
+				 	 temp3 = (uint16_t)(convert_temp(temp[3])*100);
+				 }
+				 	 if(current_ic != 0){
+				 		 cell_temps[current_ic*9+1] = (uint16_t)(convert_temp(temp[1])*100);
+				 		 cell_temps[current_ic*9+3] = (uint16_t)(convert_temp(temp[3])*100);
+				 	 }
 
-			 		 cell_temps[current_ic*9+1] = (uint16_t)(convert_temp(temp[1])*100);
-			 		 cell_temps[current_ic*9+3] = (uint16_t)(convert_temp(temp[3])*100);
+//			 		 cell_temps[current_ic*9+1] = (uint16_t)(convert_temp(temp[1])*100);
+//			 		 cell_temps[current_ic*9+3] = (uint16_t)(convert_temp(temp[3])*100);
 			 		 cell_temps[current_ic*9+5] = (uint16_t)(convert_temp(temp[5])*100);
 			 		 cell_temps[current_ic*9+7] = (uint16_t)(convert_temp(temp[7])*100);
 //			 		for(int i = 0; i < 9; i++){
@@ -312,6 +333,10 @@ int main(void)
 //			 					 					 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
 //			 		}
 			 }
+			 cell_temps[0] = temp0;
+			 cell_temps[2] = temp2;
+			 cell_temps[1] = temp1;
+			 cell_temps[3] = temp3;
 
 
 
@@ -353,7 +378,7 @@ int main(void)
 //			 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
 //		 }
 //		 }
-//		 float **converted_temp;
+//		 float **converted_;
 //		 for(int i = 0; i < 12; i++){
 //			 for(int j = 0; j < 9; j++){
 //				 converted_temp[i][j] = convert_temp(cell_codes_temp[i][j]);
