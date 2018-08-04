@@ -142,22 +142,22 @@ int main(void)
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
 
   //First cell  reads
-  ltc6804_adcv(0, hspi1);
+  ltc6804_adcv(0, &hspi1);
   HAL_Delay(10);
   for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++){
-	  ltc6804_rdcv_voltages(current_ic, cell_voltages, hspi1);
+	  ltc6804_rdcv_voltages(current_ic, cell_voltages, &hspi1);
   }
-  ltc6804_command_temperatures(1, 0, hspi1);
-  ltc6804_adcv(1, hspi1);
+  ltc6804_command_temperatures(1, 0, &hspi1);
+  ltc6804_adcv(1, &hspi1);
   HAL_Delay(10);
   for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++)
-	  ltc6804_rdcv_temp(current_ic, 0, cell_temperatures, hspi1);
-  ltc6804_command_temperatures(1, 1, hspi1);
-  ltc6804_adcv(1, hspi1);
+	  ltc6804_rdcv_temp(current_ic, 0, cell_temperatures, &hspi1);
+  ltc6804_command_temperatures(1, 1, &hspi1);
+  ltc6804_adcv(1, &hspi1);
   HAL_Delay(10);
   for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++)
-	  ltc6804_rdcv_temp(current_ic, 1, cell_temperatures, hspi1);
-  ltc6804_command_temperatures(0, 0, hspi1);
+	  ltc6804_rdcv_temp(current_ic, 1, cell_temperatures, &hspi1);
+  ltc6804_command_temperatures(0, 0, &hspi1);
 
   //Cells 90 and 91 not working
   cell_voltages[90][0]=(cell_voltages[89][0]+cell_voltages[88][0])/2;
@@ -183,18 +183,18 @@ int main(void)
   {
 
 	  /* ----- Voltages ------*/
-	  ltc6804_adcv(0, hspi1);
+	  ltc6804_adcv(0, &hspi1);
 	  HAL_Delay(10);
 	  for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++)
-		  ltc6804_rdcv_voltages(current_ic, cell_voltages, hspi1);
+		  ltc6804_rdcv_voltages(current_ic, cell_voltages, &hspi1);
 	  if (++parity == 2)
 		  parity = 0;
-	  ltc6804_command_temperatures(1, parity, hspi1);
-	  ltc6804_adcv(1, hspi1);
+	  ltc6804_command_temperatures(1, parity, &hspi1);
+	  ltc6804_adcv(1, &hspi1);
 	  HAL_Delay(10);
 	  for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++)
-		  ltc6804_rdcv_temp(current_ic, parity, cell_temperatures, hspi1);
-	  ltc6804_command_temperatures(0, 0, hspi1);
+		  ltc6804_rdcv_temp(current_ic, parity, cell_temperatures, &hspi1);
+	  ltc6804_command_temperatures(0, 0, &hspi1);
 
 	  //Cells 90 and 91 not working
 	  cell_voltages[90][0]=(cell_voltages[89][0]+cell_voltages[88][0])/2;
@@ -207,7 +207,7 @@ int main(void)
 	  cell_temperatures[91][1]=0;
 
 	  status(cell_voltages, cell_temperatures, &pack_v, &min_v, &max_v, &avg_v, &max_t, &avg_t);
-	  if(state == OVER_VOLTAGE || state == UNDER_VOLTAGE){
+	  if(state == OVER_VOLTAGE || state == UNDER_VOLTAGE || state == DATA_NOT_UPDATED){
 
 		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
 

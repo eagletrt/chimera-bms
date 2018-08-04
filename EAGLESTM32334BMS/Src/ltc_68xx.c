@@ -1,8 +1,10 @@
-/*
- * ltc_68xx.c
- *
- *  Contains all the functions to read temperatures and voltages from the LTC68xx IC
- *
+/**
+ ******************************************************************************
+ * @file	ltc_68xx.c
+ * @author	Dona, Riki, Gregor e Davide
+ * @brief	This file contains all the functions for the LTC68xx battery
+ * 			management
+ ******************************************************************************
  */
 
 #include "ltc_68xx.h"
@@ -32,6 +34,13 @@ uint16_t crcTable[256] ={0x0,0xc599, 0xceab, 0xb32, 0xd8cf, 0x1d56, 0x1664, 0xd3
     0x585a, 0x8ba7, 0x4e3e, 0x450c, 0x8095
     };
 
+/**
+  * @brief		This function is used to calculate the PEC value
+  * @param		Length of the data array
+  * @param		Array of data
+  * @param		CRC table
+  * @retval		16 bit unsigned integer containing the two PEC bytes
+  */
 uint16_t pec15(uint8_t len,uint8_t data[],uint16_t crcTable[] ){
 
     uint16_t remainder,address;
@@ -46,30 +55,59 @@ uint16_t pec15(uint8_t len,uint8_t data[],uint16_t crcTable[] ){
 
 }
 
+/**
+  * @brief		This function is used to convert the 2 byte raw data from the
+  * 			LTC68xx to a 16 bit unsigned integer
+  * @param 		Raw data bytes
+  * @retval		Voltage read from the LTC68xx
+  */
 uint16_t convert_voltage(uint8_t v_data[]){
 
 	return v_data[0] + (v_data[1] << 8);
 
 }
 
+/**
+  * @brief		This function converts a voltage data from the zener sensor
+  * 			to a temperature
+  * @param		Voltage read from the LTC68xx
+  * @retval 	Temperature of the cell multiplied by 100
+  */
 uint16_t convert_temp(uint16_t volt){
 
 	float voltf = volt*0.0001;
 	float temp;
 	temp = -225.7*voltf*voltf*voltf + 1310.6 * voltf*voltf -2594.8*voltf + 1767.8;
-	return (uint16_t)(temp*1000);
+	return (uint16_t)(temp*100);
 
 }
 
-void wakeup_idle(SPI_HandleTypeDef hspi1){
+/**
+  * @brief		Wakes up all the devices connected to the isoSPI bus
+  * @param		hspi pointer to a SPI_HandleTypeDef structure that contains
+  * 			the configuration information for SPI module.
+  */
+void wakeup_idle(SPI_HandleTypeDef *hspi){
 
 	uint8_t data = 0xFF;
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi1, &data, 1, 1);
+	HAL_SPI_Transmit(hspi, &data, 1, 1);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
 }
 
+/**
+  * @brief		Monitors voltages and temperatures of the battery pack
+  * @param		Array of voltages
+  * @param		Array of temperatures
+  * @param		Pointer to pack voltage
+  * @param		Pointer to minimum voltage
+  * @param		Pointer to maximum voltage
+  * @param		Pointer to average voltage
+  * @param		Pointer to maximum temperature
+  * @param		Pointer to average temperature
+  * @retval		Battery status
+  */
 PackStateTypeDef status(uint16_t cell_voltages[108][2],
 			   uint16_t cell_temperatures[108][2],
 			   uint32_t* pack_v,
@@ -84,6 +122,8 @@ PackStateTypeDef status(uint16_t cell_voltages[108][2],
 	*max_v = cell_voltages[0][0];
 	*min_v = cell_voltages[0][0];
 	*max_t = cell_temperatures[0][0];
+	if(cell_voltages[0][1] > 1000 || cell_temperatures[0][1] > 1000)
+				return DATA_NOT_UPDATED;
 	for(int i = 1; i < 108; i++){
 
 		if(cell_voltages[i][0] > *max_v)
@@ -94,7 +134,8 @@ PackStateTypeDef status(uint16_t cell_voltages[108][2],
 		if(cell_temperatures[i][0] > *max_t)
 			*max_t = cell_temperatures[i][0];
 		sum_t += cell_temperatures[i][0];
-
+		if(cell_voltages[1][1] > 1000 || cell_temperatures[i][1] > 1000)
+			return DATA_NOT_UPDATED;
 	}
 	*avg_v = *pack_v / 108;
 	*avg_t = sum_t / 108;
@@ -102,25 +143,32 @@ PackStateTypeDef status(uint16_t cell_voltages[108][2],
 		return UNDER_VOLTAGE;
 	if (*max_v > 42250)
 		return OVER_VOLTAGE;
-	if (*max_t > 70000)
+	if (*max_t > 7000)
 		return OVER_TEMPERATURE;
-	if (*avg_t > 65000)
+	if (*avg_t > 6500)
 		return PACK_OVER_TEMPERATURE;
 	return PACK_OK;
 }
 
-/*----- Read the raw data from the ltc6804 cell voltage register normal-----*/
+/**
+ * @brief		Reads the data form the LTC68xx and updates the cell temperatures
+ * @param		Number of the LTC68xx to read the data from
+ * @param		uint8_t that indicates if we are reading even or odd temperatures
+ * @param		Array of temperatures
+ * @param		hspi pointer to a SPI_HandleTypeDef structure that contains
+ * 				the configuration information for SPI module.
+ */
 void ltc6804_rdcv_temp(uint8_t ic_n,
 					   uint8_t parity,
 					   uint16_t cell_temperatures[108][2],
-					   SPI_HandleTypeDef hspi1){
+					   SPI_HandleTypeDef *hspi){
 
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
 	uint8_t data[8];
 	cmd[0] = (uint8_t)0x80 + 8*ic_n;
 
-	wakeup_idle(hspi1);
+	wakeup_idle(hspi);
 
 	// ---- Celle 1, 2, 3
 	cmd[1] = (uint8_t)0x04;
@@ -128,8 +176,8 @@ void ltc6804_rdcv_temp(uint8_t ic_n,
 	cmd[2] = (uint8_t)(cmd_pec >> 8);
 	cmd[3] = (uint8_t)(cmd_pec);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
-	HAL_SPI_Receive(&hspi1, data, 8, 100);
+	HAL_SPI_Transmit(hspi, cmd, 4, 100);
+	HAL_SPI_Receive(hspi, data, 8, 100);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 	if(pec15(6, data, crcTable) == (uint16_t) (data[6]*256 + data[7])){
 
@@ -168,8 +216,8 @@ void ltc6804_rdcv_temp(uint8_t ic_n,
 	cmd[2] = (uint8_t)(cmd_pec >> 8);
 	cmd[3] = (uint8_t)(cmd_pec);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
-	HAL_SPI_Receive(&hspi1, data, 8, 100);
+	HAL_SPI_Transmit(hspi, cmd, 4, 100);
+	HAL_SPI_Receive(hspi, data, 8, 100);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 	if(pec15(6, data, crcTable) == (uint16_t) (data[6]*256 + data[7])){
 
@@ -203,8 +251,8 @@ void ltc6804_rdcv_temp(uint8_t ic_n,
 	cmd[3] = (uint8_t)(cmd_pec);
 	// CS LOW
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
-	HAL_SPI_Receive(&hspi1, data, 8, 100);
+	HAL_SPI_Transmit(hspi, cmd, 4, 100);
+	HAL_SPI_Receive(hspi, data, 8, 100);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 	if(pec15(6, data, crcTable) == (uint16_t) (data[6]*256 + data[7])){
 
@@ -246,8 +294,8 @@ void ltc6804_rdcv_temp(uint8_t ic_n,
 		cmd[3] = (uint8_t)(cmd_pec);
 		// CS LOW
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-		HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
-		HAL_SPI_Receive(&hspi1, data, 8, 100);
+		HAL_SPI_Transmit(hspi, cmd, 4, 100);
+		HAL_SPI_Receive(hspi, data, 8, 100);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 		if(pec15(6, data, crcTable) == (uint16_t) (data[6]*256 + data[7])){
 
@@ -263,14 +311,20 @@ void ltc6804_rdcv_temp(uint8_t ic_n,
 
 }
 
-/*----- Read the raw data from the ltc6804 cell voltage register normal-----*/
-void ltc6804_rdcv_voltages(uint8_t ic_n, uint16_t cell_voltages[108][2], SPI_HandleTypeDef hspi1){
+/**
+ * @brief		Reads the data form the LTC68xx and updates the cell voltages
+ * @param		Number of the LTC68xx to read the data from
+ * @param		Array of voltages
+ * @param		hspi pointer to a SPI_HandleTypeDef structure that contains
+ * 				the configuration information for SPI module.
+ */
+void ltc6804_rdcv_voltages(uint8_t ic_n, uint16_t cell_voltages[108][2], SPI_HandleTypeDef *hspi){
 
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
 	uint8_t data[8];
 	cmd[0] = (uint8_t)0x80 + 8*ic_n;
-	wakeup_idle(hspi1);
+	wakeup_idle(hspi);
 
 	// ---- Celle 1, 2, 3
 	cmd[1] = (uint8_t)0x04;
@@ -278,8 +332,8 @@ void ltc6804_rdcv_voltages(uint8_t ic_n, uint16_t cell_voltages[108][2], SPI_Han
 	cmd[2] = (uint8_t)(cmd_pec >> 8);
 	cmd[3] = (uint8_t)(cmd_pec);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
-	HAL_SPI_Receive(&hspi1, data, 8, 100);
+	HAL_SPI_Transmit(hspi, cmd, 4, 100);
+	HAL_SPI_Receive(hspi, data, 8, 100);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 	if(pec15(6, data, crcTable) == (uint16_t) (data[6]*256 + data[7])){
 
@@ -305,8 +359,8 @@ void ltc6804_rdcv_voltages(uint8_t ic_n, uint16_t cell_voltages[108][2], SPI_Han
 	cmd[2] = (uint8_t)(cmd_pec >> 8);
 	cmd[3] = (uint8_t)(cmd_pec);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
-	HAL_SPI_Receive(&hspi1, data, 8, 100);
+	HAL_SPI_Transmit(hspi, cmd, 4, 100);
+	HAL_SPI_Receive(hspi, data, 8, 100);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 	if(pec15(6, data, crcTable) == (uint16_t) (data[6]*256 + data[7])){
 
@@ -329,8 +383,8 @@ void ltc6804_rdcv_voltages(uint8_t ic_n, uint16_t cell_voltages[108][2], SPI_Han
 	cmd[2] = (uint8_t)(cmd_pec >> 8);
 	cmd[3] = (uint8_t)(cmd_pec);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
-	HAL_SPI_Receive(&hspi1, data, 8, 100);
+	HAL_SPI_Transmit(hspi, cmd, 4, 100);
+	HAL_SPI_Receive(hspi, data, 8, 100);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 	if(pec15(6, data, crcTable) == (uint16_t) (data[6]*256 + data[7])){
 
@@ -357,8 +411,8 @@ void ltc6804_rdcv_voltages(uint8_t ic_n, uint16_t cell_voltages[108][2], SPI_Han
 	cmd[2] = (uint8_t)(cmd_pec >> 8);
 	cmd[3] = (uint8_t)(cmd_pec);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi1, cmd, 4, 100);
-	HAL_SPI_Receive(&hspi1, data, 8, 100);
+	HAL_SPI_Transmit(hspi, cmd, 4, 100);
+	HAL_SPI_Receive(hspi, data, 8, 100);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 	if(pec15(6, data, crcTable) == (uint16_t) (data[6]*256 + data[7])){
 
@@ -372,7 +426,14 @@ void ltc6804_rdcv_voltages(uint8_t ic_n, uint16_t cell_voltages[108][2], SPI_Han
 
 }
 
-void ltc6804_command_temperatures(uint8_t start, uint8_t parity, SPI_HandleTypeDef hspi1){
+/**
+ * @brief		Enable or disable the temperature measurement
+ * @param		1 to start temperature measurement and 0 to stop it
+ * @param		uint8_t that indicates if we are reading even or odd temperatures
+ * @param		hspi pointer to a SPI_HandleTypeDef structure that contains
+ * 				the configuration information for SPI module.
+ */
+void ltc6804_command_temperatures(uint8_t start, uint8_t parity, SPI_HandleTypeDef *hspi){
 
 	uint8_t cmd[4];
 	uint8_t cfng[8];
@@ -412,15 +473,21 @@ void ltc6804_command_temperatures(uint8_t start, uint8_t parity, SPI_HandleTypeD
 	cfng[6] = (uint8_t)(cmd_pec >> 8);
 	cfng[7] = (uint8_t)(cmd_pec);
 
-    wakeup_idle(hspi1);
+    wakeup_idle(hspi);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi1, cmd, 4,10);
-	HAL_SPI_Transmit(&hspi1, cfng, 8,10);
+	HAL_SPI_Transmit(hspi, cmd, 4,10);
+	HAL_SPI_Transmit(hspi, cfng, 8,10);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
 }
 
-void ltc6804_adcv(uint8_t DCP, SPI_HandleTypeDef hspi1){
+/**
+ * @brief		Starts the LTC68xx ADC voltage conversion
+ * @param		DCP: 0 to read voltages and 1 to read temperatures
+ * @param		hspi pointer to a SPI_HandleTypeDef structure that contains
+ * 				the configuration information for SPI module.
+ */
+void ltc6804_adcv(uint8_t DCP, SPI_HandleTypeDef *hspi){
 
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
@@ -430,9 +497,9 @@ void ltc6804_adcv(uint8_t DCP, SPI_HandleTypeDef hspi1){
 	cmd[2] = (uint8_t)(cmd_pec >> 8);
     cmd[3] = (uint8_t)(cmd_pec);
 
-    wakeup_idle(hspi1);
+    wakeup_idle(hspi);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(&hspi1, cmd, 4,100);
+	HAL_SPI_Transmit(hspi, cmd, 4,100);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
 }
