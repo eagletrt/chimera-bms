@@ -73,6 +73,8 @@ uint16_t max_t;
 uint16_t avg_t;
 uint8_t parity = 0;
 PackStateTypeDef state = PACK_OK;
+uint8_t fault_counter = 0;
+uint8_t BMS_status = 0;
 int counterCicle = 0;
 /* USER CODE END PV */
 
@@ -126,7 +128,7 @@ int main(void)
   MX_CAN_Init();
   /* USER CODE BEGIN 2 */
 
-  //CAN FIlter Initialization
+  // CAN FIlter Initialization
   tsONfilter.FilterMode = CAN_FILTERMODE_IDLIST;
   tsONfilter.FilterIdLow = 0x55 << 5;
   tsONfilter.FilterIdHigh = 0x55 << 5;
@@ -141,12 +143,14 @@ int main(void)
   // BMS Status OFF
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
 
-  //First cell  reads
+  // First cell  reads
+  // Voltages
   ltc6804_adcv(0, &hspi1);
   HAL_Delay(10);
   for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++){
 	  ltc6804_rdcv_voltages(current_ic, cell_voltages, &hspi1);
   }
+  // Temperatures
   ltc6804_command_temperatures(1, 0, &hspi1);
   ltc6804_adcv(1, &hspi1);
   HAL_Delay(10);
@@ -169,11 +173,6 @@ int main(void)
   cell_temperatures[90][1]=0;
   cell_temperatures[91][1]=0;
 
-  //First pack check
-  state = status(cell_voltages, cell_temperatures, &pack_v, &min_v, &max_v, &avg_v, &max_t, &avg_t);
-  if(state == PACK_OK)
-	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -182,11 +181,12 @@ int main(void)
   while (1)
   {
 
-	  /* ----- Voltages ------*/
+	  // Voltages
 	  ltc6804_adcv(0, &hspi1);
 	  HAL_Delay(10);
 	  for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++)
 		  ltc6804_rdcv_voltages(current_ic, cell_voltages, &hspi1);
+	  // Temperatures
 	  if (++parity == 2)
 		  parity = 0;
 	  ltc6804_command_temperatures(1, parity, &hspi1);
@@ -206,68 +206,87 @@ int main(void)
 	  cell_temperatures[90][1]=0;
 	  cell_temperatures[91][1]=0;
 
-	  status(cell_voltages, cell_temperatures, &pack_v, &min_v, &max_v, &avg_v, &max_t, &avg_t);
-	  if(state == OVER_VOLTAGE || state == UNDER_VOLTAGE || state == DATA_NOT_UPDATED){
+	  state = status(cell_voltages, cell_temperatures, &pack_v, &min_v, &max_v, &avg_v, &max_t, &avg_t);
+	  if(state == PACK_OK){
 
-		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
+		  fault_counter = 0;
+		  if(BMS_status == 0){
 
-		  TxMsg.IDE = CAN_ID_STD;
-		  TxMsg.RTR = CAN_RTR_DATA;
-		  TxMsg.DLC = 8;
-		  TxMsg.StdId = 0xAA;
-		  TxMsg.Data[0] = 0x08;
-		  TxMsg.Data[1] = 0x02;
-		  TxMsg.Data[2] = 0x00;
-		  TxMsg.Data[3] = 0x00;
-		  TxMsg.Data[4] = 0x00;
-		  TxMsg.Data[5] = 0x00;
-		  TxMsg.Data[6] = 0x00;
-		  TxMsg.Data[7] = 0x00;
-		  hcan.pTxMsg = &TxMsg;
-		  HAL_CAN_Transmit(&hcan, 10);
+			  HAL_Delay(10);
+			  BMS_status = 1;
+			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
+
+		  }
 
 	  }
-	  if(state == OVER_TEMPERATURE){
+	  else{
+		  fault_counter++;
+		  if(fault_counter > 10){
 
-		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
+			  //Set the BMS to fault
+			  BMS_status = 0;
+			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
+		  }
+		  if(state == OVER_VOLTAGE || state == UNDER_VOLTAGE || state == DATA_NOT_UPDATED){
 
-		  TxMsg.IDE = CAN_ID_STD;
-		  TxMsg.RTR = CAN_RTR_DATA;
-		  TxMsg.DLC = 8;
-		  TxMsg.StdId = 0xAA;
-		  TxMsg.Data[0] = 0x08;
-		  TxMsg.Data[1] = 0x03;
-		  TxMsg.Data[2] = 0x00;
-		  TxMsg.Data[3] = 0x00;
-		  TxMsg.Data[4] = 0x00;
-		  TxMsg.Data[5] = 0x00;
-		  TxMsg.Data[6] = 0x00;
-		  TxMsg.Data[7] = 0x00;
-		  hcan.pTxMsg = &TxMsg;
-		  HAL_CAN_Transmit(&hcan, 10);
+			  //Send CAN message indicating a voltage fault
+			  TxMsg.IDE = CAN_ID_STD;
+			  TxMsg.RTR = CAN_RTR_DATA;
+			  TxMsg.DLC = 8;
+			  TxMsg.StdId = 0xAA;
+			  TxMsg.Data[0] = 0x08;
+			  TxMsg.Data[1] = 0x02;
+			  TxMsg.Data[2] = 0x00;
+			  TxMsg.Data[3] = 0x00;
+			  TxMsg.Data[4] = 0x00;
+			  TxMsg.Data[5] = 0x00;
+			  TxMsg.Data[6] = 0x00;
+			  TxMsg.Data[7] = 0x00;
+			  hcan.pTxMsg = &TxMsg;
+			  HAL_CAN_Transmit(&hcan, 10);
+
+		  }
+		  else if(state == OVER_TEMPERATURE){
+
+			  //Send CAN message indicating a cell temperature fault
+			  TxMsg.IDE = CAN_ID_STD;
+			  TxMsg.RTR = CAN_RTR_DATA;
+			  TxMsg.DLC = 8;
+			  TxMsg.StdId = 0xAA;
+			  TxMsg.Data[0] = 0x08;
+			  TxMsg.Data[1] = 0x03;
+			  TxMsg.Data[2] = 0x00;
+			  TxMsg.Data[3] = 0x00;
+			  TxMsg.Data[4] = 0x00;
+			  TxMsg.Data[5] = 0x00;
+			  TxMsg.Data[6] = 0x00;
+			  TxMsg.Data[7] = 0x00;
+			  hcan.pTxMsg = &TxMsg;
+			  HAL_CAN_Transmit(&hcan, 10);
+
+		  }
+		  else if(state == PACK_OVER_TEMPERATURE){
+
+			  //Send CAN message indicating a pack temperature fault
+			  TxMsg.IDE = CAN_ID_STD;
+			  TxMsg.RTR = CAN_RTR_DATA;
+			  TxMsg.DLC = 8;
+			  TxMsg.StdId = 0xAA;
+			  TxMsg.Data[0] = 0x08;
+			  TxMsg.Data[1] = 0x04;
+			  TxMsg.Data[2] = 0x00;
+			  TxMsg.Data[3] = 0x00;
+			  TxMsg.Data[4] = 0x00;
+			  TxMsg.Data[5] = 0x00;
+			  TxMsg.Data[6] = 0x00;
+			  TxMsg.Data[7] = 0x00;
+			  hcan.pTxMsg = &TxMsg;
+			  HAL_CAN_Transmit(&hcan, 10);
+
+		  }
 
 	  }
-	  if(state == PACK_OVER_TEMPERATURE){
-
-		  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
-
-		  TxMsg.IDE = CAN_ID_STD;
-		  TxMsg.RTR = CAN_RTR_DATA;
-		  TxMsg.DLC = 8;
-		  TxMsg.StdId = 0xAA;
-		  TxMsg.Data[0] = 0x08;
-		  TxMsg.Data[1] = 0x04;
-		  TxMsg.Data[2] = 0x00;
-		  TxMsg.Data[3] = 0x00;
-		  TxMsg.Data[4] = 0x00;
-		  TxMsg.Data[5] = 0x00;
-		  TxMsg.Data[6] = 0x00;
-		  TxMsg.Data[7] = 0x00;
-		  hcan.pTxMsg = &TxMsg;
-		  HAL_CAN_Transmit(&hcan, 10);
-
-	  }
-
+	  // Send pack data via CAN
 	  TxMsg.IDE = CAN_ID_STD;
 	  TxMsg.RTR = CAN_RTR_DATA;
 	  TxMsg.DLC = 8;
@@ -288,12 +307,12 @@ int main(void)
 
 		  if(RxMsg.StdId == 0x55 && RxMsg.Data[0] == 0x0A){
 
+			  //TS ON procedure with delay as pre-charge control
 			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);
 			  HAL_Delay(15000);
 			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
 			  HAL_Delay(1);
 			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-			  //HAL_Delay(2000);
 			  TxMsg.IDE = CAN_ID_STD;
 			  TxMsg.RTR = CAN_RTR_DATA;
 			  TxMsg.DLC = 8;
@@ -308,10 +327,11 @@ int main(void)
 			  TxMsg.Data[7] = 0x00;
 			  hcan.pTxMsg = &TxMsg;
 			  HAL_CAN_Transmit(&hcan, 10);
+
 		  }
 		  else if(RxMsg.StdId == 0x55 && RxMsg.Data[0] == 0x0B){
-			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
 
+			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
 			  TxMsg.IDE = CAN_ID_STD;
 			  TxMsg.RTR = CAN_RTR_DATA;
 			  TxMsg.DLC = 8;
@@ -326,7 +346,9 @@ int main(void)
 			  TxMsg.Data[7] = 0x00;
 			  hcan.pTxMsg = &TxMsg;
 			  HAL_CAN_Transmit(&hcan, 10);
+
 		  }
+
 
 	  }
 
