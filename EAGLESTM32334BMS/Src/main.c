@@ -221,15 +221,9 @@ int main(void)
 	  }
 	  else{
 		  fault_counter++;
-		  if(fault_counter > 10){
-
-			  //Set the BMS to fault
-			  BMS_status = 0;
-			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
-		  }
 		  if(state == OVER_VOLTAGE || state == UNDER_VOLTAGE || state == DATA_NOT_UPDATED){
 
-			  //Send CAN message indicating a voltage fault
+			  //CAN message indicating a voltage fault
 			  TxMsg.IDE = CAN_ID_STD;
 			  TxMsg.RTR = CAN_RTR_DATA;
 			  TxMsg.DLC = 8;
@@ -243,12 +237,11 @@ int main(void)
 			  TxMsg.Data[6] = 0x00;
 			  TxMsg.Data[7] = 0x00;
 			  hcan.pTxMsg = &TxMsg;
-			  HAL_CAN_Transmit(&hcan, 10);
 
 		  }
 		  else if(state == OVER_TEMPERATURE){
 
-			  //Send CAN message indicating a cell temperature fault
+			  //CAN message indicating a cell temperature fault
 			  TxMsg.IDE = CAN_ID_STD;
 			  TxMsg.RTR = CAN_RTR_DATA;
 			  TxMsg.DLC = 8;
@@ -267,7 +260,7 @@ int main(void)
 		  }
 		  else if(state == PACK_OVER_TEMPERATURE){
 
-			  //Send CAN message indicating a pack temperature fault
+			  //CAN message indicating a pack temperature fault
 			  TxMsg.IDE = CAN_ID_STD;
 			  TxMsg.RTR = CAN_RTR_DATA;
 			  TxMsg.DLC = 8;
@@ -284,6 +277,16 @@ int main(void)
 			  HAL_CAN_Transmit(&hcan, 10);
 
 		  }
+		  if(fault_counter > 15){
+
+			  //Set the BMS to fault
+			  BMS_status = 0;
+			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
+			  //Sends the error message indicating the fault and the TS OFF
+			  HAL_CAN_Transmit(&hcan, 10);
+
+		  }
+
 
 	  }
 	  // Send pack data via CAN
