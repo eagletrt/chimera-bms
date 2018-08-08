@@ -51,7 +51,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-#define TOT_IC 5 // number of daisy chain
+#define TOT_IC 12 // number of daisy chain
 #define CELL_CH 9
 #define NUM_RX_BYT 8u
 #define BYT_IN_REG 6u
@@ -243,7 +243,7 @@ int main(void)
 	  	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 	  	 HAL_Delay(10);
 		 uint8_t data_counter = 0;
-		 for(uint8_t current_ic = 4; current_ic < TOT_IC; current_ic++){
+		 for(uint8_t current_ic = 11; current_ic < TOT_IC; current_ic++){
 
 				 ltc6804_rdcv_reg(current_ic, TOT_IC, cell_data, hspi1);
 				 HAL_Delay(500);
@@ -275,7 +275,7 @@ int main(void)
 			 HAL_Delay(10);
 			 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 			 HAL_Delay(10);
-			 for(uint8_t current_ic = 4; current_ic < TOT_IC; current_ic++){
+			 for(uint8_t current_ic = 11; current_ic < TOT_IC; current_ic++){
 				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
 				 HAL_Delay(500);
 				 	 array_temp_odd(temp, cell_data);
@@ -298,7 +298,7 @@ int main(void)
 			 HAL_Delay(10);
 			 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 			 HAL_Delay(10);
-			 for(uint8_t current_ic = 4; current_ic < TOT_IC; current_ic++){
+			 for(uint8_t current_ic = 11; current_ic < TOT_IC; current_ic++){
 				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
 				 HAL_Delay(500);
 				 array_temp_even(temp, cell_data);
@@ -309,7 +309,7 @@ int main(void)
 			 		 cell_temps[current_ic*9+7] = (uint16_t)(convert_temp(temp[7])*100);
 
 			 }
-			 for(int i = 36; i < 45; i++){
+			 for(int i = 99; i <108 ; i++){
 			 					 char v[32];
 			  					 sprintf(v, "%d - ",cell_temps[i]);
 			 					 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
