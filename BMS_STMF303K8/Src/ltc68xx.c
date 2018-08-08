@@ -67,7 +67,7 @@ void spi_write_read(uint8_t tx_Data[4],	// Array of data to be written on SPI po
 		  //}
 }
 
-uint16_t pec15(uint8_t len,uint8_t* data,uint16_t crcTable[] ){
+uint16_t pec15(uint8_t len,uint8_t data[],uint16_t crcTable[] ){
 
     uint16_t remainder,address;
 	remainder = 16;					// PEC seed
@@ -107,20 +107,20 @@ void wakeup_sleep(SPI_HandleTypeDef hspi1){
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
     HAL_Delay(1);
 }
-void max_min_voltages(uint16_t cell_codes[108], uint16_t* max_vol, uint16_t *min_vol, float *average_vol){
+void max_min_voltages(uint16_t cell_codes[108], uint16_t max_vol, uint16_t min_vol, float average_vol){
 
 	for(int i = 0; i < 108; i++){
 		//for(int j = 0; j < 9; j++){
 			if(i==0){
-				*max_vol = cell_codes[i];
-				*min_vol = cell_codes[i];
+				max_vol = cell_codes[i];
+				min_vol = cell_codes[i];
 
 			}else{
-				if(cell_codes[i] < *min_vol){
-					*min_vol = cell_codes[i];
+				if(cell_codes[i] < min_vol){
+					min_vol = cell_codes[i];
 				}
-				if(cell_codes[i] > *max_vol){
-					*max_vol = cell_codes[i];
+				if(cell_codes[i] > max_vol){
+					max_vol = cell_codes[i];
 				}
 
 			}
@@ -132,10 +132,10 @@ void max_min_voltages(uint16_t cell_codes[108], uint16_t* max_vol, uint16_t *min
 	for(int i = 0; i < 108; i++){
 		sum = sum + cell_codes[i];
 	}
-	*average_vol = sum*0.0001f / 108;
+	average_vol = sum*0.0001f / 108;
 }
 
-void array_voltages(uint16_t *voltages, uint8_t *cell_data){
+void array_voltages(uint16_t voltages[9], uint8_t cell_data[32]){
 	voltages[0] = cell_data[0] + (cell_data[1] << 8);
 	voltages[1] = cell_data[2] + (cell_data[3] << 8);
 	voltages[2] = cell_data[4] + (cell_data[5] << 8);
@@ -168,13 +168,13 @@ void array_temp_even(uint16_t temp[9], uint8_t cell_data[9]){
 	temp[7] = cell_data[20] + (cell_data[21] << 8);
 	//temp[8] = cell_data[24] + (cell_data[25] << 8);
 }
-void max_ave_temp(uint16_t cell_codes[108], uint16_t* max_temp, float *average_temp){
+void max_ave_temp(uint16_t cell_codes[108], uint16_t max_temp, float average_temp){
 	for(int i = 0; i < 108; i++){
 		if(i==0){
-			*max_temp = cell_codes[i];
+			max_temp = cell_codes[i];
 			}else{
-			if(cell_codes[i] > *max_temp){
-					*max_temp = cell_codes[i];
+			if(cell_codes[i] > max_temp){
+					max_temp = cell_codes[i];
 			}
 			}
 		}
@@ -187,7 +187,7 @@ void max_ave_temp(uint16_t cell_codes[108], uint16_t* max_temp, float *average_t
 		sum = sum + cell_codes[i];
 	}
 
-	*average_temp = sum*0.0001f / 108;
+	average_temp = sum*0.0001f / 108;
 }
 uint16_t total_pack_voltage(uint16_t cell_codes[108]){
 	uint16_t sum = 0;

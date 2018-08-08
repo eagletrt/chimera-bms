@@ -68,6 +68,7 @@ void spi_write_read(uint8_t tx_Data[],	// Array of data to be written on SPI por
 					SPI_HandleTypeDef hspi1
 			        );
 uint16_t pec15(uint8_t len,uint8_t* data, uint16_t crcTable[]);
+
 void wakeup_idle1(SPI_HandleTypeDef hspi1);
 void spi_write_array(uint8_t len, 		// Option: Number of bytes to be written on the SPI port
                      uint8_t data[] ,	// Array of bytes to be written on the SPI port

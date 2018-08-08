@@ -63,23 +63,23 @@ uint8_t spi_read_byte(uint8_t tx_dat,SPI_HandleTypeDef hspi1);
 int osal_DataLength( char *pString );
 void spi_write_read(uint8_t tx_Data[],	// Array of data to be written on SPI port
 			        uint8_t tx_len, 	// Length of the tx data arry
-			        uint8_t *rx_data,	// Input: array that will store the data read by the SPI port
+			        uint8_t rx_data[8],	// Input: array that will store the data read by the SPI port
 			        uint8_t rx_len,	// Option: number of bytes to be read from the SPI port
 					SPI_HandleTypeDef hspi1
 			        );
-uint16_t pec15(uint8_t len,uint8_t* data, uint16_t crcTable[]);
+uint16_t pec15(uint8_t len,uint8_t data[], uint16_t crcTable[]);
 void wakeup_idle1(SPI_HandleTypeDef hspi1);
 void spi_write_array(uint8_t len, 		// Option: Number of bytes to be written on the SPI port
                      uint8_t data[] ,	// Array of bytes to be written on the SPI port
 					 SPI_HandleTypeDef hspi1
 			         );
 void wakeup_sleep(SPI_HandleTypeDef hspi1);
-void max_min_voltages(uint16_t cell_codes[108], uint16_t *max_vol, uint16_t *min_vol, float *average_vol);
+void max_min_voltages(uint16_t cell_codes[108], uint16_t max_vol, uint16_t min_vol, float average_vol);
 
-void array_voltages(uint16_t *voltages, uint8_t *cell_data);
+void array_voltages(uint16_t voltages[9], uint8_t cell_data[32]);
 void array_temp_odd(uint16_t temp[9], uint8_t cell_data[9]);
 void array_temp_even(uint16_t temp[9], uint8_t cell_data[9]);
-void max_ave_temp(uint16_t cell_codes[108], uint16_t* max_temp, float *average_temp);
+void max_ave_temp(uint16_t cell_codes[108], uint16_t max_temp, float average_temp);
 float convert_temp(uint16_t volt);
 uint16_t total_pack_voltage(uint16_t cell_codes[108]);
 void ltc6804_rdcv_temp(uint8_t ic_n,				// Number of the current ic

@@ -1,0 +1,13 @@
+Se servono, questi sono i colori della grafica:
+
+BLU
+cmyk: 100, 90, 39, 39
+rgb: 30, 39, 75
+
+GIALLO
+cmyk: 4, 0, 89, 0
+rgb: 255, 236, 0
+
+ROSSO
+cmyk: 1, 90, 85, 0
+rgb: 229, 52, 42

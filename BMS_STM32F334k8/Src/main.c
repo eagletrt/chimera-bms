@@ -42,11 +42,11 @@
 
 /* USER CODE BEGIN Includes */
 
-#include "measurement.h"
-#include "eeprom.h"
-#include "can.h"
+//#include "measurement.h"
+//#include "eeprom.h"
+//#include "can.h"
 #include "ltc68xx.h"
-#include "ltc1865.h"
+//#include "ltc1865.h"
 #include <string.h>
 #include <stdlib.h>
 #include <inttypes.h>
@@ -69,9 +69,8 @@
 #define CELL_IN_REG 3u
 #define NUM_CV_REG 3u
 
-CAN_FilterConfTypeDef sFilter;
+CAN_FilterConfTypeDef tsONfilter;
 CanRxMsgTypeDef RxHeader;
-
 /* USER CODE END Includes */
 
 /* Private variables ---------------------------------------------------------*/
@@ -85,39 +84,38 @@ SPI_HandleTypeDef hspi1;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+uint8_t cell_data[32];
+uint16_t cell_voltages[108];
+uint16_t cell_temps[108];
+uint16_t parsed_cell;
+uint16_t received_pec;
+uint16_t data_pec;
+uint8_t pec_error=0;
+uint16_t voltages[9];
+int counterCicle;
+float parsed1;
+float parsed2;
+float parsed3;
+float parsed4;
+float parsed5;
+float parsed6;
+float parsed7;
+float parsed8;
+float parsed9;
+float *av_temp1 = 0;
+float *av_temp2 = 0;
+float *av_temp3 = 0;
+uint32_t *adcBuffer;
+float gigi[9];
+uint8_t *totalPack;
+uint32_t Current;
+uint8_t *tractiveVoltage;
+uint16_t *max_vol;
+uint16_t *min_vol;
+float *average_vol;
+uint16_t temp[9];
 
 
-
- uint8_t cell_data[32];
- uint16_t cell_voltages[108];
- uint16_t cell_temps[108];
- uint16_t parsed_cell;
- uint16_t received_pec;
- uint16_t data_pec;
- uint8_t pec_error=0;
- uint16_t voltages[9];
- int counterCicle = 0;
- float parsed1;
- float parsed2;
- float parsed3;
- float parsed4;
- float parsed5;
- float parsed6;
- float parsed7;
- float parsed8;
- float parsed9;
- float *av_temp1 = 0;
- float *av_temp2 = 0;
- float *av_temp3 = 0;
- uint32_t *adcBuffer;
- float gigi[9];
- uint8_t *totalPack;
- uint32_t Current;
- uint8_t *tractiveVoltage;
- uint16_t *max_vol;
- uint16_t *min_vol;
- float *average_vol;
- uint16_t temp[9];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -155,7 +153,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
 
-
+	counterCicle = 0;
 
 
 
@@ -186,21 +184,17 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   /* SETTING CAN */
-  sFilter.FilterMode = CAN_FILTERMODE_IDMASK;
-  sFilter.FilterMode = CAN_FILTERMODE_IDMASK;
-  sFilter.FilterIdLow = 0;
-  sFilter.FilterIdHigh = 0;
-  sFilter.FilterMaskIdHigh = 0;
-  sFilter.FilterMaskIdLow = 0;
-  sFilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-  sFilter.BankNumber = 0;
-  sFilter.FilterScale = CAN_FILTERSCALE_16BIT;
-  sFilter.FilterActivation = ENABLE;
-  HAL_CAN_ConfigFilter(&hcan, &sFilter);
-
+  tsONfilter.FilterMode = CAN_FILTERMODE_IDLIST;
+  tsONfilter.FilterIdHigh = 0x01 << 5;
+  tsONfilter.FilterIdLow = 0x01 << 5;
+  tsONfilter.FilterMaskIdHigh = 0x01 << 5;
+  tsONfilter.FilterMaskIdLow = 0x01 << 5;
+  tsONfilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+  tsONfilter.BankNumber = 0;
+  tsONfilter.FilterScale = CAN_FILTERSCALE_16BIT;
+  tsONfilter.FilterActivation = ENABLE;
+  HAL_CAN_ConfigFilter(&hcan, &tsONfilter);
   HAL_CAN_Init(&hcan);
-
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -250,78 +244,101 @@ int main(void)
 // 	HAL_ADC_Stop_DMA(&hadc1);
 // 	uint32_t Current = Get_Amps_Value(adcBuffer,(uint16_t)offset);
 
-
-  	 /* ----- Voltages ------*/
-  		  	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-  		  	 HAL_Delay(10);
-  			 uint8_t data_counter = 0;
-  			 for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++){
-
-  					 ltc6804_rdcv_reg(current_ic, TOT_IC, cell_data, hspi1);
-
-  			 	 	 array_voltages(voltages, cell_data);
-
-
-
-//  			 	 	char num[2];
-//  			 	 	sprintf(num, "\n");
-  			 	 //	HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
-  			 	 	 for(int i = 0; i < 9; i++){
-//  			 	 		 char v[32];
-//  			 	 		 sprintf(v, "%d - ",voltages[i]);
-//  			 	 		 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
-  			 	 		 cell_voltages[current_ic*9+i] = voltages[i];
-  			 	  	 }
-
-
-
-  			 }
-  			 //char num[8];
-
-//  			 max_min_voltages(cell_voltages, max_vol, min_vol, average_vol);
-  	//		 //Can Messages
-  	//
-  	//		 /* ----- Temperatures -----*/
-  	//
-  	//		 //odd temp
-
-  			 ltc6804_address_temp_odd(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-  			 HAL_Delay(1);
-  			 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-  			 HAL_Delay(10);
-  			 for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
-  				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
-  				 	 array_temp_odd(temp, cell_data);
-
-  				 	 cell_temps[current_ic*9+0] = (uint16_t)(convert_temp(temp[0])*100);
-  				 	 cell_temps[current_ic*9+2] = (uint16_t)(convert_temp(temp[2])*100);
-  				 	 cell_temps[current_ic*9+4] = (uint16_t)(convert_temp(temp[4])*100);
-  				 	 cell_temps[current_ic*9+6] = (uint16_t)(convert_temp(temp[6])*100);
-  				 	 cell_temps[current_ic*9+8] = (uint16_t)(convert_temp(temp[8])*100);
-
-  			 }
-
-
-  			 //
-  	//		 //ltc6804_rdcv_temp(...);
-  	//		 convert_temp();
-  	//
-  	//		 //even temp
-  			 ltc6804_address_temp_even(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-  			 HAL_Delay(1);
-  			 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
-  			 HAL_Delay(10);
-  			 for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++){
-  				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
-  			 		 array_temp_even(temp, cell_data);
-
-  			 		 cell_temps[current_ic*9+1] = (uint16_t)(convert_temp(temp[1])*100);
-  			 		 cell_temps[current_ic*9+3] = (uint16_t)(convert_temp(temp[3])*100);
-  			 		 cell_temps[current_ic*9+5] = (uint16_t)(convert_temp(temp[5])*100);
-  			 		 cell_temps[current_ic*9+7] = (uint16_t)(convert_temp(temp[7])*100);
-
-  			 }
-  			ltc6804_stop_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+//
+//  	 /* ----- Voltages ------*/
+//  		  	 ltc6804_adcv(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+//  		  	 HAL_Delay(10);
+////  			 uint8_t data_counter = 0;
+//  			 for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++){
+//
+//  					 ltc6804_rdcv_reg(current_ic, TOT_IC, cell_data, hspi1);
+//
+//  			 	 	 array_voltages(voltages, cell_data);
+//
+//
+//
+////  			 	 	char num[2];
+////  			 	 	sprintf(num, "\n");
+//  			 	 //	HAL_UART_Transmit(&huart2, &num, strlen(num), 100);
+//  			 	 	 for(int i = 0; i < 9; i++){
+////  			 	 		 char v[32];
+////  			 	 		 sprintf(v, "%d - ",voltages[i]);
+////  			 	 		 HAL_UART_Transmit(&huart2, &v, strlen(v), 100);
+//  			 	 		 cell_voltages[current_ic*9+i] = voltages[i];
+//  			 	  	 }
+//
+//
+//
+//  			 }
+//  			 //char num[8];
+//
+////  			 max_min_voltages(cell_voltages, max_vol, min_vol, average_vol);
+//  	//		 //Can Messages
+//  	//
+//  	//		 /* ----- Temperatures -----*/
+//  	//
+//  	//		 //odd temp
+//  			uint16_t temp0, temp1, temp2, temp3;
+//  			temp0 = 0;
+//  			temp1 = 0;
+//  			temp2 = 0;
+//  			temp3 = 0;
+//  			 ltc6804_address_temp_odd(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+//
+//  			 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+//  			 HAL_Delay(10);
+//  			 for(uint8_t current_ic = 0 ; current_ic < TOT_IC; current_ic++){
+//  				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
+//  				 	 array_temp_odd(temp, cell_data);
+//  				 	if(current_ic == 0){
+//  				 		temp0 = (uint16_t)(convert_temp(temp[0])*100);
+//  				 		temp2 = (uint16_t)(convert_temp(temp[2])*100);
+//  				 	}
+//  				 	if(current_ic != 0){
+//  				 		 cell_temps[current_ic*9+0] = (uint16_t)(convert_temp(temp[0])*100);
+//  				 		 cell_temps[current_ic*9+2] = (uint16_t)(convert_temp(temp[2])*100);
+//  				 	}
+//
+////  				 	 cell_temps[current_ic*9+0] = (uint16_t)(convert_temp(temp[0])*100);
+////  				 	 cell_temps[current_ic*9+2] = (uint16_t)(convert_temp(temp[2])*100);
+//  				 	 cell_temps[current_ic*9+4] = (uint16_t)(convert_temp(temp[4])*100);
+//  				 	 cell_temps[current_ic*9+6] = (uint16_t)(convert_temp(temp[6])*100);
+//  				 	 cell_temps[current_ic*9+8] = (uint16_t)(convert_temp(temp[8])*100);
+//
+//  			 }
+//
+//
+//  			 //
+//  	//		 //ltc6804_rdcv_temp(...);
+//  	//		 convert_temp();
+//  	//
+//  	//		 //even temp
+//  			 ltc6804_address_temp_even(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+////  			 HAL_Delay(1);
+//  			 ltc6804_adcv_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
+//  			 HAL_Delay(10);
+//  			 for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++){
+//  				 ltc6804_rdcv_temp(current_ic, TOT_IC, cell_data, hspi1);
+//  			 		 array_temp_even(temp, cell_data);
+//  			 		 if(current_ic == 0){
+//  			 		  	 temp1 = (uint16_t)(convert_temp(temp[1])*100);
+//  			 		 	 temp3 = (uint16_t)(convert_temp(temp[3])*100);
+//  			 		 }
+//  			 		 if(current_ic != 0){
+//  			 			 cell_temps[current_ic*9+1] = (uint16_t)(convert_temp(temp[1])*100);
+//  			 			 cell_temps[current_ic*9+3] = (uint16_t)(convert_temp(temp[3])*100);
+//  			 		 }
+////  			 		 cell_temps[current_ic*9+1] = (uint16_t)(convert_temp(temp[1])*100);
+////  			 		 cell_temps[current_ic*9+3] = (uint16_t)(convert_temp(temp[3])*100);
+//  			 		 cell_temps[current_ic*9+5] = (uint16_t)(convert_temp(temp[5])*100);
+//  			 		 cell_temps[current_ic*9+7] = (uint16_t)(convert_temp(temp[7])*100);
+//
+//  			 }
+//  			 cell_temps[0] = temp0;
+//  			 cell_temps[2] = temp2;
+//  			 cell_temps[1] = temp1;
+//  			 cell_temps[3] = temp3;
+//  			ltc6804_stop_temp(MD_7KHZ_3KHZ, DCP_DISABLED, CELL_CH_ALL, hspi1);
 //  			 for(int i = 0; i < 9; i++){
 //  					 char v[32];
 //  					 sprintf(v, "%x - ",cell_temps[7][i]);
