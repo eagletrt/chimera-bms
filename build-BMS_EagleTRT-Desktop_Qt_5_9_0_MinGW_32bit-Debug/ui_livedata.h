@@ -18,6 +18,7 @@
 #include <QtWidgets/QLCDNumber>
 #include <QtWidgets/QLabel>
 #include <QtWidgets/QProgressBar>
+#include <QtWidgets/QPushButton>
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QTableWidget>
 #include <QtWidgets/QTextEdit>
@@ -69,6 +70,7 @@ public:
     QWidget *LiveGraph;
     QTextEdit *txtSerialName;
     QLabel *label_14;
+    QPushButton *pushButton;
 
     void setupUi(QDialog *LiveData)
     {
@@ -213,6 +215,9 @@ public:
         label_14 = new QLabel(LiveData);
         label_14->setObjectName(QStringLiteral("label_14"));
         label_14->setGeometry(QRect(470, 10, 111, 31));
+        pushButton = new QPushButton(LiveData);
+        pushButton->setObjectName(QStringLiteral("pushButton"));
+        pushButton->setGeometry(QRect(760, 10, 101, 31));
 
         retranslateUi(LiveData);
 
@@ -247,6 +252,7 @@ public:
         tabWidget->setTabText(tabWidget->indexOf(Canbus), QApplication::translate("LiveData", "Canbus", Q_NULLPTR));
         tabWidget->setTabText(tabWidget->indexOf(LiveGraph), QApplication::translate("LiveData", "Live Graph", Q_NULLPTR));
         label_14->setText(QApplication::translate("LiveData", "Serial Port", Q_NULLPTR));
+        pushButton->setText(QApplication::translate("LiveData", "Connect", Q_NULLPTR));
     } // retranslateUi
 
 };
