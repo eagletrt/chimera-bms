@@ -406,7 +406,15 @@ int main(void)
 	  		  }
 
 		  }
+		  // Send all Voltages and Temperatures data via CAN
+		 	  //remove 2nd dimension for can
 
+		 	  	  for(int i=0;i<108;i++){
+		 	  		 cell_voltages_vector[i]=cell_voltages[i][0];
+		 	  		  }
+		 	  	  for(int i=0;i<108;i++){
+		 	  		  		 cell_temperatures_vector[i]=cell_voltages[i][0];
+		 	  		  		  }
 	  }
 
   /* USER CODE END WHILE */
