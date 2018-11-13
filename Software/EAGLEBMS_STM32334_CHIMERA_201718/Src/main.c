@@ -354,7 +354,7 @@ int main(void)
  			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
  			  precharge = 1;
 			  HAL_CAN_ConfigFilter(&hcan, &runFilter);
-
+// CAN MESS ERR
 		  }
 
 	  }
@@ -364,7 +364,7 @@ int main(void)
 
 		  if(RxMsg.StdId == 0x55 && RxMsg.Data[0] == 0x0A && RxMsg.Data[1] == 0x00){
 
-			  //TS ON procedure with delay as pre-charge control
+			  //TS ON procedure with inverter
 			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);
 			  precharge = 0;
 			  precharge_timer = 0;
