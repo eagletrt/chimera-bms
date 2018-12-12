@@ -38,17 +38,13 @@
   */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "stm32f3xx_hal.h"
 
 /* USER CODE BEGIN Includes */
 
+#include "stm32f3xx_hal.h"
 #include "ltc_68xx.h"
 #include "can.h"
-#include <string.h>
-#include <stdlib.h>
-#include <inttypes.h>
-#define TOT_IC 12 // number of daisy chain
-#define CELL_CH 9
+
 CAN_FilterConfTypeDef runFilter;
 CAN_FilterConfTypeDef pcFilter;
 CanRxMsgTypeDef RxMsg;
@@ -68,6 +64,8 @@ TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN PV */
 /* Private variables ---------------------------------------------------------*/
+
+Cell cells[N_CELLS];
 
 uint16_t cell_voltages[108][2];
 uint16_t cell_voltages_vector[108];
@@ -152,6 +150,8 @@ int main(void)
   MX_CAN_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
+
+  cells_init(cells,N_CELLS);
 
   // CAN FIlter Initialization
   runFilter.FilterNumber = 0;
@@ -426,6 +426,18 @@ int main(void)
   }
   /* USER CODE END 3 */
 
+}
+
+void cells_init(Cell *cells,size_t size){
+	uint8_t i;
+
+	for(i=0;i<size;i++)
+	{
+		cells[i].voltage=0;
+		cells[i].temperature=0;
+		cells[i].voltage_faults=0;
+		cells[i].temperature_faults=0;
+	}
 }
 
 /**

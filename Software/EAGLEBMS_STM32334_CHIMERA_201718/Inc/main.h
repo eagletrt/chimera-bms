@@ -44,7 +44,9 @@
 /* Includes ------------------------------------------------------------------*/
 
 /* USER CODE BEGIN Includes */
-
+#include <string.h>
+#include <stdlib.h>
+#include <inttypes.h>
 /* USER CODE END Includes */
 
 /* Private define ------------------------------------------------------------*/
@@ -62,6 +64,18 @@
 #define BMS_FAULT_Pin GPIO_PIN_10
 #define BMS_FAULT_GPIO_Port GPIOA
 
+typedef struct cell{
+	uint16_t voltage;
+	uint16_t temperature;
+
+	uint16_t voltage_faults;
+	uint16_t temperature_faults;
+} Cell;
+
+#define N_CELLS 108
+#define TOT_IC 12 // number of daisy chain
+#define CELL_CH 9
+
 /* ########################## Assert Selection ############################## */
 /**
   * @brief Uncomment the line below to expanse the "assert_param" macro in the 
@@ -70,7 +84,7 @@
 /* #define USE_FULL_ASSERT    1U */
 
 /* USER CODE BEGIN Private defines */
-
+void cells_init(Cell *cells,size_t size);
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
