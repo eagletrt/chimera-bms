@@ -40,7 +40,6 @@
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
-
 #include "stm32f3xx_hal.h"
 #include "ltc_68xx.h"
 #include "can.h"
@@ -265,7 +264,7 @@ int main(void)
 	  current_s = current_s + instCurrent - (current_s / 16);
 	  current= current_s/16;
 
-	 state = status(cell_voltages, cell_temperatures, &pack_v, &pack_t, &max_t, instCurrent, &cell, &value);
+	 state = status(cells, &pack_v, &pack_t, &max_t, instCurrent, &cell, &value);
 
 
 	  if(state == PACK_OK){

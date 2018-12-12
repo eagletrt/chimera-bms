@@ -49,6 +49,8 @@
 #include <inttypes.h>
 /* USER CODE END Includes */
 
+#include "eagle_vars.h"
+
 /* Private define ------------------------------------------------------------*/
 
 #define CurrentSensor_Pin GPIO_PIN_0
@@ -64,15 +66,6 @@
 #define BMS_FAULT_Pin GPIO_PIN_10
 #define BMS_FAULT_GPIO_Port GPIOA
 
-typedef struct cell{
-	uint16_t voltage;
-	uint16_t temperature;
-
-	uint16_t voltage_faults;
-	uint16_t temperature_faults;
-} Cell;
-
-#define N_CELLS 108
 #define TOT_IC 12 // number of daisy chain
 #define CELL_CH 9
 

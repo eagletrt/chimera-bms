@@ -88,7 +88,6 @@ uint16_t convert_temp(uint16_t volt){
   * 			the configuration information for SPI module.
   */
 void wakeup_idle(SPI_HandleTypeDef *hspi){
-
 	uint8_t data = 0xFF;
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 	HAL_SPI_Transmit(hspi, &data, 1, 1);
@@ -109,65 +108,63 @@ void wakeup_idle(SPI_HandleTypeDef *hspi){
   * @param		Pointer to current
   * @retval		Battery status
   */
-PackStateTypeDef status(uint16_t cell_voltages[108][2],
-						uint16_t cell_temperatures[108][2],
-					    uint32_t *pack_v,
-					    uint16_t *pack_t,
-					    uint16_t *max_t,
-					    int32_t current,
-					    uint8_t *cell,
-					    uint16_t *value){
 
+//PackStateTypeDef
+ Pack status(Cell *cells, CellState *state){
 
-	    uint32_t sum_t = 0;
+	 Pack pack = {0, 0, PACK_OK};
 
-	  	uint32_t pack_v_temp=0;
-	  	uint32_t max_t_temp=0;
+	 /*
+	 uint32_t sum_t = 0;
 
-	for(int i = 0; i < 108; i++){
-		if(cell_temperatures[i][0] > max_t_temp)
-		max_t_temp = cell_temperatures[i][0];
-		sum_t += cell_temperatures[i][0];
-		pack_v_temp += cell_voltages[i][0];
-		if(cell_voltages[1][1] > 10 || cell_temperatures[i][1] > 10){
+	 uint32_t pack_v_temp=0;
+	 uint32_t max_t_temp=0;
+	 */
 
-			*cell = i;
-			return DATA_NOT_UPDATED;
+	for(int i = 0; i < N_CELLS; i++){
+		state[i]=CELL_OK;
 
+		/*if(cells[i].temperature > max_t_temp){
+			max_t_temp = cells[i].temperature;
+		}*/
+
+		pack.voltage += cells[i].voltage;
+		pack.temperature += cells[i].temperature;
+
+		if(cells[i].voltage_faults > 10 || cells[i].temperature_faults > 10){
+			state[i]=CELL_DATA_NOT_UPDATED;
 		}
-		if(cell_voltages[i][0] < 25000){
 
-			*cell = i;
-			*value = cell_voltages[i][0];
-			return UNDER_VOLTAGE;
-
+		if(cells[i].voltage < CELL_MIN_VOLTAGE){
+			cell[i]=CELL_UNDER_VOLTAGE;
 		}
-		if(cell_voltages[i][0] > 42250){
 
-			*cell = i;
-			*value = cell_voltages[i][0];
-			return OVER_VOLTAGE;
-
+		if(cells[i].voltage > CELL_MAX_VOLTAGE){
+			cell[i]=CELL_OVER_VOLTAGE;
 		}
-		if(cell_temperatures[i][0] > 7000 || cell_temperatures[i][0] == 0 ){
 
-			*cell = i;
-			*value = cell_temperatures[i][0];
-			return OVER_TEMPERATURE;
-
+		if(cells[i].temperature > CELL_MAX_TEMPERATURE || cells[i].temperature == 0 ){
+			cell[i]=CELL_OVER_TEMPERATURE;
 		}
 	}
-	*pack_t = sum_t / 108;
-	if (*pack_t > 6500){
 
-		*cell = 0,
-		*value = *pack_t;
-		return PACK_OVER_TEMPERATURE;
+	pack.temperature /= N_CELLS;
 
+	if(pack.voltage < PACK_MIN_VOLTAGE){
+		pack.state=PACK_UNDER_VOLTAGE;
 	}
+	if(pack.voltage > PACK_MAX_VOLTAGE){
+		pack.state=PACK_OVER_VOLTAGE;
+	}
+	if (pack.temperature > PACK_MAX_TEMPERATURE) {
+		pack.state = PACK_OVER_TEMPERATURE;
+	}
+
+	/*
 	*max_t=max_t_temp;
-	*pack_v=pack_v_temp;
-	return PACK_OK;
+	*pack_v=pack_v_temp;*/
+
+	return pack;
 }
 
 /**
