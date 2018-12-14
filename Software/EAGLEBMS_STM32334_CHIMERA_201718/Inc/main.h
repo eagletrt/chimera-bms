@@ -66,8 +66,7 @@
 #define BMS_FAULT_Pin GPIO_PIN_10
 #define BMS_FAULT_GPIO_Port GPIOA
 
-#define TOT_IC 12 // number of daisy chain
-#define CELL_CH 9
+
 
 /* ########################## Assert Selection ############################## */
 /**

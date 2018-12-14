@@ -86,7 +86,7 @@ uint32_t adcCurrent[512];
 int32_t instCurrent;
 int32_t current;
 int32_t current_s;
-PackStateTypeDef state = PACK_OK;
+Pack state;
 
 uint8_t fault_counter = 0;
 uint8_t BMS_status = 0;
@@ -184,7 +184,7 @@ int main(void)
   HAL_Delay(10);
 
   for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++){
-	  ltc6804_rdcv_voltages(current_ic, cell_voltages, &hspi1);
+	  ltc6804_rdcv_voltages(current_ic, cells, &hspi1);
   }
 
   // Temperatures

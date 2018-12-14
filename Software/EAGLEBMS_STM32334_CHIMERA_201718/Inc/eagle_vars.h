@@ -12,6 +12,10 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
+#define TOT_IC 12 // number of daisy chain
+#define N_REGISTERS 4
+#define CELLS_PER_IC 9
+
 #define N_CELLS 108
 
 #define CELL_MIN_VOLTAGE 25000
@@ -22,6 +26,23 @@
 #define PACK_MAX_VOLTAGE N_CELLS*CELL_MAX_VOLTAGE
 #define PACK_MAX_TEMPERATURE 6500
 
+uint8_t rdcv_cmd[]={
+		0x04,	// A
+		0x06,	// B
+		0x08,	// C
+		0x0A	// D
+};
+
+/**
+ * Defines the cell distribution inside the rdcv groups
+ */
+uint8_t cell_distribution[]={
+		1,1,1,	// GROUP A
+		1,1,0,	// GROUP B
+		1,1,1,	// GROUP C
+		1,0,0	// GROUP D
+};
+
 /** @defgroup PackState Battery Pack Status
  */
 typedef enum {
@@ -29,7 +50,7 @@ typedef enum {
 	CELL_UNDER_VOLTAGE	  =	0x01U, /*!< Cell in Under Voltage */
 	CELL_OVER_VOLTAGE 	  =	0x02U, /*!< Cell in Over Voltage */
 	CELL_OVER_TEMPERATURE = 0x03U, /*!< Cell in Over Temperature */
-	CELL_DATA_NOT_UPDATED = 0x05U, /*!< Data not received form LTC68xx for more than 1000 cycles */
+	CELL_DATA_NOT_UPDATED = 0x04U, /*!< Data not received form LTC68xx for more than 1000 cycles */
 } CellState;
 
 typedef enum {
@@ -49,8 +70,8 @@ typedef struct {
 } Cell;
 
 typedef struct{
-	uint16_t voltage;
-	uint16_t temperature;
+	uint32_t voltage;
+	uint32_t temperature;
 	PackState state;
 } Pack;
 
