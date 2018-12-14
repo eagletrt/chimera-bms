@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file	ltc_68xx.h
- * @author	Dona, Riki, Gregor e Davide
+ * @author	Dona, Riki, Gregor, Davide e Matteo
  * @brief	This file contains all the functions properties for the LTC68xx
  * 			battery management
  ******************************************************************************

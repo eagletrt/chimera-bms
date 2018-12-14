@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file	ltc_68xx.c
- * @author	Dona, Riki, Gregor e Davide
+ * @author	Dona, Riki, Gregor, Davide e Matteo
  * @brief	This file contains all the functions for the LTC68xx battery
  * 			management
  ******************************************************************************
@@ -360,40 +360,26 @@ void ltc6804_rdcv_voltages(Cell cells[], SPI_HandleTypeDef *hspi) {
 			if (pec15(6, data, crcTable)
 					== (uint16_t) (data[6] * 256 + data[7])) {
 
-				if (cell_distribution[reg * 3]) {
-					cells[ic_count + count].voltage = convert_voltage(data);
-					cells[ic_count + count].voltage_faults = 0;
-					count++;
-				}
+				uint8_t cell;
+				for (cell = 0; cell < CELLS_PER_REG; cell++) {
 
-				if (cell_distribution[reg * 3 + 1]) {
-					cells[ic_count + count].voltage = convert_voltage(&data[2]);
-					cells[ic_count + count].voltage_faults = 0;
-					count++;
-				}
+					if (cell_distribution[reg * CELLS_PER_REG + cell]) {
+						cells[ic_count + count].voltage = convert_voltage(data + 2 * cell);
+						cells[ic_count + count].voltage_faults = 0;
+						count++;
+					}
 
-				if (cell_distribution[reg * 3 + 2]) {
-					cells[ic_count + count].voltage = convert_voltage(&data[4]);
-					cells[ic_count + count].voltage_faults = 0;
-					count++;
 				}
 
 			} else {
-				uint8_t count = 0;
 
-				if (cell_distribution[reg * 3]) {
-					cells[ic_count + count].voltage_faults++;
-					count++;
-				}
+				uint8_t cell;
+				for (cell = 0; cell < CELLS_PER_REG; cell++) {
 
-				if (cell_distribution[reg * 3 + 1]) {
-					cells[ic_count + count].voltage_faults++;
-					count++;
-				}
-
-				if (cell_distribution[reg * 3 + 2]) {
-					cells[ic_count + count].voltage_faults++;
-					count++;
+					if (cell_distribution[reg * CELLS_PER_REG + cell]) {
+						cells[ic_count + count].voltage_faults++;
+						count++;
+					}
 				}
 			}
 		}
