@@ -86,7 +86,9 @@ uint32_t adcCurrent[512];
 int32_t instCurrent;
 int32_t current;
 int32_t current_s;
-Pack state;
+
+Pack pack_state;
+CellState cell_state[N_CELLS];
 
 uint8_t fault_counter = 0;
 uint8_t BMS_status = 0;
@@ -150,7 +152,7 @@ int main(void)
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 
-  cells_init(cells,N_CELLS);
+  cells_init(cells, N_CELLS);
 
   // CAN FIlter Initialization
   runFilter.FilterNumber = 0;
@@ -178,14 +180,12 @@ int main(void)
   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
   precharge = 1;
 
-  // First cell  reads
-   //Voltages
+  // Initial cell reading
+  // Voltages
   ltc6804_adcv(0, &hspi1);
   HAL_Delay(10);
 
-  for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++){
-	  ltc6804_rdcv_voltages(current_ic, cells, &hspi1);
-  }
+  ltc6804_rdcv_voltages(cells, &hspi1);
 
   // Temperatures
   ltc6804_command_temperatures(1, 0, &hspi1);
@@ -201,17 +201,27 @@ int main(void)
 
   for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++)
 	  ltc6804_rdcv_temp(current_ic, 1, cell_temperatures, &hspi1);
-  ltc6804_command_temperatures(0, 0, &hspi1);
+	ltc6804_command_temperatures(0, 0, &hspi1);
 
-  //Cells 90 and 91 not working
-  cell_voltages[90][0] = (cell_voltages[89][0] + cell_voltages[88][0]) / 2;
+	//Cells 90 and 91 not working
+	cells[90].voltage = (cells[89].voltage + cells[88].voltage) / 2;
+	cells[90].temperature = (cells[89].temperature + cells[88].temperature) / 2;
+	cells[90].voltage_faults = 0;
+	cells[90].temperature_faults = 0;
+
+	cells[91].voltage = (cells[92].voltage + cells[93].voltage) / 2;
+	cells[91].temperature = (cells[92].temperature + cells[93].temperature) / 2;
+	cells[91].voltage_faults = 0;
+	cells[91].temperature_faults = 0;
+
+  /*cell_voltages[90][0] = (cell_voltages[89][0] + cell_voltages[88][0]) / 2;
   cell_voltages[91][0] = (cell_voltages[92][0] + cell_voltages[93][0]) / 2;
   cell_voltages[90][1] = 0;
   cell_voltages[91][1] = 0;
   cell_temperatures[90][0] = (cell_temperatures[89][0] + cell_temperatures[88][0]) / 2;
   cell_temperatures[91][0] = (cell_temperatures[92][0] + cell_temperatures[93][0]) / 2;
   cell_temperatures[90][1] = 0;
-  cell_temperatures[91][1] = 0;
+  cell_temperatures[91][1] = 0;*/
 
  // Start current measuring
   HAL_ADC_Start_DMA(&hadc1, adcCurrent, 512);
@@ -231,8 +241,7 @@ int main(void)
 	  // Voltages
 	  ltc6804_adcv(0, &hspi1);
 	  HAL_Delay(10);
-	  for(uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++)
-		  ltc6804_rdcv_voltages(current_ic, cell_voltages, &hspi1);
+		ltc6804_rdcv_voltages(cells, &hspi1);
 
 	  // Temperatures
 	  if (++parity == 2)
@@ -244,15 +253,18 @@ int main(void)
 		  ltc6804_rdcv_temp(current_ic, parity, cell_temperatures, &hspi1);
 	  ltc6804_command_temperatures(0, 0, &hspi1);
 
-	  //Cells 90 and 91 not working
-	  cell_voltages[90][0] = (cell_voltages[89][0] + cell_voltages[88][0])/2;
-	  cell_voltages[91][0] = (cell_voltages[92][0] + cell_voltages[93][0])/2;
-	  cell_voltages[90][1] = 0;
-	  cell_voltages[91][1] = 0;
-	  cell_temperatures[90][0] = (cell_temperatures[89][0]+cell_temperatures[88][0])/2;
-	  cell_temperatures[91][0] = (cell_temperatures[92][0]+cell_temperatures[93][0])/2;
-	  cell_temperatures[90][1] = 0;
-	  cell_temperatures[91][1] = 0;
+		//Cells 90 and 91 not working
+		cells[90].voltage = (cells[89].voltage + cells[88].voltage) / 2;
+		cells[90].temperature = (cells[89].temperature + cells[88].temperature)
+				/ 2;
+		cells[90].voltage_faults = 0;
+		cells[90].temperature_faults = 0;
+
+		cells[91].voltage = (cells[92].voltage + cells[93].voltage) / 2;
+		cells[91].temperature = (cells[92].temperature + cells[93].temperature)
+				/ 2;
+		cells[91].voltage_faults = 0;
+		cells[91].temperature_faults = 0;
 
 
 	  //Current
@@ -264,10 +276,10 @@ int main(void)
 	  current_s = current_s + instCurrent - (current_s / 16);
 	  current= current_s/16;
 
-	 state = status(cells, &pack_v, &pack_t, &max_t, instCurrent, &cell, &value);
+	 pack_state = status(cells, cell_state);
 
-
-	  if(state == PACK_OK){
+	 // TODO: Implement per-cell error monitoring
+	  if(pack_state == PACK_OK){
 
 		  fault_counter = 0;
 		  if(BMS_status == 0){
@@ -287,7 +299,7 @@ int main(void)
 			  BMS_status = 0;
 			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
 			  //Sends the error message indicating the fault and the TS OFF
-			  ErrorMsg(state, cell, value, data);
+			  ErrorMsg(pack_state, cell, value, data);
 			  CAN_Transmit(&hcan, 0xAA, 8, data);
 
 		  }
@@ -427,15 +439,14 @@ int main(void)
 
 }
 
-void cells_init(Cell *cells,size_t size){
+void cells_init(Cell *cells, size_t size) {
 	uint8_t i;
 
-	for(i=0;i<size;i++)
-	{
-		cells[i].voltage=0;
-		cells[i].temperature=0;
-		cells[i].voltage_faults=0;
-		cells[i].temperature_faults=0;
+	for (i = 0; i < size; i++) {
+		cells[i].voltage = 0;
+		cells[i].temperature = 0;
+		cells[i].voltage_faults = 0;
+		cells[i].temperature_faults = 0;
 	}
 }
 

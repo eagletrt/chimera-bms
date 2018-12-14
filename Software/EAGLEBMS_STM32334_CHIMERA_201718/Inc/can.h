@@ -14,6 +14,6 @@
 
 
 void CAN_Transmit(CAN_HandleTypeDef *canh, uint32_t ID, uint32_t DLC, uint8_t data[8]);
-void ErrorMsg(PackStateTypeDef status, uint8_t cell, uint16_t value, uint8_t data[]);
+void ErrorMsg(PackState status, uint8_t cell, uint16_t value, uint8_t data[]);
 
 #endif /* CAN_H_ */

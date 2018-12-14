@@ -99,10 +99,9 @@ void wakeup_idle(SPI_HandleTypeDef *hspi){
   * @brief		Monitors voltages and temperatures of the battery pack
   * @param		Array of cells
   * @param		Array of cell states
-  * @param		which cells reported a fault
   * @retval		Pack status
   */
- Pack status(Cell *cells, CellState *state, uint16_t *fault){
+ Pack status(Cell cells[], CellState state[]){
 
 	 Pack pack = {0, 0, PACK_OK};
 
@@ -323,8 +322,7 @@ void ltc6804_rdcv_temp(uint8_t ic_n,
 
 /**
  * @brief		Reads the data form the LTC68xx and updates the cell voltages
- * @param		Number of the LTC68xx to read the data from
- * @param		Array of voltages
+ * @param		Array of cells
  * @param		hspi pointer to a SPI_HandleTypeDef structure that contains
  * 				the configuration information for SPI module.
  */
@@ -357,8 +355,7 @@ void ltc6804_rdcv_voltages(Cell cells[], SPI_HandleTypeDef *hspi) {
 			HAL_SPI_Receive(hspi, data, 8, 100);
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
-			if (pec15(6, data, crcTable)
-					== (uint16_t) (data[6] * 256 + data[7])) {
+			if (pec15(6, data, crcTable) == (uint16_t) (data[6] * 256 + data[7])) {
 
 				uint8_t cell;
 				for (cell = 0; cell < CELLS_PER_REG; cell++) {
@@ -368,7 +365,6 @@ void ltc6804_rdcv_voltages(Cell cells[], SPI_HandleTypeDef *hspi) {
 						cells[ic_count + count].voltage_faults = 0;
 						count++;
 					}
-
 				}
 
 			} else {

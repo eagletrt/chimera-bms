@@ -36,11 +36,11 @@ void CAN_Transmit(CAN_HandleTypeDef *canh, uint32_t ID, uint32_t DLC, uint8_t da
 
 }
 
-void ErrorMsg(PackStateTypeDef status, uint8_t cell, uint16_t value, uint8_t data[]){
+void ErrorMsg(PackState status, uint8_t cell, uint16_t value, uint8_t data[]){
 
 	switch (status) {
 
-	case UNDER_VOLTAGE :
+	case PACK_UNDER_VOLTAGE :
 		data[0] = 0x08;
 		data[1] = 0x02;
 		data[2] = 0x01;
@@ -50,7 +50,7 @@ void ErrorMsg(PackStateTypeDef status, uint8_t cell, uint16_t value, uint8_t dat
 		data[6] = 0;
 		data[7] = 0;
 	break;
-	case OVER_VOLTAGE :
+	case PACK_OVER_VOLTAGE :
 		data[0] = 0x08;
 		data[1] = 0x02;
 		data[2] = 0x02;
@@ -60,7 +60,7 @@ void ErrorMsg(PackStateTypeDef status, uint8_t cell, uint16_t value, uint8_t dat
 		data[6] = 0;
 		data[7] = 0;
 		break;
-	case OVER_TEMPERATURE :
+	case CELL_OVER_TEMPERATURE :
 		data[0] = 0x08;
 		data[1] = 0x03;
 		data[2] = 0x02;
@@ -81,7 +81,7 @@ void ErrorMsg(PackStateTypeDef status, uint8_t cell, uint16_t value, uint8_t dat
 		data[7] = 0x00;
 		break;
 
-	case DATA_NOT_UPDATED :
+	case CELL_DATA_NOT_UPDATED :
 		data[0] = 0x08;
 		data[1] = 0x02;
 		data[2] = 0x00;
