@@ -308,11 +308,11 @@ int main(void)
 
 	  // Send pack data via CAN
 	  data[0] = 0x01;
-	  data[1] = (uint8_t) (pack_v >> 16);
-	  data[2] = (uint8_t) (pack_v >> 8);
-	  data[3] = (uint8_t) (pack_v);
-	  data[4] = (uint8_t) (pack_t >> 8);
-	  data[5] = (uint8_t) (pack_t);
+	  data[1] = (uint8_t) (pack_state.voltage >> 16);
+	  data[2] = (uint8_t) (pack_state.voltage >> 8);
+	  data[3] = (uint8_t) (pack_state.voltage);
+	  data[4] = (uint8_t) (pack_state.temperature >> 8);
+	  data[5] = (uint8_t) (pack_state.temperature);
 	  data[6] = (uint8_t) (max_t >> 8);
 	  data[7] = (uint8_t) (max_t);
 	  CAN_Transmit(&hcan, 0xAA, 8, data);
