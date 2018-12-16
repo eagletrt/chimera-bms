@@ -44,12 +44,12 @@
 /* Includes ------------------------------------------------------------------*/
 
 /* USER CODE BEGIN Includes */
+#include <chimera_config.h>
 #include <string.h>
 #include <stdlib.h>
 #include <inttypes.h>
 /* USER CODE END Includes */
 
-#include "eagle_vars.h"
 
 /* Private define ------------------------------------------------------------*/
 

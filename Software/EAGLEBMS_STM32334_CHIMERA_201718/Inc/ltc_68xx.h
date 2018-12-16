@@ -12,8 +12,8 @@
 #define ltc_68xx_H
 
 //	Include HAL libraries for the SPI functions
+#include <chimera_config.h>
 #include "stm32f3xx_hal.h"
-#include "eagle_vars.h"
 
 uint16_t pec15(uint8_t len,uint8_t data[], uint16_t crcTable[]);
 uint16_t convert_voltage(uint8_t v_data[]);

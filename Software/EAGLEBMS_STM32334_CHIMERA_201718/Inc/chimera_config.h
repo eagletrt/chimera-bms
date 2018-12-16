@@ -5,8 +5,8 @@
  *      Author: bonnee
  */
 
-#ifndef EAGLE_VARS_H_
-#define EAGLE_VARS_H_
+#ifndef CHIMERA_CONFIG_H_
+#define CHIMERA_CONFIG_H_
 
 #include <inttypes.h>
 
@@ -74,4 +74,4 @@ typedef struct{
 	PackState state;
 } Pack;
 
-#endif /* EAGLE_VARS_H_ */
+#endif /* CHIMERA_CONFIG_H_ */
