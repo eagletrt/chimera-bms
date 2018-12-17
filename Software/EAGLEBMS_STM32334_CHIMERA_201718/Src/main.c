@@ -4,42 +4,10 @@
   * @file           : main.c
   * @brief          : Main program body
   ******************************************************************************
-  ** This notice applies to any and all portions of this file
-  * that are not between comment pairs USER CODE BEGIN and
-  * USER CODE END. Other portions of this file, whether 
-  * inserted by the user or by software development tools
-  * are owned by their respective copyright owners.
-  *
-  * COPYRIGHT(c) 2018 STMicroelectronics
-  *
-  * Redistribution and use in source and binary forms, with or without modification,
-  * are permitted provided that the following conditions are met:
-  *   1. Redistributions of source code must retain the above copyright notice,
-  *      this list of conditions and the following disclaimer.
-  *   2. Redistributions in binary form must reproduce the above copyright notice,
-  *      this list of conditions and the following disclaimer in the documentation
-  *      and/or other materials provided with the distribution.
-  *   3. Neither the name of STMicroelectronics nor the names of its contributors
-  *      may be used to endorse or promote products derived from this software
-  *      without specific prior written permission.
-  *
-  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-  * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-  * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-  * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-  * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  *
-  ******************************************************************************
-  */
-/* Includes ------------------------------------------------------------------*/
+*/
+
 #include "main.h"
 
-/* USER CODE BEGIN Includes */
 #include "stm32f3xx_hal.h"
 #include "ltc_68xx.h"
 #include "can.h"
@@ -49,9 +17,6 @@ CAN_FilterConfTypeDef pcFilter;
 CanRxMsgTypeDef RxMsg;
 CanTxMsgTypeDef TxMsg;
 
-/* USER CODE END Includes */
-
-/* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
@@ -61,11 +26,13 @@ SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim6;
 
-/* USER CODE BEGIN PV */
-/* Private variables ---------------------------------------------------------*/
 
 Cell cells[N_CELLS];
 
+Pack pack_state;
+CellState cell_state[N_CELLS];
+
+// TODO: remove old vars
 uint16_t cell_voltages[108][2];
 uint16_t cell_voltages_vector[108];
 uint8_t parity = 0;
@@ -78,17 +45,11 @@ uint8_t cell;
 uint16_t value;
 
 uint8_t data[8];
-uint8_t InvBusVoltage[] = {0x3D, 0xEB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-uint8_t TsON[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-uint8_t TsOFF[] = {0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 uint32_t adcCurrent[512];
 int32_t instCurrent;
 int32_t current;
 int32_t current_s;
-
-Pack pack_state;
-CellState cell_state[N_CELLS];
 
 uint8_t fault_counter = 0;
 uint8_t BMS_status = 0;
@@ -96,25 +57,6 @@ uint8_t precharge;
 uint16_t precharge_timer = 0;
 int32_t bus_voltage;
 
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_DMA_Init(void);
-static void MX_SPI1_Init(void);
-static void MX_ADC1_Init(void);
-static void MX_CAN_Init(void);
-static void MX_TIM6_Init(void);
-
-/* USER CODE BEGIN PFP */
-/* Private function prototypes -----------------------------------------------*/
-
-/* USER CODE END PFP */
-
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
@@ -123,25 +65,10 @@ static void MX_TIM6_Init(void);
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
-
-  /* USER CODE END 1 */
-
-  /* MCU Configuration----------------------------------------------------------*/
-
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-
-  /* USER CODE BEGIN Init */
-
-  /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
-
-  /* USER CODE BEGIN SysInit */
-
-  /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
@@ -150,7 +77,6 @@ int main(void)
   MX_ADC1_Init();
   MX_CAN_Init();
   MX_TIM6_Init();
-  /* USER CODE BEGIN 2 */
 
   cells_init(cells, N_CELLS);
 
@@ -225,11 +151,6 @@ int main(void)
 
  // Start current measuring
   HAL_ADC_Start_DMA(&hadc1, adcCurrent, 512);
-
-  /* USER CODE END 2 */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
 
   while (1)
   {
@@ -365,7 +286,7 @@ int main(void)
  			  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
  			  precharge = 1;
 			  HAL_CAN_ConfigFilter(&hcan, &runFilter);
-// CAN MESS ERR
+			  // CAN MESS ERR
 		  }
 
 	  }
@@ -430,13 +351,6 @@ int main(void)
 		 	  		  		 cell_temperatures_vector[i]=cell_voltages[i][0];
 		 	  		  		  }
 	  }
-
-  /* USER CODE END WHILE */
-
-  /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
-
 }
 
 void cells_init(Cell *cells, size_t size) {
@@ -676,10 +590,6 @@ static void MX_GPIO_Init(void)
 
 }
 
-/* USER CODE BEGIN 4 */
-
-/* USER CODE END 4 */
-
 /**
   * @brief  This function is executed in case of error occurrence.
   * @param  file: The file name as string.
@@ -712,13 +622,3 @@ void assert_failed(uint8_t* file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
