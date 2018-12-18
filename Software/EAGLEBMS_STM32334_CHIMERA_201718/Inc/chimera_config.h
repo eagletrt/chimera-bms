@@ -10,23 +10,25 @@
 
 #include <inttypes.h>
 
-#define TOT_IC 12 // number of daisy chain
-#define CELLS_PER_IC 9	// refer to cell_distribution for arrangement
+#define TOT_IC 12 		// number of daisy chain
+#define CELLS_PER_IC 9	// refer to cell_distribution for configuration
 #define N_REGISTERS 4	// A B C D
 #define CELLS_PER_REG 3	// Each register returns a triplet
 
-#define N_CELLS TOT_IC*CELLS_PER_IC
+#define N_CELLS TOT_IC * CELLS_PER_IC
 
 #define CELL_MIN_VOLTAGE 25000
 #define CELL_MAX_VOLTAGE 42250
 #define CELL_MAX_TEMPERATURE 7000
 
-#define PACK_MIN_VOLTAGE N_CELLS*CELL_MIN_VOLTAGE
-#define PACK_MAX_VOLTAGE N_CELLS*CELL_MAX_VOLTAGE
+#define PACK_MIN_VOLTAGE N_CELLS * CELL_MIN_VOLTAGE
+#define PACK_MAX_VOLTAGE N_CELLS * CELL_MAX_VOLTAGE
 #define PACK_MAX_TEMPERATURE 6500
 #define PACK_MIN_TEMPERATURE 1000
 
-static const uint8_t rdcv_cmd[] = {
+#define CAN_ID 0xAA
+
+static const uint8_t rdcv_cmd[N_REGISTERS] = {
 		0x04,	// A
 		0x06,	// B
 		0x08,	// C

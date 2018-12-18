@@ -139,157 +139,107 @@ Pack status(Cell cells[]) {
  * @param		hspi pointer to a SPI_HandleTypeDef structure that contains
  * 				the configuration information for SPI module.
  */
-void ltc6804_rdcv_temp(uint8_t ic_n, uint8_t parity,
-		uint16_t cell_temperatures[108][2], SPI_HandleTypeDef *hspi) {
+void ltc6804_rdcv_temp(Cell cells[], SPI_HandleTypeDef *hspi) {
+	wakeup_idle(hspi);
 
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
 	uint8_t data[8];
-	cmd[0] = (uint8_t) 0x80 + 8 * ic_n;
 
-	wakeup_idle(hspi);
+	uint8_t ic;
+	uint8_t reg;
+	uint8_t parity;
 
-	// ---- Celle 1, 2, 3
-	cmd[1] = (uint8_t) 0x04;
-	cmd_pec = pec15(2, cmd, crcTable);
-	cmd[2] = (uint8_t) (cmd_pec >> 8);
-	cmd[3] = (uint8_t) (cmd_pec);
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(hspi, cmd, 4, 100);
-	HAL_SPI_Receive(hspi, data, 8, 100);
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
+	for (parity = 0; parity < 1; parity++) {
+		ltc6804_command_temperatures(1, parity, hspi);	// switch between even and odd
+		ltc6804_adcv(1, hspi);
+		HAL_Delay(10);
 
-	if (pec15(6, data, crcTable) == (uint16_t) (data[6] * 256 + data[7])) {
+		for (ic = 0; ic < TOT_IC; ic++) {
+			uint8_t count = 0;
+			uint8_t ic_count = ic * CELLS_PER_IC;
+			cmd[0] = (uint8_t) 0x80 + 8 * ic;
 
-		if (parity == 0) {
+			for (reg = 0; reg < N_REGISTERS; reg++) {
 
-			cell_temperatures[ic_n * 9 + 1][0] = convert_temp(
-					convert_voltage(&data[2]));
-			cell_temperatures[ic_n * 9 + 1][1] = 0;
+				cmd[1] = (uint8_t) rdcv_cmd[reg];
+				cmd_pec = pec15(2, cmd, crcTable);
+				cmd[2] = (uint8_t) (cmd_pec >> 8);
+				cmd[3] = (uint8_t) (cmd_pec);
 
-		} else {
+				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
+				HAL_SPI_Transmit(hspi, cmd, 4, 100);
+				HAL_SPI_Receive(hspi, data, 8, 100);
+				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
-			cell_temperatures[ic_n * 9][0] = convert_temp(
-					convert_voltage(&data[0]));
-			cell_temperatures[ic_n * 9 + 2][0] = convert_temp(
-					convert_voltage(&data[4]));
-			cell_temperatures[ic_n * 9][1] = 0;
-			cell_temperatures[ic_n * 9 + 2][1] = 0;
+				if (pec15(6, data, crcTable) == (uint16_t) (data[6] * 256 + data[7])) {
 
+					if (parity) {
+
+						count++; // Skipping the first cell
+
+						if (cell_distribution[reg * CELLS_PER_REG + 1]) {
+							cells[ic_count + count + 1].temperature = convert_temp(convert_voltage(data + 2));
+							cells[ic_count + count + 1].temperature_faults = 0;
+
+							count++;
+						}
+
+						count++; // Skipping the last cell
+					} else {
+
+						if (cell_distribution[reg * CELLS_PER_REG]) {
+							cells[ic_count + count].temperature = convert_temp(convert_voltage(data));
+							cells[ic_count + count].temperature_faults = 0;
+
+							count++;
+						}
+
+						count++; // Skipping the middle cell
+
+						if (cell_distribution[reg * CELLS_PER_REG + 2]) {
+							cells[ic_count + count].temperature = convert_temp(convert_voltage(data + 4));
+							cells[ic_count + count].temperature_faults = 0;
+
+							count++;
+						}
+					}
+
+				} else {
+
+					if (parity) {
+
+						count++; // Skipping the first cell
+
+						if (cell_distribution[reg * CELLS_PER_REG + 1]) {
+							cells[ic_count + count + 1].temperature_faults++;
+
+							count++;
+						}
+
+						count++; // Skipping the last cell
+					} else {
+
+						if (cell_distribution[reg * CELLS_PER_REG]) {
+							cells[ic_count + count].temperature_faults++;
+
+							count++;
+						}
+
+						count++; // Skipping the middle cell
+
+						if (cell_distribution[reg * CELLS_PER_REG + 2]) {
+							cells[ic_count + count].temperature_faults++;
+
+							count++;
+						}
+					}
+				}
+			}
 		}
-
-	} else {
-
-		if (parity == 0)
-			cell_temperatures[ic_n * 9 + 1][1]++;
-		else {
-
-			cell_temperatures[ic_n * 9][1]++;
-			cell_temperatures[ic_n * 9 + 2][1]++;
-
-		}
-
 	}
 
-	// ---- Celle 4, 5, /
-	cmd[1] = 0x06;
-	cmd_pec = pec15(2, cmd, crcTable);
-	cmd[2] = (uint8_t) (cmd_pec >> 8);
-	cmd[3] = (uint8_t) (cmd_pec);
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(hspi, cmd, 4, 100);
-	HAL_SPI_Receive(hspi, data, 8, 100);
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
-	if (pec15(6, data, crcTable) == (uint16_t) (data[6] * 256 + data[7])) {
-
-		if (parity == 0) {
-
-			cell_temperatures[ic_n * 9 + 3][0] = convert_temp(
-					convert_voltage(&data[0]));
-			cell_temperatures[ic_n * 9 + 3][1] = 0;
-
-		} else {
-
-			cell_temperatures[ic_n * 9 + 4][0] = convert_temp(
-					convert_voltage(&data[2]));
-			cell_temperatures[ic_n * 9 + 4][1] = 0;
-
-		}
-
-	} else {
-
-		if (parity == 0)
-			cell_temperatures[ic_n * 9 + 3][1]++;
-		else
-			cell_temperatures[ic_n * 9 + 4][1]++;
-
-	}
-
-	// ---- Celle 6, 7, 8
-	cmd[1] = 0x08;
-	cmd_pec = pec15(2, cmd, crcTable);
-	cmd[2] = (uint8_t) (cmd_pec >> 8);
-	cmd[3] = (uint8_t) (cmd_pec);
-	// CS LOW
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(hspi, cmd, 4, 100);
-	HAL_SPI_Receive(hspi, data, 8, 100);
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
-	if (pec15(6, data, crcTable) == (uint16_t) (data[6] * 256 + data[7])) {
-
-		if (parity == 0) {
-
-			cell_temperatures[ic_n * 9 + 5][0] = convert_temp(
-					convert_voltage(&data[0]));
-			cell_temperatures[ic_n * 9 + 7][0] = convert_temp(
-					convert_voltage(&data[4]));
-			cell_temperatures[ic_n * 9 + 5][1] = 0;
-			cell_temperatures[ic_n * 9 + 7][1] = 0;
-
-		} else {
-
-			cell_temperatures[ic_n * 9 + 6][0] = convert_temp(
-					convert_voltage(&data[2]));
-			cell_temperatures[ic_n * 9 + 6][1] = 0;
-
-		}
-
-	} else {
-
-		if (parity == 0) {
-
-			cell_temperatures[ic_n * 9 + 5][1]++;
-			cell_temperatures[ic_n * 9 + 7][1]++;
-
-		} else
-			cell_temperatures[ic_n * 9 + 6][1]++;
-
-	}
-
-	// ---- Celle 9, /, /
-	if (parity == 1) {
-
-		cmd[1] = 0x0A;
-		cmd_pec = pec15(2, cmd, crcTable);
-		cmd[2] = (uint8_t) (cmd_pec >> 8);
-		cmd[3] = (uint8_t) (cmd_pec);
-		// CS LOW
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-		HAL_SPI_Transmit(hspi, cmd, 4, 100);
-		HAL_SPI_Receive(hspi, data, 8, 100);
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
-		if (pec15(6, data, crcTable) == (uint16_t) (data[6] * 256 + data[7])) {
-
-			cell_temperatures[ic_n * 9 + 8][0] = convert_temp(
-					convert_voltage(&data[0]));
-			cell_temperatures[ic_n * 9 + 8][1] = 0;
-
-		} else
-			cell_temperatures[ic_n * 9 + 8][1]++;
-
-	}
-	return;
-
+	ltc6804_command_temperatures(0, 0, hspi);	// turn off temp reading
 }
 
 /**
@@ -299,12 +249,14 @@ void ltc6804_rdcv_temp(uint8_t ic_n, uint8_t parity,
  * 				the configuration information for SPI module.
  */
 void ltc6804_rdcv_voltages(Cell cells[], SPI_HandleTypeDef *hspi) {
+	wakeup_idle(hspi);
+	ltc6804_adcv(0, hspi);
+	HAL_Delay(10);
 
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
 	uint8_t data[8];
 
-	wakeup_idle(hspi);
 
 	uint8_t ic;
 	uint8_t reg;
@@ -327,15 +279,13 @@ void ltc6804_rdcv_voltages(Cell cells[], SPI_HandleTypeDef *hspi) {
 			HAL_SPI_Receive(hspi, data, 8, 100);
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
-			if (pec15(6, data, crcTable)
-					== (uint16_t) (data[6] * 256 + data[7])) {
+			if (pec15(6, data, crcTable) == (uint16_t) (data[6] * 256 + data[7])) {
 
 				uint8_t cell;
 				for (cell = 0; cell < CELLS_PER_REG; cell++) {
 
 					if (cell_distribution[reg * CELLS_PER_REG + cell]) {
-						cells[ic_count + count].voltage = convert_voltage(
-								data + 2 * cell);
+						cells[ic_count + count].voltage = convert_voltage(data + 2 * cell);
 						cells[ic_count + count].voltage_faults = 0;
 						count++;
 					}
@@ -353,72 +303,6 @@ void ltc6804_rdcv_voltages(Cell cells[], SPI_HandleTypeDef *hspi) {
 				}
 			}
 		}
-
-		/*
-
-		 // ---- Celle 4, 5, /
-		 cmd[1] = 0x06;
-		 cmd_pec = pec15(2, cmd,crcTable);
-		 cmd[2] = (uint8_t)(cmd_pec >> 8);
-		 cmd[3] = (uint8_t)(cmd_pec);
-		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-		 HAL_SPI_Transmit(hspi, cmd, 4, 100);
-		 HAL_SPI_Receive(hspi, data, 8, 100);
-		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
-
-		 if(pec15(6, data, crcTable) == (uint16_t) (data[6]*256 + data[7])){
-		 cells[ic_n*9+3].voltage = convert_voltage(data);
-		 cells[ic_n*9+4].voltage = convert_voltage(&data[2]);
-		 cells[ic_n*9+3].voltage_faults = 0;
-		 cells[ic_n*9+4].voltage_faults = 0;
-		 }else{
-		 cells[ic_n*9+3].voltage_faults++;
-		 cells[ic_n*9+4].voltage_faults++;
-
-		 }
-
-		 // ---- Celle 6, 7, 8
-		 cmd[1] = 0x08;
-		 cmd_pec = pec15(2, cmd,crcTable);
-		 cmd[2] = (uint8_t)(cmd_pec >> 8);
-		 cmd[3] = (uint8_t)(cmd_pec);
-		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-		 HAL_SPI_Transmit(hspi, cmd, 4, 100);
-		 HAL_SPI_Receive(hspi, data, 8, 100);
-		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
-
-		 if(pec15(6, data, crcTable) == (uint16_t) (data[6]*256 + data[7])){
-		 cells[ic_n*9+5].voltage = convert_voltage(data);
-		 cells[ic_n*9+6].voltage = convert_voltage(&data[2]);
-		 cells[ic_n*9+7].voltage = convert_voltage(&data[4]);
-		 cells[ic_n*9+5].voltage_faults = 0;
-		 cells[ic_n*9+6].voltage_faults = 0;
-		 cells[ic_n*9+7].voltage_faults = 0;
-		 }
-		 else{
-		 cells[ic_n*9+5].voltage_faults++;
-		 cells[ic_n*9+6].voltage_faults++;
-		 cells[ic_n*9+7].voltage_faults++;
-		 }
-
-		 // ---- Celle 9, /, /
-		 cmd[1] = 0x0A;
-		 cmd_pec = pec15(2, cmd,crcTable);
-		 cmd[2] = (uint8_t)(cmd_pec >> 8);
-		 cmd[3] = (uint8_t)(cmd_pec);
-		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-		 HAL_SPI_Transmit(hspi, cmd, 4, 100);
-		 HAL_SPI_Receive(hspi, data, 8, 100);
-		 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
-
-		 if(pec15(6, data, crcTable) == (uint16_t) (data[6]*256 + data[7])){
-		 cells[ic_n*9+8].voltage = convert_voltage(data);
-		 cells[ic_n*9+8].voltage_faults = 0;
-		 }
-		 else
-		 cells[ic_n*9+8].voltage_faults++;
-
-		 return;*/
 	}
 }
 
@@ -429,8 +313,9 @@ void ltc6804_rdcv_voltages(Cell cells[], SPI_HandleTypeDef *hspi) {
  * @param		hspi pointer to a SPI_HandleTypeDef structure that contains
  * 				the configuration information for SPI module.
  */
-void ltc6804_command_temperatures(uint8_t start, uint8_t parity,
-		SPI_HandleTypeDef *hspi) {
+void ltc6804_command_temperatures(uint8_t start, uint8_t parity, SPI_HandleTypeDef *hspi) {
+	wakeup_idle(hspi);
+	ltc6804_adcv(1, hspi);
 
 	uint8_t cmd[4];
 	uint8_t cfng[8];

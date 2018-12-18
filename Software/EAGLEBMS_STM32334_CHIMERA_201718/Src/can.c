@@ -15,11 +15,11 @@
  * @param		Data array
  * @retval		16 bit unsigned integer containing the two PEC bytes
  */
-void CAN_Transmit(CAN_HandleTypeDef *canh, uint32_t ID, uint32_t DLC, const uint8_t data[]) {
+void CAN_Transmit(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC, const uint8_t data[]) {
 
 	CanTxMsgTypeDef TxMsg;
 	TxMsg.IDE = CAN_ID_STD;
-	TxMsg.StdId = ID;
+	TxMsg.StdId = id;
 	TxMsg.DLC = DLC;
 	TxMsg.RTR = CAN_RTR_DATA;
 

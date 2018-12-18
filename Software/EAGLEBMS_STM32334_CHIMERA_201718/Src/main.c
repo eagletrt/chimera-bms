@@ -113,49 +113,6 @@ int main(void) {
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
 	precharge = 1;
 
-	// Initial cell reading
-	// Voltages
-	ltc6804_adcv(0, &hspi1);
-	HAL_Delay(10);
-
-	ltc6804_rdcv_voltages(cells, &hspi1);
-
-	// Temperatures
-	ltc6804_command_temperatures(1, 0, &hspi1);
-	ltc6804_adcv(1, &hspi1);
-	HAL_Delay(10);
-
-	for (uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++)
-		ltc6804_rdcv_temp(current_ic, 0, cell_temperatures, &hspi1);
-
-	ltc6804_command_temperatures(1, 1, &hspi1);
-	ltc6804_adcv(1, &hspi1);
-	HAL_Delay(10);
-
-	for (uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++)
-		ltc6804_rdcv_temp(current_ic, 1, cell_temperatures, &hspi1);
-	ltc6804_command_temperatures(0, 0, &hspi1);
-
-	//Cells 90 and 91 not working
-	cells[90].voltage = (cells[89].voltage + cells[88].voltage) / 2;
-	cells[90].temperature = (cells[89].temperature + cells[88].temperature) / 2;
-	cells[90].voltage_faults = 0;
-	cells[90].temperature_faults = 0;
-
-	cells[91].voltage = (cells[92].voltage + cells[93].voltage) / 2;
-	cells[91].temperature = (cells[92].temperature + cells[93].temperature) / 2;
-	cells[91].voltage_faults = 0;
-	cells[91].temperature_faults = 0;
-
-	/*cell_voltages[90][0] = (cell_voltages[89][0] + cell_voltages[88][0]) / 2;
-	 cell_voltages[91][0] = (cell_voltages[92][0] + cell_voltages[93][0]) / 2;
-	 cell_voltages[90][1] = 0;
-	 cell_voltages[91][1] = 0;
-	 cell_temperatures[90][0] = (cell_temperatures[89][0] + cell_temperatures[88][0]) / 2;
-	 cell_temperatures[91][0] = (cell_temperatures[92][0] + cell_temperatures[93][0]) / 2;
-	 cell_temperatures[90][1] = 0;
-	 cell_temperatures[91][1] = 0;*/
-
 	// Start current measuring
 	HAL_ADC_Start_DMA(&hadc1, adcCurrent, 512);
 
@@ -166,30 +123,19 @@ int main(void) {
 
 		}
 		// Voltages
-		ltc6804_adcv(0, &hspi1);
-		HAL_Delay(10);
 		ltc6804_rdcv_voltages(cells, &hspi1);
 
 		// Temperatures
-		if (++parity == 2)
-			parity = 0;
-		ltc6804_command_temperatures(1, parity, &hspi1);
-		ltc6804_adcv(1, &hspi1);
-		HAL_Delay(10);
-		for (uint8_t current_ic = 0; current_ic < TOT_IC; current_ic++)
-			ltc6804_rdcv_temp(current_ic, parity, cell_temperatures, &hspi1);
-		ltc6804_command_temperatures(0, 0, &hspi1);
+		ltc6804_rdcv_temp(cells, &hspi1);
 
 		//Cells 90 and 91 not working
 		cells[90].voltage = (cells[89].voltage + cells[88].voltage) / 2;
-		cells[90].temperature = (cells[89].temperature + cells[88].temperature)
-				/ 2;
+		cells[90].temperature = (cells[89].temperature + cells[88].temperature)	/ 2;
 		cells[90].voltage_faults = 0;
 		cells[90].temperature_faults = 0;
 
 		cells[91].voltage = (cells[92].voltage + cells[93].voltage) / 2;
-		cells[91].temperature = (cells[92].temperature + cells[93].temperature)
-				/ 2;
+		cells[91].temperature = (cells[92].temperature + cells[93].temperature)	/ 2;
 		cells[91].voltage_faults = 0;
 		cells[91].temperature_faults = 0;
 
