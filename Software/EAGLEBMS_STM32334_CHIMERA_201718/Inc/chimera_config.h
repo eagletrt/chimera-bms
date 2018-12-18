@@ -1,5 +1,5 @@
 /*
- * eagle_vars.h
+ * chimera_config.h
  *
  *  Created on: Dec 12, 2018
  *      Author: bonnee
@@ -24,8 +24,9 @@
 #define PACK_MIN_VOLTAGE N_CELLS*CELL_MIN_VOLTAGE
 #define PACK_MAX_VOLTAGE N_CELLS*CELL_MAX_VOLTAGE
 #define PACK_MAX_TEMPERATURE 6500
+#define PACK_MIN_TEMPERATURE 1000
 
-uint8_t rdcv_cmd[] = {
+static const uint8_t rdcv_cmd[] = {
 		0x04,	// A
 		0x06,	// B
 		0x08,	// C
@@ -35,43 +36,49 @@ uint8_t rdcv_cmd[] = {
 /**
  * Defines the cell distribution inside the rdcv groups
  */
-uint8_t cell_distribution[] = {
+static const uint8_t cell_distribution[] = {
 		1,1,1,	// GROUP A
 		1,1,0,	// GROUP B
 		1,1,1,	// GROUP C
 		1,0,0	// GROUP D
 };
 
-/** @defgroup PackState Battery Pack Status
+/**
+ * @defgroup single cell status
  */
 typedef enum {
 	CELL_OK				  =	0x00U,	/*!< Cell is OK */
 	CELL_UNDER_VOLTAGE	  =	0x01U,	/*!< Cell Under Voltage */
 	CELL_OVER_VOLTAGE 	  =	0x02U,	/*!< Cell Over Voltage */
-	CELL_OVER_TEMPERATURE = 0x03U,	/*!< Cell Over Temperature */
-	CELL_DATA_NOT_UPDATED = 0x04U	/*!< Data not received form LTC68xx for more than 1000 cycles */
+	CELL_UNDER_TEMPERATURE= 0x03U,
+	CELL_OVER_TEMPERATURE = 0x04U,	/*!< Cell Over Temperature */
+	CELL_DATA_NOT_UPDATED = 0x05U	/*!< Data not received form LTC68xx for more than 1000 cycles */
 } CellState;
 
+/**
+ * @defgroup Ok if all cells are ok, error otherwise
+ */
 typedef enum {
-	PACK_OK 			  =	0x00U,
-	PACK_OVER_TEMPERATURE = 0x01U,
-	PACK_UNDER_VOLTAGE	  =	0x02U,
-	PACK_OVER_VOLTAGE 	  = 0x03U
+	PACK_OK 				= 0x00U,
+	PACK_ERROR				= 0x01U
 } PackState;
 
-
+/**	Cell basic info */
 typedef struct {
-	uint16_t voltage;
-	uint16_t temperature;
+	uint16_t voltage;			/**< voltage of the cell */
+	uint16_t temperature;		/**< temperature of the cell */
 
-	uint16_t voltage_faults;
-	uint16_t temperature_faults;
+	uint8_t voltage_faults;		/**< fault counter for voltage readings */
+	uint8_t temperature_faults;	/**< fault counter for temperature readings */
+
+	CellState state;
 } Cell;
 
+/** Battery pack basic info */
 typedef struct{
-	uint32_t voltage;
-	uint32_t temperature;
-	PackState state;
+	uint32_t voltage;		/**< the total pack voltage */
+	uint32_t temperature;	/**< the average temp of all cells of the pack */
+	PackState state;		/**< general state of the pack */
 } Pack;
 
 #endif /* CHIMERA_CONFIG_H_ */

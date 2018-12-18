@@ -33,19 +33,11 @@
   */
 /* #define USE_FULL_ASSERT    1U */
 
-const uint8_t InvBusVoltage[] = {0x3D, 0xEB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-const uint8_t TsON[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-const uint8_t TsOFF[] = {0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+const uint8_t InvBusVoltage[8];
+const uint8_t TsON[8];
+const uint8_t TsOFF[8];
 
-void cells_init(Cell *cells,size_t size);
-
-void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_DMA_Init(void);
-static void MX_SPI1_Init(void);
-static void MX_ADC1_Init(void);
-static void MX_CAN_Init(void);
-static void MX_TIM6_Init(void);
+void cells_init(Cell cells[]);
 
 #ifdef __cplusplus
  extern "C" {
