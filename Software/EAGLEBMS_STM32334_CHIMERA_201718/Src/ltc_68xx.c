@@ -74,11 +74,11 @@ void wakeup_idle(SPI_HandleTypeDef *hspi) {
 /**
  * @brief		Monitors voltages and temperatures of the battery pack
  * @param		Array of cells
- * @retval		Pack status
+ * @param		Pack status
  */
-Pack status(Cell cells[]) {
+void status(Cell cells[], Pack *pack) {
 
-	Pack pack = { 0, 0, PACK_OK };
+	pack->state = PACK_OK;
 
 	/*
 	 uint32_t sum_t = 0;
@@ -101,34 +101,32 @@ Pack status(Cell cells[]) {
 
 		if (cells[i].voltage_faults > 10 || cells[i].temperature_faults > 10) {
 			cells[i].state = CELL_DATA_NOT_UPDATED;
-			pack.state = PACK_ERROR;
+			pack->state = PACK_ERROR;
 		}
 
 		if (cells[i].voltage < CELL_MIN_VOLTAGE) {
 			cells[i].state = CELL_UNDER_VOLTAGE;
-			pack.state = PACK_ERROR;
+			pack->state = PACK_ERROR;
 		}
 
 		if (cells[i].voltage > CELL_MAX_VOLTAGE) {
 			cells[i].state = CELL_OVER_VOLTAGE;
-			pack.state = PACK_ERROR;
+			pack->state = PACK_ERROR;
 		}
 
 		if (cells[i].temperature > CELL_MAX_TEMPERATURE
 				|| cells[i].temperature == 0) {
 			cells[i].state = CELL_OVER_TEMPERATURE;
-			pack.state = PACK_ERROR;
+			pack->state = PACK_ERROR;
 		}
 	}
 
-	pack.voltage = pack_volt;
-	pack.temperature = (uint16_t) (pack_temp / N_CELLS);
+	pack->voltage = pack_volt;
+	pack->temperature = (uint16_t) (pack_temp / N_CELLS);
 
 	/*
 	 *max_t=max_t_temp;
 	 *pack_v=pack_v_temp;*/
-
-	return pack;
 }
 
 /**

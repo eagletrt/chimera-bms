@@ -49,7 +49,7 @@ uint16_t pec15(uint8_t len, uint8_t data[], const uint16_t crcTable[]);
 uint16_t convert_voltage(uint8_t v_data[]);
 uint16_t convert_temp(uint16_t volt);
 void wakeup_idle(SPI_HandleTypeDef *hspi);
-Pack status(Cell cells[]);
+void status(Cell cells[], Pack *pack);
 void ltc6804_rdcv_temp(Cell cells[], SPI_HandleTypeDef *hspi);
 void ltc6804_rdcv_voltages(Cell cells[], SPI_HandleTypeDef *hspi);
 void ltc6804_command_temperatures(uint8_t start, uint8_t parity, SPI_HandleTypeDef *hspi);

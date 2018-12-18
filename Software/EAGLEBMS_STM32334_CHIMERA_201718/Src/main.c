@@ -122,6 +122,7 @@ int main(void) {
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
 
 		}
+
 		// Voltages
 		ltc6804_rdcv_voltages(cells, &hspi1);
 
@@ -146,9 +147,9 @@ int main(void) {
 
 		instCurrent = -(instCurrent / 512 - 2595) * 12.91;
 		current_s = current_s + instCurrent - (current_s / 16);
-		current = current_s / 16;
+		pack.current = current_s / 16;
 
-		pack = status(cells);
+		status(cells, &pack);
 
 		if (pack.state == PACK_ERROR) { // Cell error
 

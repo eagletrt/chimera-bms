@@ -80,6 +80,7 @@ typedef struct {
 typedef struct{
 	uint32_t voltage;		/**< the total pack voltage */
 	uint32_t temperature;	/**< the average temp of all cells of the pack */
+	int32_t current;		/**< the current flowing in or out the pack */
 	PackState state;		/**< general state of the pack */
 } Pack;
 
