@@ -33,10 +33,6 @@
   */
 /* #define USE_FULL_ASSERT    1U */
 
-const uint8_t InvBusVoltage[8];
-const uint8_t TsON[8];
-const uint8_t TsOFF[8];
-
 void cells_init(Cell cells[]);
 
 #ifdef __cplusplus

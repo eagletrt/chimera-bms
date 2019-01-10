@@ -8,6 +8,11 @@
 
 #include <can.h>
 
+
+void CAN_Init(CAN_HandleTypeDef *canh){
+
+}
+
 /**
  * @brief		This function is used to transmit a CAN message
  * @param		STD ID
@@ -33,7 +38,7 @@ void CAN_Transmit(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC, const uint
 
 }
 
-void CellErr(CAN_HandleTypeDef *canh, uint8_t index, Cell cell) {
+void CAN_CellErr(CAN_HandleTypeDef *canh, uint8_t index, Cell cell) {
 
 	uint8_t data[8];
 

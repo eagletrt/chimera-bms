@@ -80,21 +80,15 @@ void status(Cell cells[], Pack *pack) {
 
 	pack->state = PACK_OK;
 
-	/*
-	 uint32_t sum_t = 0;
-	 uint32_t pack_v_temp=0;
-	 uint32_t max_t_temp=0;
-	 */
-
 	uint32_t pack_volt = 0;
 	uint32_t pack_temp = 0;
+	uint32_t max_cell_temp=0;
 
 	for (int i = 0; i < N_CELLS; i++) {
 		cells[i].state = CELL_OK;
 
-		/*if(cells[i].temperature > max_t_temp){
-		 max_t_temp = cells[i].temperature;
-		 }*/
+		if(cells[i].temperature > max_cell_temp)
+			max_cell_temp=cells[i].temperature;
 
 		pack_volt += cells[i].voltage;
 		pack_temp += cells[i].temperature;
@@ -123,10 +117,8 @@ void status(Cell cells[], Pack *pack) {
 
 	pack->voltage = pack_volt;
 	pack->temperature = (uint16_t) (pack_temp / N_CELLS);
+	pack->max_temperature=(uint16_t)max_cell_temp;
 
-	/*
-	 *max_t=max_t_temp;
-	 *pack_v=pack_v_temp;*/
 }
 
 /**

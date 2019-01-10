@@ -78,10 +78,12 @@ typedef struct {
 
 /** Battery pack basic info */
 typedef struct{
-	uint32_t voltage;		/**< the total pack voltage */
-	uint32_t temperature;	/**< the average temp of all cells of the pack */
-	int32_t current;		/**< the current flowing in or out the pack */
-	PackState state;		/**< general state of the pack */
+	uint32_t voltage;			/**< the total pack voltage */
+	uint16_t temperature;		/**< the average temp of all cells of the pack */
+	uint16_t max_temperature;	/**< the max registered cell temperature */
+
+	int32_t current;			/**< the current flowing in or out the pack */
+	PackState state;			/**< general state of the pack */
 } Pack;
 
 #endif /* CHIMERA_CONFIG_H_ */

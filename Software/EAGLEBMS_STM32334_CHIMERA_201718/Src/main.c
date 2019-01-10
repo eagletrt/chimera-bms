@@ -5,15 +5,10 @@
  ******************************************************************************
  */
 
-#include "main.h"
-
 #include "stm32f3xx_hal.h"
 #include "ltc_68xx.h"
+#include "main.h"
 #include "can.h"
-
-const uint8_t InvBusVoltage[] = {0x3D, 0xEB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-const uint8_t TsON[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-const uint8_t TsOFF[] = {0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
@@ -22,6 +17,11 @@ static void MX_DMA_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_CAN_Init(void);
 static void MX_TIM6_Init(void);
+
+
+const uint8_t InvBusVoltage[] = {0x3D, 0xEB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+const uint8_t TsON[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+const uint8_t TsOFF[] = {0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 CAN_FilterConfTypeDef runFilter;
 CAN_FilterConfTypeDef pcFilter;
@@ -42,7 +42,7 @@ Cell cells[N_CELLS];
 Pack pack;
 
 // TODO: remove old vars
-uint16_t cell_voltages[108][2];
+/*uint16_t cell_voltages[108][2];
 uint16_t cell_voltages_vector[108];
 uint8_t parity = 0;
 uint16_t cell_temperatures[108][2];
@@ -51,7 +51,7 @@ uint32_t pack_v;
 uint16_t pack_t;
 uint16_t max_t;
 uint8_t cell;
-uint16_t value;
+uint16_t value;*/
 
 uint8_t data[8];
 
@@ -85,9 +85,10 @@ int main(void) {
 	MX_CAN_Init();
 	MX_TIM6_Init();
 
-	cells_init(cells);
+	CAN_Init(&hcan);
 
-	// CAN FIlter Initialization
+	// TODO: what are these?
+	// CAN Filter Initialization
 	runFilter.FilterNumber = 0;
 	runFilter.FilterMode = CAN_FILTERMODE_IDLIST;
 	runFilter.FilterIdLow = 0x55 << 5;
@@ -109,6 +110,8 @@ int main(void) {
 	pcFilter.FilterScale = CAN_FILTERSCALE_16BIT;
 	pcFilter.FilterActivation = ENABLE;
 
+	cells_init(cells);
+
 	// BMS Status OFF
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
 	precharge = 1;
@@ -129,7 +132,7 @@ int main(void) {
 		// Temperatures
 		ltc6804_rdcv_temp(cells, &hspi1);
 
-		//Cells 90 and 91 not working
+		// Cells 90 and 91 not working
 		cells[90].voltage = (cells[89].voltage + cells[88].voltage) / 2;
 		cells[90].temperature = (cells[89].temperature + cells[88].temperature)	/ 2;
 		cells[90].voltage_faults = 0;
@@ -163,7 +166,7 @@ int main(void) {
 
 				for (i = 0; i < N_CELLS; i++) {
 					//Sends the error message indicating the fault and the TS OFF
-					CellErr(&hcan, i, cells[i]);
+					CAN_CellErr(&hcan, i, cells[i]);
 				}
 			}
 		} else {
@@ -176,7 +179,6 @@ int main(void) {
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
 
 			}
-
 		}
 
 		// Send pack data via CAN
@@ -186,8 +188,8 @@ int main(void) {
 		data[3] = (uint8_t) (pack.voltage);
 		data[4] = (uint8_t) (pack.temperature >> 8);
 		data[5] = (uint8_t) (pack.temperature);
-		data[6] = (uint8_t) (max_t >> 8);
-		data[7] = (uint8_t) (max_t);
+		data[6] = (uint8_t) (pack.max_temperature >> 8);
+		data[7] = (uint8_t) (pack.max_temperature);
 		CAN_Transmit(&hcan, 0xAA, 8, data);
 
 		// Send current data via CAN
@@ -222,7 +224,7 @@ int main(void) {
 			}
 			bus_voltage = bus_voltage * 10000 / 31.499;
 
-			if (bus_voltage > pack_v * 0.90) {
+			if (bus_voltage > pack.voltage * 0.90) {
 				HAL_Delay(1000);
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
 				HAL_Delay(1);
@@ -274,15 +276,15 @@ int main(void) {
 
 			} else if (RxMsg.StdId == 0xA8) {
 
-				for (uint8_t i = 0; i < 108; i += 3) {
+				for (uint8_t i = 0; i < N_CELLS; i += 3) {
 
 					data[0] = i;
-					data[1] = (uint8_t) (cell_voltages[i][0] / 400);   //*0.04
-					data[2] = (uint8_t) (cell_temperatures[i][0] / 40);   //*.4
-					data[3] = (uint8_t) (cell_voltages[i + 1][0] / 400);
-					data[4] = (uint8_t) (cell_temperatures[i + 1][0] / 40);
-					data[5] = (uint8_t) (cell_voltages[i + 2][0] / 400);
-					data[6] = (uint8_t) (cell_temperatures[i + 2][0] / 40);
+					data[1] = (uint8_t) (cells[i].voltage / 400);   //*0.04
+					data[2] = (uint8_t) (cells[i].temperature / 40);   //*.4
+					data[3] = (uint8_t) (cells[i].voltage / 400);
+					data[4] = (uint8_t) (cells[i + 1].temperature / 40);
+					data[5] = (uint8_t) (cells[i + 2].voltage / 400);
+					data[6] = (uint8_t) (cells[i + 2].temperature / 40);
 					data[7] = 0;
 					CAN_Transmit(&hcan, 0xAB, 8, data);
 					HAL_Delay(10);
