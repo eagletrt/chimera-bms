@@ -10,12 +10,14 @@
 
 #include <inttypes.h>
 
-#define TOT_IC 12 		// number of daisy chain
-#define CELLS_PER_IC 9	// refer to cell_distribution for configuration
-#define N_REGISTERS 4	// A B C D
-#define CELLS_PER_REG 3	// Each register returns a triplet
+#define TOT_IC 12 		// number of daisy chained ICs
+#define CELLS_PER_IC 9	// How many cells an ic controls. Refer to cell_distribution for configuration
+#define N_REGISTERS 4	// How many registers are used on the IC. A B C D
+#define CELLS_PER_REG 3	// Each register returns a triplet of values. Refer to cell_distribution.
 
 #define N_CELLS TOT_IC * CELLS_PER_IC
+
+#define CELL_RATED_CAPACITY 14400 * 4 // Coulomb
 
 #define CELL_MIN_VOLTAGE 25000
 #define CELL_MAX_VOLTAGE 42250
