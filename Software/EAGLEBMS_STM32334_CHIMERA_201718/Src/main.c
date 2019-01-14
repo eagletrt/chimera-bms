@@ -18,10 +18,9 @@ static void MX_SPI1_Init(void);
 static void MX_CAN_Init(void);
 static void MX_TIM6_Init(void);
 
-
-const uint8_t InvBusVoltage[] = {0x3D, 0xEB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-const uint8_t TsON[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-const uint8_t TsOFF[] = {0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t InvBusVoltage[] = {0x3D, 0xEB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t TsON[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t TsOFF[] = {0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 CAN_FilterConfTypeDef runFilter;
 CAN_FilterConfTypeDef pcFilter;
@@ -37,21 +36,9 @@ SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim6;
 
-Cell cells[N_CELLS];
+Cell cells[CELL_COUNT];
 
 Pack pack;
-
-// TODO: remove old vars
-/*uint16_t cell_voltages[108][2];
-uint16_t cell_voltages_vector[108];
-uint8_t parity = 0;
-uint16_t cell_temperatures[108][2];
-uint16_t cell_temperatures_vector[108];
-uint32_t pack_v;
-uint16_t pack_t;
-uint16_t max_t;
-uint8_t cell;
-uint16_t value;*/
 
 uint8_t data[8];
 
@@ -164,7 +151,7 @@ int main(void) {
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
 				uint8_t i;
 
-				for (i = 0; i < N_CELLS; i++) {
+				for (i = 0; i < CELL_COUNT; i++) {
 					//Sends the error message indicating the fault and the TS OFF
 					CAN_CellErr(&hcan, i, cells[i]);
 				}
@@ -276,7 +263,7 @@ int main(void) {
 
 			} else if (RxMsg.StdId == 0xA8) {
 
-				for (uint8_t i = 0; i < N_CELLS; i += 3) {
+				for (uint8_t i = 0; i < CELL_COUNT; i += 3) {
 
 					data[0] = i;
 					data[1] = (uint8_t) (cells[i].voltage / 400);   //*0.04
@@ -298,7 +285,7 @@ int main(void) {
 void cells_init(Cell cells[]) {
 
 	uint8_t i;
-	for (i = 0; i < N_CELLS; i++) {
+	for (i = 0; i < CELL_COUNT; i++) {
 		cells[i].voltage = 0;
 		cells[i].temperature = 0;
 		cells[i].voltage_faults = 0;

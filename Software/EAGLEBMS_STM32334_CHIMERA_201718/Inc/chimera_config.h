@@ -10,35 +10,29 @@
 
 #include <inttypes.h>
 
-#define TOT_IC 12 		// number of daisy chained ICs
-#define CELLS_PER_IC 9	// How many cells an ic controls. Refer to cell_distribution for configuration
-#define N_REGISTERS 4	// How many registers are used on the IC. A B C D
-#define CELLS_PER_REG 3	// Each register returns a triplet of values. Refer to cell_distribution.
+enum {
+	IC_COUNT = 12,							// Number of daisy chained ICs
+	IC_CELL_COUNT = 9,						// Number of cells a single IC controls. Refer to cell_distribution for configuration
+	IC_REG_COUNT = 4,						// Number of registers for a single IC. A, B, C, D
+	IC_REG_CELL_COUNT = 3,					// Number of cells handled by a register. Refer to cell distribution
+	CELL_COUNT = IC_COUNT * IC_CELL_COUNT,	// Total number of cells in series
+	CELL_RATED_CAPACITY = 14400 * 4,		// The rated capacity of a parallel module. Expressed in Coulomb
 
-#define N_CELLS TOT_IC * CELLS_PER_IC
+	CELL_MIN_VOLTAGE = 25000,
+	CELL_MAX_VOLTAGE = 42250,
+	CELL_MIN_TEMPERATURE = 0000,
+	CELL_MAX_TEMPERATURE = 7000,
 
-#define CELL_RATED_CAPACITY 14400 * 4 // Coulomb
-
-#define CELL_MIN_VOLTAGE 25000
-#define CELL_MAX_VOLTAGE 42250
-#define CELL_MAX_TEMPERATURE 7000
-
-#define PACK_MIN_VOLTAGE N_CELLS * CELL_MIN_VOLTAGE
-#define PACK_MAX_VOLTAGE N_CELLS * CELL_MAX_VOLTAGE
-#define PACK_MAX_TEMPERATURE 6500
-#define PACK_MIN_TEMPERATURE 1000
-
-#define CAN_ID 0xAA
-
-static const uint8_t rdcv_cmd[N_REGISTERS] = {
-		0x04,	// A
-		0x06,	// B
-		0x08,	// C
-		0x0A	// D
+	PACK_MIN_VOLTAGE = CELL_COUNT * CELL_MIN_VOLTAGE,
+	PACK_MAX_VOLTAGE = CELL_COUNT * CELL_MAX_VOLTAGE,
+	PACK_MAX_TEMPERATURE = 6500,
+	PACK_MIN_TEMPERATURE = 1000
 };
 
 /**
- * Defines the cell distribution inside the rdcv groups
+ * Defines the cell distribution inside the rdcv groups.
+ * 0: cell not present
+ * 1: cell present
  */
 static const uint8_t cell_distribution[] = {
 		1,1,1,	// GROUP A

@@ -74,7 +74,7 @@ void wakeup_idle(SPI_HandleTypeDef *hspi) {
 /**
  * @brief		Monitors voltages and temperatures of the battery pack
  * @param		Array of cells
- * @param		Pack status
+ * @param		Pack object
  */
 void status(Cell cells[], Pack *pack) {
 
@@ -84,7 +84,7 @@ void status(Cell cells[], Pack *pack) {
 	uint32_t pack_temp = 0;
 	uint32_t max_cell_temp=0;
 
-	for (int i = 0; i < N_CELLS; i++) {
+	for (int i = 0; i < CELL_COUNT; i++) {
 		cells[i].state = CELL_OK;
 
 		if(cells[i].temperature > max_cell_temp)
@@ -116,16 +116,14 @@ void status(Cell cells[], Pack *pack) {
 	}
 
 	pack->voltage = pack_volt;
-	pack->temperature = (uint16_t) (pack_temp / N_CELLS);
+	pack->temperature = (uint16_t) (pack_temp / CELL_COUNT);
 	pack->max_temperature=(uint16_t)max_cell_temp;
 
 }
 
 /**
  * @brief		Reads the data form the LTC68xx and updates the cell temperatures
- * @param		Number of the LTC68xx to read the data from
- * @param		uint8_t that indicates if we are reading even or odd temperatures
- * @param		Array of temperatures
+ * @param		array of cells
  * @param		hspi pointer to a SPI_HandleTypeDef structure that contains
  * 				the configuration information for SPI module.
  */
@@ -145,12 +143,12 @@ void ltc6804_rdcv_temp(Cell cells[], SPI_HandleTypeDef *hspi) {
 		ltc6804_adcv(1, hspi);
 		HAL_Delay(10);
 
-		for (ic = 0; ic < TOT_IC; ic++) {
+		for (ic = 0; ic < IC_COUNT; ic++) {
 			uint8_t count = 0;
-			uint8_t ic_count = ic * CELLS_PER_IC;
+			uint8_t ic_count = ic * IC_CELL_COUNT;
 			cmd[0] = (uint8_t) 0x80 + 8 * ic;
 
-			for (reg = 0; reg < N_REGISTERS; reg++) {
+			for (reg = 0; reg < IC_REG_COUNT; reg++) {
 
 				cmd[1] = (uint8_t) rdcv_cmd[reg];
 				cmd_pec = pec15(2, cmd, crcTable);
@@ -162,67 +160,48 @@ void ltc6804_rdcv_temp(Cell cells[], SPI_HandleTypeDef *hspi) {
 				HAL_SPI_Receive(hspi, data, 8, 100);
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
-				if (pec15(6, data, crcTable) == (uint16_t) (data[6] * 256 + data[7])) {
+				uint8_t pec = pec15(6, data, crcTable) == (uint16_t) (data[6] * 256 + data[7]);
 
-					if (parity) {
+				if (parity) {
 
-						count++; // Skipping the first cell
+					count++; // Skipping the first cell
 
-						if (cell_distribution[reg * CELLS_PER_REG + 1]) {
+					if (cell_distribution[reg * IC_REG_CELL_COUNT + 1]) {
+						if (pec) {
 							cells[ic_count + count + 1].temperature = convert_temp(convert_voltage(data + 2));
 							cells[ic_count + count + 1].temperature_faults = 0;
-
-							count++;
+						} else {
+							cells[ic_count + count + 1].temperature_faults++;
 						}
 
-						count++; // Skipping the last cell
-					} else {
-
-						if (cell_distribution[reg * CELLS_PER_REG]) {
-							cells[ic_count + count].temperature = convert_temp(convert_voltage(data));
-							cells[ic_count + count].temperature_faults = 0;
-
-							count++;
-						}
-
-						count++; // Skipping the middle cell
-
-						if (cell_distribution[reg * CELLS_PER_REG + 2]) {
-							cells[ic_count + count].temperature = convert_temp(convert_voltage(data + 4));
-							cells[ic_count + count].temperature_faults = 0;
-
-							count++;
-						}
+						count++;
 					}
 
+					count++; // Skipping the last cell
 				} else {
 
-					if (parity) {
-
-						count++; // Skipping the first cell
-
-						if (cell_distribution[reg * CELLS_PER_REG + 1]) {
-							cells[ic_count + count + 1].temperature_faults++;
-
-							count++;
-						}
-
-						count++; // Skipping the last cell
-					} else {
-
-						if (cell_distribution[reg * CELLS_PER_REG]) {
+					if (cell_distribution[reg * IC_REG_CELL_COUNT]) {
+						if (pec) {
+							cells[ic_count + count].temperature = convert_temp(convert_voltage(data));
+							cells[ic_count + count].temperature_faults = 0;
+						} else {
 							cells[ic_count + count].temperature_faults++;
-
-							count++;
 						}
 
-						count++; // Skipping the middle cell
+						count++;
+					}
 
-						if (cell_distribution[reg * CELLS_PER_REG + 2]) {
+					count++; // Skipping the middle cell
+
+					if (cell_distribution[reg * IC_REG_CELL_COUNT + 2]) {
+						if (pec) {
+							cells[ic_count + count].temperature = convert_temp(convert_voltage(data + 4));
+							cells[ic_count + count].temperature_faults = 0;
+						} else {
 							cells[ic_count + count].temperature_faults++;
-
-							count++;
 						}
+
+						count++;
 					}
 				}
 			}
@@ -250,14 +229,14 @@ void ltc6804_rdcv_voltages(Cell cells[], SPI_HandleTypeDef *hspi) {
 
 	uint8_t ic;
 	uint8_t reg;
-	for (ic = 0; ic < TOT_IC; ic++) {
+	for (ic = 0; ic < IC_COUNT; ic++) {
 		// if cell_distribution is 0 the count is not increased
 		uint8_t count = 0;
-		uint8_t ic_count = ic * CELLS_PER_IC;
+		uint8_t ic_count = ic * IC_CELL_COUNT;
 
 		cmd[0] = (uint8_t) 0x80 + 8 * ic;
 
-		for (reg = 0; reg < N_REGISTERS; reg++) {
+		for (reg = 0; reg < IC_REG_COUNT; reg++) {
 
 			cmd[1] = (uint8_t) rdcv_cmd[reg];
 			cmd_pec = pec15(2, cmd, crcTable);
@@ -269,27 +248,20 @@ void ltc6804_rdcv_voltages(Cell cells[], SPI_HandleTypeDef *hspi) {
 			HAL_SPI_Receive(hspi, data, 8, 100);
 			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
-			if (pec15(6, data, crcTable) == (uint16_t) (data[6] * 256 + data[7])) {
+			uint8_t pec = pec15(6, data, crcTable) == (uint16_t) (data[6] * 256 + data[7]);
+			uint8_t cell;
+			for (cell = 0; cell < IC_REG_CELL_COUNT; cell++) {
 
-				uint8_t cell;
-				for (cell = 0; cell < CELLS_PER_REG; cell++) {
+				if (cell_distribution[reg * IC_REG_CELL_COUNT + cell]) {
 
-					if (cell_distribution[reg * CELLS_PER_REG + cell]) {
+					if (pec) {
 						cells[ic_count + count].voltage = convert_voltage(data + 2 * cell);
 						cells[ic_count + count].voltage_faults = 0;
-						count++;
-					}
-				}
 
-			} else {
-
-				uint8_t cell;
-				for (cell = 0; cell < CELLS_PER_REG; cell++) {
-
-					if (cell_distribution[reg * CELLS_PER_REG + cell]) {
+					} else {
 						cells[ic_count + count].voltage_faults++;
-						count++;
 					}
+					count++;
 				}
 			}
 		}
