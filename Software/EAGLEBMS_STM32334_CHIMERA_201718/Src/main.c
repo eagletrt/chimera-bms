@@ -19,8 +19,9 @@ static void MX_CAN_Init(void);
 static void MX_TIM6_Init(void);
 
 static const uint8_t InvBusVoltage[] = {0x3D, 0xEB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-static const uint8_t TsON[] = {0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-static const uint8_t TsOFF[] = {0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+static const uint8_t TsON[] = {CAN_CONFIRM_START, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t TsOFF[] = {CAN_CONFIRM_STOP, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 CAN_FilterConfTypeDef runFilter;
 CAN_FilterConfTypeDef pcFilter;
@@ -169,7 +170,7 @@ int main(void) {
 		}
 
 		// Send pack data via CAN
-		data[0] = 0x01;
+		data[0] = CAN_PACK_STATE;
 		data[1] = (uint8_t) (pack.voltage >> 16);
 		data[2] = (uint8_t) (pack.voltage >> 8);
 		data[3] = (uint8_t) (pack.voltage);
@@ -180,7 +181,7 @@ int main(void) {
 		CAN_Transmit(&hcan, 0xAA, 8, data);
 
 		// Send current data via CAN
-		data[0] = 0x05;
+		data[0] = CAN_CURRENT;
 		data[1] = (int8_t) (current >> 16);
 		data[2] = (int8_t) (current >> 8);
 		data[3] = (int8_t) current;
@@ -191,7 +192,6 @@ int main(void) {
 		CAN_Transmit(&hcan, 0xAA, 8, data);
 
 		if (precharge == 0) {
-
 			//inverter1 bus voltage request
 			CAN_Transmit(&hcan, 0x201, 3, InvBusVoltage);
 
@@ -209,10 +209,11 @@ int main(void) {
 
 				}
 			}
+
 			bus_voltage = bus_voltage * 10000 / 31.499;
 
 			if (bus_voltage > pack.voltage * 0.90) {
-				HAL_Delay(1000);
+				HAL_Delay(1000); // TODO: use a timer
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
 				HAL_Delay(1);
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
@@ -249,7 +250,7 @@ int main(void) {
 
 				//TS ON procedure with delay as pre-charge control
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);
-				HAL_Delay(15000);
+				HAL_Delay(15000); // TODO: Use a timer
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
 				HAL_Delay(1);
 				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
@@ -276,7 +277,6 @@ int main(void) {
 					CAN_Transmit(&hcan, 0xAB, 8, data);
 					HAL_Delay(10);
 				}
-
 			}
 		}
 	}
