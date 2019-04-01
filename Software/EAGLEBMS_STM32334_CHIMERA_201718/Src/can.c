@@ -8,9 +8,49 @@
 
 #include <can.h>
 
+CAN_FilterConfTypeDef runFilter; // CAN filter used during regular use
+CAN_FilterConfTypeDef pcFilter; // CAN filter used during precharge cycle
 
-void CAN_Init(CAN_HandleTypeDef *canh){
+void CAN_Init(CAN_HandleTypeDef *canh) {
+	CAN_Init(canh);
 
+	// CAN Filter Initialization
+	runFilter.FilterNumber = 0;
+	runFilter.FilterMode = CAN_FILTERMODE_IDLIST;
+	runFilter.FilterIdLow = 0x55 << 5;
+	runFilter.FilterIdHigh = 0xA8 << 5;
+	runFilter.FilterMaskIdHigh = 0x55 << 5;
+	runFilter.FilterMaskIdLow = 0x55 << 5;
+	runFilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	runFilter.FilterScale = CAN_FILTERSCALE_16BIT;
+	runFilter.FilterActivation = ENABLE;
+
+	HAL_CAN_ConfigFilter(canh, &runFilter);
+
+	pcFilter.FilterNumber = 0;
+	pcFilter.FilterMode = CAN_FILTERMODE_IDLIST;
+	pcFilter.FilterIdLow = 0x181 << 5;
+	pcFilter.FilterIdHigh = 0x181 << 5;
+	pcFilter.FilterMaskIdHigh = 0x181 << 5;
+	pcFilter.FilterMaskIdLow = 0x181 << 5;
+	pcFilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	pcFilter.FilterScale = CAN_FILTERSCALE_16BIT;
+	pcFilter.FilterActivation = ENABLE;
+
+}
+
+uint8_t CAN_recv(CAN_HandleTypeDef *canh, CanRxMsgTypeDef*rx) {
+
+	(*canh).pRxMsg = rx;
+	return HAL_CAN_Receive(canh, CAN_FIFO0, 1) == HAL_OK;
+
+}
+
+void CAN_filter_precharge(CAN_HandleTypeDef *canh) {
+	HAL_CAN_ConfigFilter(canh, &pcFilter);
+}
+void CAN_filter_normal(CAN_HandleTypeDef *canh) {
+	HAL_CAN_ConfigFilter(canh, &runFilter);
 }
 
 /**
@@ -20,7 +60,8 @@ void CAN_Init(CAN_HandleTypeDef *canh){
  * @param		Data array
  * @retval		16 bit unsigned integer containing the two PEC bytes
  */
-void CAN_Transmit(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC, const uint8_t data[]) {
+void CAN_Transmit(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
+		const uint8_t data[]) {
 
 	CanTxMsgTypeDef TxMsg;
 	TxMsg.IDE = CAN_ID_STD;

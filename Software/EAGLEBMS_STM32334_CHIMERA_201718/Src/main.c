@@ -18,15 +18,14 @@ static void MX_SPI1_Init(void);
 static void MX_CAN_Init(void);
 static void MX_TIM6_Init(void);
 
-static const uint8_t InvBusVoltage[] = {0x3D, 0xEB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+static const uint8_t InvBusVoltage[] = { 0x3D, 0xEB, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00 };
+static const uint8_t TsON[] = { CAN_CONFIRM_START, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00 };
+static const uint8_t TsOFF[] = { CAN_CONFIRM_STOP, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00 };
 
-static const uint8_t TsON[] = {CAN_CONFIRM_START, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-static const uint8_t TsOFF[] = {CAN_CONFIRM_STOP, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
-CAN_FilterConfTypeDef runFilter;
-CAN_FilterConfTypeDef pcFilter;
-CanRxMsgTypeDef RxMsg;
-CanTxMsgTypeDef TxMsg;
+CanRxMsgTypeDef can_rx;
 
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
@@ -49,8 +48,8 @@ int32_t current;
 int32_t current_s;
 
 uint8_t fault_counter = 0;
-uint8_t BMS_status = 0;
-uint8_t precharge;
+
+BMSStatus state;
 uint16_t precharge_timer = 0;
 int32_t bus_voltage;
 
@@ -75,210 +74,236 @@ int main(void) {
 
 	CAN_Init(&hcan);
 
-	// TODO: what are these?
-	// CAN Filter Initialization
-	runFilter.FilterNumber = 0;
-	runFilter.FilterMode = CAN_FILTERMODE_IDLIST;
-	runFilter.FilterIdLow = 0x55 << 5;
-	runFilter.FilterIdHigh = 0xA8 << 5;
-	runFilter.FilterMaskIdHigh = 0x55 << 5;
-	runFilter.FilterMaskIdLow = 0x55 << 5;
-	runFilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-	runFilter.FilterScale = CAN_FILTERSCALE_16BIT;
-	runFilter.FilterActivation = ENABLE;
-	HAL_CAN_ConfigFilter(&hcan, &runFilter);
-
-	pcFilter.FilterNumber = 0;
-	pcFilter.FilterMode = CAN_FILTERMODE_IDLIST;
-	pcFilter.FilterIdLow = 0x181 << 5;
-	pcFilter.FilterIdHigh = 0x181 << 5;
-	pcFilter.FilterMaskIdHigh = 0x181 << 5;
-	pcFilter.FilterMaskIdLow = 0x181 << 5;
-	pcFilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-	pcFilter.FilterScale = CAN_FILTERSCALE_16BIT;
-	pcFilter.FilterActivation = ENABLE;
-
 	cells_init(cells);
 
 	// BMS Status OFF
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
-	precharge = 1;
+	HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_RESET);
 
 	// Start current measuring
 	HAL_ADC_Start_DMA(&hadc1, adcCurrent, 512);
 
 	while (1) {
-		if (HAL_CAN_GetState(&hcan) == HAL_CAN_ERROR_BOF) {
-			// BMS Status OFF
-			HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
 
+		if (check_CAN()) {
+			HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_RESET);
+			state = BMS_ERROR;
 		}
 
-		// Voltages
-		ltc6804_rdcv_voltages(cells, &hspi1);
+		CAN_recv(&hcan, &can_rx);
 
-		// Temperatures
-		ltc6804_rdcv_temp(cells, &hspi1);
+		if (can_rx.StdId == CAN_CTRL_ID && can_rx.Data[0] == CAN_CTRL_TS_OFF) {
+			// TS Off
+			HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_RESET);
+			state = BMS_OFF;
+			CAN_Transmit(&hcan, 0xAA, 8, TsOFF);
 
-		// Cells 90 and 91 not working
-		cells[90].voltage = (cells[89].voltage + cells[88].voltage) / 2;
-		cells[90].temperature = (cells[89].temperature + cells[88].temperature)	/ 2;
-		cells[90].voltage_faults = 0;
-		cells[90].temperature_faults = 0;
+		} else if (can_rx.StdId == 0xA8) { // "Initial check". TODO: When is it called?
+			uint8_t  i;
+			for (i = 0; i < CELL_COUNT; i += 3) {
 
-		cells[91].voltage = (cells[92].voltage + cells[93].voltage) / 2;
-		cells[91].temperature = (cells[92].temperature + cells[93].temperature)	/ 2;
-		cells[91].voltage_faults = 0;
-		cells[91].temperature_faults = 0;
-
-		//Current
-		instCurrent = 0;
-		for (int i = 0; i < 512; i++)
-			instCurrent += adcCurrent[i];
-
-		instCurrent = -(instCurrent / 512 - 2595) * 12.91;
-		current_s = current_s + instCurrent - (current_s / 16);
-		pack.current = current_s / 16;
-
-		status(cells, &pack);
-
-		if (pack.state == PACK_ERROR) { // Cell error
-
-			fault_counter++;
-			if (fault_counter > 15) {
-
-				//Set the BMS to fault
-				BMS_status = 0;
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
-				uint8_t i;
-
-				for (i = 0; i < CELL_COUNT; i++) {
-					//Sends the error message indicating the fault and the TS OFF
-					CAN_CellErr(&hcan, i, cells[i]);
-				}
-			}
-		} else {
-
-			fault_counter = 0;
-			if (BMS_status == 0) {
-
+				data[0] = i;
+				data[1] = (uint8_t) (cells[i].voltage / 400);   //*0.04
+				data[2] = (uint8_t) (cells[i].temperature / 40);   //*.4
+				data[3] = (uint8_t) (cells[i + 1].voltage / 400);
+				data[4] = (uint8_t) (cells[i + 1].temperature / 40);
+				data[5] = (uint8_t) (cells[i + 2].voltage / 400);
+				data[6] = (uint8_t) (cells[i + 2].temperature / 40);
+				data[7] = 0;
+				CAN_Transmit(&hcan, 0xAB, 8, data);
 				HAL_Delay(10);
-				BMS_status = 1;
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
-
 			}
 		}
 
-		// Send pack data via CAN
-		data[0] = CAN_PACK_STATE;
-		data[1] = (uint8_t) (pack.voltage >> 16);
-		data[2] = (uint8_t) (pack.voltage >> 8);
-		data[3] = (uint8_t) (pack.voltage);
-		data[4] = (uint8_t) (pack.temperature >> 8);
-		data[5] = (uint8_t) (pack.temperature);
-		data[6] = (uint8_t) (pack.max_temperature >> 8);
-		data[7] = (uint8_t) (pack.max_temperature);
-		CAN_Transmit(&hcan, 0xAA, 8, data);
+		updateCells();
+		updateCurrent();
 
-		// Send current data via CAN
-		data[0] = CAN_CURRENT;
-		data[1] = (int8_t) (current >> 16);
-		data[2] = (int8_t) (current >> 8);
-		data[3] = (int8_t) current;
-		data[4] = 0;
-		data[5] = 0;
-		data[6] = 0;
-		data[7] = 0;
-		CAN_Transmit(&hcan, 0xAA, 8, data);
+		check_Pack();
 
-		if (precharge == 0) {
-			//inverter1 bus voltage request
-			CAN_Transmit(&hcan, 0x201, 3, InvBusVoltage);
+		sendPackData();
+		sendCurrent();
 
-			for (int i = 0; i < 2; i++) {
+		switch (state) {
+		case BMS_PRECHARGE:
+			precharge();
+			break;
+		case BMS_OFF:
+			if (can_rx.StdId == CAN_CTRL_ID) {
+				if (can_rx.Data[0] == CAN_CTRL_TS_ON) {
+					// TS On
 
-				hcan.pRxMsg = &RxMsg;
-				if (HAL_CAN_Receive(&hcan, CAN_FIFO0, 1) == HAL_OK) {
+					if (can_rx.Data[1] == 0x00) {
+						// Precharge
 
-					if (RxMsg.StdId == 0x181 && RxMsg.Data[0] == 0xEB) {
+						HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_SET);
+						state = BMS_PRECHARGE;
+						precharge_timer = 0;
+						bus_voltage = 0;
+						//HAL_CAN_ConfigFilter(&hcan, &pcFilter);
+						CAN_filter_precharge(&hcan);
 
-						bus_voltage = RxMsg.Data[2] << 8;
-						bus_voltage += RxMsg.Data[1];
+					} else if (can_rx.Data[1] == 0x01) { // TODO: When is this called??
+						// Direct TS ON
 
+						HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_SET);
+						HAL_Delay(15000); // TODO: Use a timer
+						HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+						HAL_Delay(1);
+						HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+						CAN_Transmit(&hcan, 0xAA, 8, TsON);
+
+						state = BMS_ON;
 					}
-
 				}
 			}
 
-			bus_voltage = bus_voltage * 10000 / 31.499;
+			break;
+		case BMS_ON:
 
-			if (bus_voltage > pack.voltage * 0.90) {
-				HAL_Delay(1000); // TODO: use a timer
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-				HAL_Delay(1);
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-				precharge = 1;
-				HAL_CAN_ConfigFilter(&hcan, &runFilter);
-				CAN_Transmit(&hcan, 0xAA, 8, TsON);
+			break;
+		case BMS_ERROR:
 
+			break;
+		default:
+			state = BMS_OFF;
+			break;
+		}
+	}
+}
+
+void check_Pack() {
+	status(cells, &pack);
+
+	if (pack.state == PACK_ERROR) { // Cell error
+
+		fault_counter++;
+		if (fault_counter > 15) {
+
+			//Set the BMS to fault
+			state = BMS_ERROR;
+			HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_RESET);
+			uint8_t i;
+
+			for (i = 0; i < CELL_COUNT; i++) {
+				//Sends the error message indicating the fault and the TS OFF
+				CAN_CellErr(&hcan, i, cells[i]);
 			}
-			if (++precharge_timer > 450) {
+		}
+	} else {
 
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
-				precharge = 1;
-				HAL_CAN_ConfigFilter(&hcan, &runFilter);
-				// CAN MESS ERR
+		fault_counter = 0;
+		if (state == BMS_ERROR) {
+
+			HAL_Delay(10);
+			state = BMS_ON;
+			HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_SET);
+
+		}
+	}
+}
+
+void sendCurrent() {
+// Send current data via CAN
+	data[0] = CAN_CURRENT;
+	data[1] = (int8_t) (current >> 16);
+	data[2] = (int8_t) (current >> 8);
+	data[3] = (int8_t) current;
+	data[4] = 0;
+	data[5] = 0;
+	data[6] = 0;
+	data[7] = 0;
+	CAN_Transmit(&hcan, 0xAA, 8, data);
+}
+
+void sendPackData() {
+// Send pack data via CAN
+	data[0] = CAN_PACK_STATE;
+	data[1] = (uint8_t) (pack.voltage >> 16);
+	data[2] = (uint8_t) (pack.voltage >> 8);
+	data[3] = (uint8_t) (pack.voltage);
+	data[4] = (uint8_t) (pack.temperature >> 8);
+	data[5] = (uint8_t) (pack.temperature);
+	data[6] = (uint8_t) (pack.max_temperature >> 8);
+	data[7] = (uint8_t) (pack.max_temperature);
+	CAN_Transmit(&hcan, 0xAA, 8, data);
+}
+
+uint8_t check_CAN() {
+	if (HAL_CAN_GetState(&hcan) == HAL_CAN_ERROR_BOF) {
+		return 1;
+	}
+	return 0;
+}
+
+void updateCells() {
+// Voltages
+	ltc6804_rdcv_voltages(cells, &hspi1);
+
+// Temperatures
+	ltc6804_rdcv_temp(cells, &hspi1);
+
+// Cells 90 and 91 not working
+	cells[90].voltage = (cells[89].voltage + cells[88].voltage) / 2;
+	cells[90].temperature = (cells[89].temperature + cells[88].temperature) / 2;
+	cells[90].voltage_faults = 0;
+	cells[90].temperature_faults = 0;
+
+	cells[91].voltage = (cells[92].voltage + cells[93].voltage) / 2;
+	cells[91].temperature = (cells[92].temperature + cells[93].temperature) / 2;
+	cells[91].voltage_faults = 0;
+	cells[91].temperature_faults = 0;
+}
+
+void updateCurrent() {
+	//Current
+	instCurrent = 0;
+	for (int i = 0; i < 512; i++)
+		instCurrent += adcCurrent[i];
+
+	instCurrent = -(instCurrent / 512 - 2595) * 12.91;
+	current_s = current_s + instCurrent - (current_s / 16);
+	pack.current = current_s / 16;
+}
+
+void precharge() {
+
+	//inverter1 bus voltage request
+	CAN_Transmit(&hcan, 0x201, 3, InvBusVoltage);
+
+	for (uint8_t i = 0; i < 2; i++) { // Why this cycle?
+
+		if (CAN_recv(&hcan, &can_rx)) {
+			// check bus voltage from inverter
+			if (can_rx.StdId == 0x181 && can_rx.Data[0] == 0xEB) {
+
+				bus_voltage = can_rx.Data[2] << 8;
+				bus_voltage += can_rx.Data[1];
 			}
 
 		}
+	}
+	bus_voltage = bus_voltage * 10000 / 31.499;
 
-		hcan.pRxMsg = &RxMsg;
-		if (HAL_CAN_Receive(&hcan, CAN_FIFO0, 1) == HAL_OK) {
+	if (bus_voltage > pack.voltage * 0.90) {
+		HAL_Delay(1000); // TODO: use a timer
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+		HAL_Delay(1);
+		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+		state = BMS_ON;
 
-			if (RxMsg.StdId == 0x55 && RxMsg.Data[0] == 0x0A
-					&& RxMsg.Data[1] == 0x00) {
+		CAN_filter_normal(&hcan);
 
-				//TS ON procedure with inverter
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);
-				precharge = 0;
-				precharge_timer = 0;
-				bus_voltage = 0;
-				HAL_CAN_ConfigFilter(&hcan, &pcFilter);
+		CAN_Transmit(&hcan, 0xAA, 8, TsON);
 
-			} else if (RxMsg.StdId == 0x55 && RxMsg.Data[0] == 0x0A
-					&& RxMsg.Data[1] == 0x01) {
+	}
 
-				//TS ON procedure with delay as pre-charge control
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_SET);
-				HAL_Delay(15000); // TODO: Use a timer
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-				HAL_Delay(1);
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-				CAN_Transmit(&hcan, 0xAA, 8, TsON);
+	if (++precharge_timer > 450) { // Timeout. TODO: Use a timer
 
-			} else if (RxMsg.StdId == 0x55 && RxMsg.Data[0] == 0x0B) {
+		HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_RESET);
+		state = BMS_ERROR;
 
-				HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9, GPIO_PIN_RESET);
-				precharge = 1;
-				CAN_Transmit(&hcan, 0xAA, 8, TsOFF);
+		CAN_filter_normal(&hcan);
 
-			} else if (RxMsg.StdId == 0xA8) {
-
-				for (uint8_t i = 0; i < CELL_COUNT; i += 3) {
-
-					data[0] = i;
-					data[1] = (uint8_t) (cells[i].voltage / 400);   //*0.04
-					data[2] = (uint8_t) (cells[i].temperature / 40);   //*.4
-					data[3] = (uint8_t) (cells[i].voltage / 400);
-					data[4] = (uint8_t) (cells[i + 1].temperature / 40);
-					data[5] = (uint8_t) (cells[i + 2].voltage / 400);
-					data[6] = (uint8_t) (cells[i + 2].temperature / 40);
-					data[7] = 0;
-					CAN_Transmit(&hcan, 0xAB, 8, data);
-					HAL_Delay(10);
-				}
-			}
-		}
+		// CAN MESS ERR
 	}
 }
 
@@ -487,15 +512,15 @@ static void MX_GPIO_Init(void) {
 	;
 
 	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(GPIOA, PreChargeEnd_Pin | TS_ON_Pin | BMS_FAULT_Pin,
+	HAL_GPIO_WritePin(GPIOA, PreChargeEnd_Pin | PIN_TS_ON | PIN_BMS_FAULT,
 			GPIO_PIN_RESET);
 
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(CS_6820_GPIO_Port, CS_6820_Pin, GPIO_PIN_SET);
 
-	/*Configure GPIO pins : PreChargeEnd_Pin CS_6820_Pin TS_ON_Pin BMS_FAULT_Pin */
-	GPIO_InitStruct.Pin = PreChargeEnd_Pin | CS_6820_Pin | TS_ON_Pin
-			| BMS_FAULT_Pin;
+	/*Configure GPIO pins : PreChargeEnd_Pin CS_6820_Pin PIN_TS_ON BMS_FAULT_Pin */
+	GPIO_InitStruct.Pin =
+	PreChargeEnd_Pin | CS_6820_Pin | PIN_TS_ON | PIN_BMS_FAULT;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

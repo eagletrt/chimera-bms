@@ -29,6 +29,13 @@ enum {
 	PACK_MIN_TEMPERATURE = 1000
 };
 
+typedef enum{
+	BMS_OFF,
+	BMS_PRECHARGE,
+	BMS_ON,
+	BMS_ERROR
+} BMSStatus;
+
 /**
  * Defines CAN message codes
  */
@@ -40,7 +47,11 @@ typedef enum {
 	CAN_CURRENT = 0x05,
 	CAN_AVG_TEMP = 0x06,
 	CAN_MAX_TEMP = 0x07,
-	CAN_ERROR = 0x08
+	CAN_ERROR = 0x08,
+
+	CAN_CTRL_ID = 0x55,
+	CAN_CTRL_TS_ON=0x0A,
+	CAN_CTRL_TS_OFF=0x0B
 } CanCode;
 
 /**

@@ -1,10 +1,10 @@
 /**
-  ******************************************************************************
-  * @file           : main.h
-  * @brief          : Header for main.c file.
-  *                   This file contains the common defines of the application.
-  ******************************************************************************
-*/
+ ******************************************************************************
+ * @file           : main.h
+ * @brief          : Header for main.c file.
+ *                   This file contains the common defines of the application.
+ ******************************************************************************
+ */
 
 #ifndef __MAIN_H__
 #define __MAIN_H__
@@ -22,21 +22,30 @@
 #define CS_6820_GPIO_Port GPIOA
 #define ShutDownStatus_Pin GPIO_PIN_6
 #define ShutDownStatus_GPIO_Port GPIOA
-#define TS_ON_Pin GPIO_PIN_9
+#define PIN_TS_ON GPIO_PIN_9
 #define TS_ON_GPIO_Port GPIOA
-#define BMS_FAULT_Pin GPIO_PIN_10
+#define PIN_BMS_FAULT GPIO_PIN_10
 #define BMS_FAULT_GPIO_Port GPIOA
 
 /**
-  * @brief Uncomment the line below to expanse the "assert_param" macro in the
-  *        HAL drivers code
-  */
+ * @brief Uncomment the line below to expanse the "assert_param" macro in the
+ *        HAL drivers code
+ */
 /* #define USE_FULL_ASSERT    1U */
 
 void cells_init(Cell cells[]);
 
+void precharge();
+void ready();
+uint8_t check_CAN();
+void updateCells();
+void updateCurrent();
+void check_Pack();
+void sendCurrent();
+void sendPackData();
+
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 void _Error_Handler(char *, int);
 
