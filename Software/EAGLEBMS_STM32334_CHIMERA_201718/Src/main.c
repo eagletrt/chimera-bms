@@ -5,53 +5,46 @@
  ******************************************************************************
  */
 
-#include "stm32f3xx_hal.h"
-#include "ltc_68xx.h"
 #include "main.h"
+
+#include <string.h>
+#include <stdlib.h>
+
+#include "stm32f3xx_hal.h"
+#include "chimera_config.h"
+#include "pack.h"
 #include "can.h"
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_DMA_Init(void);
-static void MX_SPI1_Init(void);
 static void MX_CAN_Init(void);
 static void MX_TIM6_Init(void);
+static void MX_SPI1_Init(void);
 
-static const uint8_t InvBusVoltage[] = { 0x3D, 0xEB, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00 };
-static const uint8_t TsON[] = { CAN_CONFIRM_START, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00 };
-static const uint8_t TsOFF[] = { CAN_CONFIRM_STOP, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0x00, 0x00 };
 
 CanRxMsgTypeDef can_rx;
 
-ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
+ADC_HandleTypeDef hadc1;
+SPI_HandleTypeDef hspi1;
 
 CAN_HandleTypeDef hcan;
 
-SPI_HandleTypeDef hspi1;
-
 TIM_HandleTypeDef htim6;
 
-Cell cells[CELL_COUNT];
-
-Pack pack;
+PACK_T pack;
 
 uint8_t data[8];
 
-uint32_t adcCurrent[512];
-int32_t instCurrent;
-int32_t current;
-int32_t current_s;
-
 uint8_t fault_counter = 0;
 
-BMSStatus state;
+BMS_STATUS_T state = BMS_INIT;
 uint16_t precharge_timer = 0;
 int32_t bus_voltage;
+
+uint32_t tick=0;
 
 /**
  * @brief  The application entry point.
@@ -67,81 +60,96 @@ int main(void) {
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 	MX_DMA_Init();
-	MX_SPI1_Init();
 	MX_ADC1_Init();
 	MX_CAN_Init();
 	MX_TIM6_Init();
+	MX_SPI1_Init();
 
-	CAN_Init(&hcan);
+	can_init(&hcan);
 
-	cells_init(cells);
+	pack_init(&hadc1, &pack);
 
 	// BMS Status OFF
 	HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_RESET);
 
-	// Start current measuring
-	HAL_ADC_Start_DMA(&hadc1, adcCurrent, 512);
-
+	state = BMS_OFF;
 	while (1) {
-
-		if (check_CAN()) {
+		tick++;
+		if (can_check_error(&hcan)) {
 			HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_RESET);
-			state = BMS_ERROR;
+			state = BMS_CAN_ERROR;
 		}
 
-		CAN_recv(&hcan, &can_rx);
+		can_receive(&hcan, &can_rx);
 
 		if (can_rx.StdId == CAN_CTRL_ID && can_rx.Data[0] == CAN_CTRL_TS_OFF) {
 			// TS Off
 			HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_RESET);
 			state = BMS_OFF;
-			CAN_Transmit(&hcan, 0xAA, 8, TsOFF);
+
+			can_send_ts_off(&hcan);
 
 		} else if (can_rx.StdId == 0xA8) { // "Initial check". TODO: When is it called?
 			uint8_t  i;
-			for (i = 0; i < CELL_COUNT; i += 3) {
+
+			CELL_T *cells[PACK_CELL_COUNT];
+			pack_get_cells(cells);
+			for (i = 0; i < PACK_CELL_COUNT; i += 3) {
 
 				data[0] = i;
-				data[1] = (uint8_t) (cells[i].voltage / 400);   //*0.04
-				data[2] = (uint8_t) (cells[i].temperature / 40);   //*.4
-				data[3] = (uint8_t) (cells[i + 1].voltage / 400);
-				data[4] = (uint8_t) (cells[i + 1].temperature / 40);
-				data[5] = (uint8_t) (cells[i + 2].voltage / 400);
-				data[6] = (uint8_t) (cells[i + 2].temperature / 40);
+				data[1] = (uint8_t) (cells[i]->voltage / 400);   //*0.04
+				data[2] = (uint8_t) (cells[i]->temperature / 40);   //*.4
+				data[3] = (uint8_t) (cells[i + 1]->voltage / 400);
+				data[4] = (uint8_t) (cells[i + 1]->temperature / 40);
+				data[5] = (uint8_t) (cells[i + 2]->voltage / 400);
+				data[6] = (uint8_t) (cells[i + 2]->temperature / 40);
 				data[7] = 0;
-				CAN_Transmit(&hcan, 0xAB, 8, data);
+				can_transmit(&hcan, 0xAB, 8, data);
 				HAL_Delay(10);
 			}
 		}
 
-		updateCells();
-		updateCurrent();
+		// Voltages
+		pack_update_voltages(&hspi1, &pack);
 
-		check_Pack();
+		// Temperatures
+		pack_update_temperatures(&hspi1, &pack);
 
-		sendPackData();
-		sendCurrent();
+		pack_update_current(&pack);
 
-		switch (state) {
+		pack_update_status(&pack);
+
+		check_pack();
+
+		can_send_pack_state(&hcan, pack);
+		can_send_current(&hcan, pack.current);
+
+		switch (state)
+		{
 		case BMS_PRECHARGE:
 			precharge();
 			break;
 		case BMS_OFF:
-			if (can_rx.StdId == CAN_CTRL_ID) {
-				if (can_rx.Data[0] == CAN_CTRL_TS_ON) {
+			if (can_rx.StdId == CAN_CTRL_ID)
+			{
+				if (can_rx.Data[0] == CAN_CTRL_TS_ON)
+				{
 					// TS On
 
-					if (can_rx.Data[1] == 0x00) {
+					if (can_rx.Data[1] == 0x00)
+					{
 						// Precharge
 
 						HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_SET);
 						state = BMS_PRECHARGE;
 						precharge_timer = 0;
 						bus_voltage = 0;
-						//HAL_CAN_ConfigFilter(&hcan, &pcFilter);
-						CAN_filter_precharge(&hcan);
 
-					} else if (can_rx.Data[1] == 0x01) { // TODO: When is this called??
+						can_filter_precharge(&hcan);
+
+					}
+					else if (can_rx.Data[1] == 0x01)
+					{ 	// TODO: Undocumented
 						// Direct TS ON
 
 						HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_SET);
@@ -149,7 +157,7 @@ int main(void) {
 						HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
 						HAL_Delay(1);
 						HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-						CAN_Transmit(&hcan, 0xAA, 8, TsON);
+						can_send_ts_on(&hcan);
 
 						state = BMS_ON;
 					}
@@ -158,10 +166,11 @@ int main(void) {
 
 			break;
 		case BMS_ON:
-
 			break;
-		case BMS_ERROR:
-
+		case BMS_CAN_ERROR:
+		case BMS_LTC6804_ERROR:
+		case BMS_PACK_ERROR:
+		case BMS_PRECHARGE_ERROR:
 			break;
 		default:
 			state = BMS_OFF;
@@ -170,108 +179,68 @@ int main(void) {
 	}
 }
 
-void check_Pack() {
-	status(cells, &pack);
+void check_pack() {
 
-	if (pack.state == PACK_ERROR) { // Cell error
+	switch (pack.state)
+	{
+	case PACK_INIT:
+		break;
+	case PACK_WARNING: // Cell error
 
 		fault_counter++;
-		if (fault_counter > 15) {
+		if (fault_counter > 15)
+		{
 
-			//Set the BMS to fault
-			state = BMS_ERROR;
+			// Set the BMS to fault
+			state = BMS_PACK_ERROR;
 			HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_RESET);
-			uint8_t i;
 
-			for (i = 0; i < CELL_COUNT; i++) {
+			uint8_t i;
+			CELL_T *cells[PACK_CELL_COUNT];
+			pack_get_cells(cells);
+
+			for (i = 0; i < PACK_CELL_COUNT; i++)
+			{
 				//Sends the error message indicating the fault and the TS OFF
-				CAN_CellErr(&hcan, i, cells[i]);
+				can_send_cell_error(&hcan, i, *(cells)[i]);
 			}
 		}
-	} else {
+		break;
+	case PACK_COMMUNICATION_ERROR:	// LTC error
+		state = BMS_LTC6804_ERROR;
+		HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_RESET);
+
+		uint8_t i;
+		LTC6804_T ltc[LTC6804_COUNT];
+		pack_get_ltcs(ltc);
+
+		for (i = 0; i < LTC6804_COUNT; i++)
+		{
+			can_send_ltc_error(&hcan, i, ltc[i]);
+		}
+		break;
+	case PACK_OK:
 
 		fault_counter = 0;
-		if (state == BMS_ERROR) {
-
+		if (state == BMS_PACK_ERROR)
+		{
 			HAL_Delay(10);
 			state = BMS_ON;
 			HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_SET);
 
 		}
+		break;
 	}
-}
-
-void sendCurrent() {
-// Send current data via CAN
-	data[0] = CAN_CURRENT;
-	data[1] = (int8_t) (current >> 16);
-	data[2] = (int8_t) (current >> 8);
-	data[3] = (int8_t) current;
-	data[4] = 0;
-	data[5] = 0;
-	data[6] = 0;
-	data[7] = 0;
-	CAN_Transmit(&hcan, 0xAA, 8, data);
-}
-
-void sendPackData() {
-// Send pack data via CAN
-	data[0] = CAN_PACK_STATE;
-	data[1] = (uint8_t) (pack.voltage >> 16);
-	data[2] = (uint8_t) (pack.voltage >> 8);
-	data[3] = (uint8_t) (pack.voltage);
-	data[4] = (uint8_t) (pack.temperature >> 8);
-	data[5] = (uint8_t) (pack.temperature);
-	data[6] = (uint8_t) (pack.max_temperature >> 8);
-	data[7] = (uint8_t) (pack.max_temperature);
-	CAN_Transmit(&hcan, 0xAA, 8, data);
-}
-
-uint8_t check_CAN() {
-	if (HAL_CAN_GetState(&hcan) == HAL_CAN_ERROR_BOF) {
-		return 1;
-	}
-	return 0;
-}
-
-void updateCells() {
-// Voltages
-	ltc6804_rdcv_voltages(cells, &hspi1);
-
-// Temperatures
-	ltc6804_rdcv_temp(cells, &hspi1);
-
-// Cells 90 and 91 not working
-	cells[90].voltage = (cells[89].voltage + cells[88].voltage) / 2;
-	cells[90].temperature = (cells[89].temperature + cells[88].temperature) / 2;
-	cells[90].voltage_faults = 0;
-	cells[90].temperature_faults = 0;
-
-	cells[91].voltage = (cells[92].voltage + cells[93].voltage) / 2;
-	cells[91].temperature = (cells[92].temperature + cells[93].temperature) / 2;
-	cells[91].voltage_faults = 0;
-	cells[91].temperature_faults = 0;
-}
-
-void updateCurrent() {
-	//Current
-	instCurrent = 0;
-	for (int i = 0; i < 512; i++)
-		instCurrent += adcCurrent[i];
-
-	instCurrent = -(instCurrent / 512 - 2595) * 12.91;
-	current_s = current_s + instCurrent - (current_s / 16);
-	pack.current = current_s / 16;
 }
 
 void precharge() {
 
 	//inverter1 bus voltage request
-	CAN_Transmit(&hcan, 0x201, 3, InvBusVoltage);
+	can_request_inverter_voltage(&hcan);
 
 	for (uint8_t i = 0; i < 2; i++) { // Why this cycle?
 
-		if (CAN_recv(&hcan, &can_rx)) {
+		if (can_receive(&hcan, &can_rx)) {
 			// check bus voltage from inverter
 			if (can_rx.StdId == 0x181 && can_rx.Data[0] == 0xEB) {
 
@@ -290,31 +259,20 @@ void precharge() {
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
 		state = BMS_ON;
 
-		CAN_filter_normal(&hcan);
+		can_filter_normal(&hcan);
 
-		CAN_Transmit(&hcan, 0xAA, 8, TsON);
+		can_send_ts_on(&hcan);
 
 	}
 
 	if (++precharge_timer > 450) { // Timeout. TODO: Use a timer
 
 		HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_RESET);
-		state = BMS_ERROR;
+		state = BMS_PRECHARGE_ERROR;
 
-		CAN_filter_normal(&hcan);
+		can_filter_normal(&hcan);
 
 		// CAN MESS ERR
-	}
-}
-
-void cells_init(Cell cells[]) {
-
-	uint8_t i;
-	for (i = 0; i < CELL_COUNT; i++) {
-		cells[i].voltage = 0;
-		cells[i].temperature = 0;
-		cells[i].voltage_faults = 0;
-		cells[i].temperature_faults = 0;
 	}
 }
 
@@ -411,6 +369,29 @@ static void MX_ADC1_Init(void) {
 
 }
 
+static void MX_SPI1_Init(void)
+{
+	/* SPI1 parameter configuration*/
+	hspi1.Instance = SPI1;
+	hspi1.Init.Mode = SPI_MODE_MASTER;
+	hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+	hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+	hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+	hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+	hspi1.Init.NSS = SPI_NSS_SOFT;
+	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+	hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+	hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+	hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+	hspi1.Init.CRCPolynomial = 7;
+	hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
+	hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
+	if (HAL_SPI_Init(&hspi1) != HAL_OK)
+	{
+		_Error_Handler(__FILE__, __LINE__);
+	}
+}
+
 /* CAN init function */
 static void MX_CAN_Init(void) {
 
@@ -427,30 +408,6 @@ static void MX_CAN_Init(void) {
 	hcan.Init.RFLM = DISABLE;
 	hcan.Init.TXFP = DISABLE;
 	if (HAL_CAN_Init(&hcan) != HAL_OK) {
-		_Error_Handler(__FILE__, __LINE__);
-	}
-
-}
-
-/* SPI1 init function */
-static void MX_SPI1_Init(void) {
-
-	/* SPI1 parameter configuration*/
-	hspi1.Instance = SPI1;
-	hspi1.Init.Mode = SPI_MODE_MASTER;
-	hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-	hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
-	hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
-	hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
-	hspi1.Init.NSS = SPI_NSS_SOFT;
-	hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
-	hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
-	hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
-	hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-	hspi1.Init.CRCPolynomial = 7;
-	hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
-	hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
-	if (HAL_SPI_Init(&hspi1) != HAL_OK) {
 		_Error_Handler(__FILE__, __LINE__);
 	}
 

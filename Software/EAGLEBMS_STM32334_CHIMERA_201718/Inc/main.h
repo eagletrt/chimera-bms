@@ -9,9 +9,6 @@
 #ifndef __MAIN_H__
 #define __MAIN_H__
 
-#include <chimera_config.h>
-#include <string.h>
-#include <stdlib.h>
 #include <inttypes.h>
 
 #define CurrentSensor_Pin GPIO_PIN_0
@@ -33,16 +30,16 @@
  */
 /* #define USE_FULL_ASSERT    1U */
 
-void cells_init(Cell cells[]);
+void cells_init();
 
 void precharge();
 void ready();
-uint8_t check_CAN();
+uint8_t can_check_error();
 void updateCells();
-void updateCurrent();
-void check_Pack();
-void sendCurrent();
-void sendPackData();
+void pack_update_current();
+void check_pack();
+void can_send_current();
+void can_send_pack_state();
 
 #ifdef __cplusplus
 extern "C" {
