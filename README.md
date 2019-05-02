@@ -1,1 +1,2 @@
-EagleTRT Repsitory in cui è presente il software e gli schematici del nostro lavoro
+# Eagle BMS
+Repo containing the Battery Management System for Chimera Evoluzione.
