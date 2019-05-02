@@ -10,15 +10,12 @@
 
 #include <inttypes.h>
 #include "stm32f3xx_hal.h"
-
 #include "chimera_config.h"
 
 typedef enum
 {
 	LTC6804_STATUS_NONE,		/*< LTC is not initialized */
 	LTC6804_STATUS_OK,			/*< LTC operating normally */
-	LTC6804_STATUS_PEC_ERROR,	/*< Received wrong PEC */
-	LTC6804_STATUS_CELL_ERROR	/*< One or more cells are reporting problems */
 } LTC6804_STATUS_T;
 
 /**
@@ -28,25 +25,32 @@ typedef enum
 {
 	CELL_NONE,				/*!< Cell is not yet initialized */
 	CELL_OK,				/*!< Cell is OK */
-	CELL_UNDER_VOLTAGE,		/*!< Cell Under Voltage */
-	CELL_OVER_VOLTAGE,		/*!< Cell Over Voltage */
+	CELL_UNDER_VOLTAGE,
+	CELL_OVER_VOLTAGE,
 	CELL_UNDER_TEMPERATURE,
-	CELL_OVER_TEMPERATURE	/*!< Cell Over Temperature */
-	//CELL_DATA_NOT_UPDATED /*!< Data not received form LTC68xx for more than 1000 cycles */
+	CELL_OVER_TEMPERATURE
 } CELL_STATE_T;
 
-/**	Cell basic info */
+/*	Cell basic info */
 typedef struct
 {
-	uint16_t voltage; /**< voltage of the cell */
-	uint16_t temperature; /**< temperature of the cell */
+	uint16_t voltage; /*!< voltage of the cell */
+	uint16_t temperature; /*!< temperature of the cell */
 
-	uint8_t voltage_faults; /**< fault counter for voltage readings */
-	uint8_t temperature_faults; /**< fault counter for temperature readings */
+	//uint8_t voltage_faults; /*!< fault counter for voltage readings */
+	//uint8_t temperature_faults; /*!< fault counter for temperature readings */
 
 	CELL_STATE_T state;
 } CELL_T;
 
+typedef struct
+{
+	uint8_t address;	/*!<  The isoSPI bus address */
+	uint8_t *cell_distribution;		/*!<		distribution of cells across the registers	*/
+	//LTC6804_STATUS_T status;		/*!<	General status	*/
+} LTC6804_T;
+
+/*
 typedef struct
 {
 	uint8_t address;
@@ -61,19 +65,7 @@ typedef struct
 	LTC6804_STATUS_T status;
 
 } LTC6804_T;
-
-/**
- * Defines the cell distribution inside the rdcv groups.
- * 0: cell not present
- * 1: cell present
- */
-static const uint8_t cell_distribution[LTC6804_REG_COUNT * LTC6804_REG_CELL_COUNT] =
-{
-		1, 1, 1,	// GROUP A
-		1, 1, 0,	// GROUP B
-		1, 1, 1,	// GROUP C
-		1, 0, 0		// GROUP D
-};
+*/
 
 static const uint16_t crcTable[256] = { 0x0, 0xc599, 0xceab, 0xb32, 0xd8cf,
 		0x1d56, 0x1664, 0xd3fd, 0xf407, 0x319e, 0x3aac, 0xff35, 0x2cc8, 0xe951,
@@ -121,12 +113,12 @@ void _wakeup_idle(SPI_HandleTypeDef *hspi);
 void _ltc6804_adcv(SPI_HandleTypeDef *hspi, uint8_t DCP);
 void _ltc6804_command_temperatures(SPI_HandleTypeDef *hspi, uint8_t start,
 		uint8_t parity);
+LTC6804_STATUS_T _rdcv_temp(SPI_HandleTypeDef *hspi, uint8_t parity, LTC6804_T *config, CELL_T *cells);
 
-void ltc6804_init(LTC6804_T *ltc, uint8_t address);
-CELL_STATE_T ltc6804_update_state(CELL_T *cell);
-void ltc6804_compute_total_values(LTC6804_T *ltc);
-LTC6804_STATUS_T ltc6804_read_voltages(SPI_HandleTypeDef *hspi, LTC6804_T *ltc);
-LTC6804_STATUS_T ltc6804_read_temperatures(SPI_HandleTypeDef *hspi,
-		uint8_t parity, LTC6804_T *ltc);
+void cells_init(CELL_T *cells);
+void ltc6804_update_state(CELL_T *cell);
+void ltc6804_compute_total_values(CELL_T *ltc);
+void ltc6804_read_voltages(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, CELL_T *cells);
+void ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, CELL_T *cells);
 
 #endif /* LTC6804_H_ */

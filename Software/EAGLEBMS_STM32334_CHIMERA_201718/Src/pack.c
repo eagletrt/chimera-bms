@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "stm32f3xx_hal.h"
 
 uint32_t adcCurrent[512];
@@ -18,77 +19,50 @@ int32_t current;
 int32_t current_s;
 
 LTC6804_T ltc[LTC6804_COUNT];
+CELL_T cells[PACK_CELL_COUNT];
 
 void pack_init(ADC_HandleTypeDef *adc, PACK_T *pack)
 {
 	// Start current measuring
 	HAL_ADC_Start_DMA(adc, adcCurrent, 512);
 
-	pack->state = PACK_INIT;
 	pack->voltage = 0;
-	pack->temperature = 0;
+	pack->max_voltage = 0;
+	pack->min_voltage = 0;
+	pack->avg_temperature = 0;
 	pack->max_temperature = 0;
+	pack->min_temperature = 0;
 	pack->current = 0;
 
 	uint8_t i;
 	for (i = 0; i < LTC6804_COUNT; i++)
 	{
-		ltc6804_init(&ltc[i], (uint8_t) 8 * i);
+		ltc[i].address = (uint8_t) 8 * i;
+		ltc[i].cell_distribution = cell_distribution;	// cell_distribution is not duplicated through the array.
+	}
+
+	for (i = 0; i < PACK_CELL_COUNT; i++)
+	{
+		cells_init(&cells[i]);
 	}
 }
 
-PACK_STATE_T pack_update_voltages(SPI_HandleTypeDef *spi, PACK_T *pack)
+void pack_update_voltages(SPI_HandleTypeDef *spi, PACK_T *pack)
 {
 	uint8_t i;
 	for (i = 0; i < LTC6804_COUNT; i++)
 	{
-		switch (ltc6804_read_voltages(spi, &ltc[i]))
-		{
-		case LTC6804_STATUS_OK:
-			pack->state = PACK_OK;
-			break;
-		case LTC6804_STATUS_NONE: // ????
-			pack->state=PACK_INIT;
-			break;
-		case LTC6804_STATUS_CELL_ERROR:
-			pack->state = PACK_WARNING;
-			break;
-		case LTC6804_STATUS_PEC_ERROR:
-			pack->state = PACK_COMMUNICATION_ERROR;
-			break;
-		}
+		ltc6804_read_voltages(spi, &ltc[i], &cells [ i * LTC6804_CELL_COUNT]);
 	}
-	return pack->state;
 }
 
-PACK_STATE_T pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack)
+void pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack)
 {
-	pack->state = PACK_OK;
-
-	uint8_t parity;
-	uint8_t ltc_count;
-	for (parity = 0; parity < 2; parity++)
+	uint8_t i;
+	for (i = 0; i < LTC6804_COUNT; i++)
 	{
-		for (ltc_count = 0; ltc_count < LTC6804_COUNT; ltc_count++)
-		{
-			switch (ltc6804_read_temperatures(spi, parity, &ltc[ltc_count]))
-			{
-			case LTC6804_STATUS_OK:
-				break;
-			case LTC6804_STATUS_NONE:	// ?????
-				pack->state = PACK_INIT;
-				break;
-			case LTC6804_STATUS_CELL_ERROR:
-				pack->state = PACK_WARNING;
-				break;
-			case LTC6804_STATUS_PEC_ERROR:
-				pack->state = PACK_COMMUNICATION_ERROR;
-				break;
-			}
-		}
+		ltc6804_read_temperatures(spi, &ltc[i], &cells [ i * LTC6804_CELL_COUNT]);
 	}
-
-	return pack->state;
 }
 
 void pack_update_current(PACK_T *pack)
@@ -97,10 +71,10 @@ void pack_update_current(PACK_T *pack)
 	instCurrent = 0;
 	for (int i = 0; i < 512; i++)
 		instCurrent += adcCurrent[i];
+	instCurrent /= 512;
 
-	instCurrent = -(instCurrent / 512 - 2595) * 12.91;
-	current_s = current_s + instCurrent - (current_s / 16);
-	pack->current = current_s / 16;
+	float tmp_cur = (((float) instCurrent * 3.3) / 4096 - 2.048);
+	pack->current = round((tmp_cur * 200 / 1.25) * 10);
 }
 
 /**
@@ -110,41 +84,42 @@ void pack_update_current(PACK_T *pack)
  */
 void pack_update_status(PACK_T *pack)
 {
-	pack->temperature = 0;
-	pack->voltage = 0;
-	pack->max_temperature = 0;
+	uint32_t voltage = 0;
+	uint16_t max_voltage = 0;
+	uint16_t min_voltage = cells[0].voltage;
 
-	uint32_t sum_temp=0;
-	for (int i = 0; i < LTC6804_COUNT; i++)
+	uint32_t avg_temperature = 0;
+	uint16_t max_temperature = 0;
+	uint16_t min_temperature = cells[0].temperature;
+
+	for (int i = 0; i < PACK_CELL_COUNT; i++)
 	{
-		sum_temp += ltc[i].avg_cell_temperature;
+		avg_temperature += cells[i].temperature;
 
-		pack->voltage += (uint32_t) ltc[i].cell_voltage;
+		voltage += (uint32_t) cells[i].voltage;
 
-		if (ltc[i].max_cell_temperature > pack->max_temperature)
-		{
-			pack->max_temperature = ltc[i].max_cell_temperature;
-		}
+		max_voltage = fmax(max_voltage, cells[i].voltage);
+		min_voltage = fmin(min_voltage, cells[i].voltage);
+
+		max_temperature = fmax(max_temperature, cells[i].temperature);
+		min_temperature = fmin(min_temperature, cells[i].temperature);
 	}
-	pack->temperature = sum_temp / LTC6804_COUNT;
 
-	if (pack->voltage > PACK_MAX_VOLTAGE
-			|| pack->temperature > PACK_MAX_TEMPERATURE)
-	{
-		pack->state = PACK_WARNING;
-	}
+	pack->voltage=voltage;
+	pack->max_voltage=max_voltage;
+	pack->min_voltage=min_voltage;
+
+	pack->avg_temperature = (uint16_t) (avg_temperature / PACK_CELL_COUNT);
+	pack->max_temperature=max_temperature;
+	pack->min_temperature=min_temperature;
 }
 
-void pack_get_ltcs(LTC6804_T *out_ltc)
+LTC6804_T* pack_get_configs()
 {
-	out_ltc = ltc;
+	return ltc;
 }
 
-void pack_get_cells(CELL_T *cells[])
+CELL_T* pack_get_cells()
 {
-	uint8_t i;
-	for (i = 0; i < LTC6804_COUNT; i++)
-	{
-		cells[i * LTC6804_CELL_COUNT] = ltc[i].cells;
-	}
+	return cells;
 }

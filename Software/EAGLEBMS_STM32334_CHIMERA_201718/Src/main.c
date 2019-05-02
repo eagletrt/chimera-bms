@@ -5,6 +5,7 @@
  ******************************************************************************
  */
 
+#include <error.h>
 #include "main.h"
 
 #include <string.h>
@@ -23,7 +24,6 @@ static void MX_CAN_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_SPI1_Init(void);
 
-
 CanRxMsgTypeDef can_rx;
 
 DMA_HandleTypeDef hdma_adc1;
@@ -38,20 +38,17 @@ PACK_T pack;
 
 uint8_t data[8];
 
-uint8_t fault_counter = 0;
-
 BMS_STATUS_T state = BMS_INIT;
-uint16_t precharge_timer = 0;
+uint32_t precharge_timer;
 int32_t bus_voltage;
-
-uint32_t tick=0;
 
 /**
  * @brief  The application entry point.
  *
  * @retval None
  */
-int main(void) {
+int main(void)
+{
 	HAL_Init();
 
 	/* Configure the system clock */
@@ -73,28 +70,36 @@ int main(void) {
 	HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_RESET);
 
 	state = BMS_OFF;
-	while (1) {
-		tick++;
-		if (can_check_error(&hcan)) {
-			HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_RESET);
-			state = BMS_CAN_ERROR;
+	while (1)
+	{
+		if (can_check_error(&hcan))
+		{
+			error_set(ERROR_CAN, HAL_GetTick());
+		}
+		else
+		{
+			error_unset(ERROR_CAN);
 		}
 
 		can_receive(&hcan, &can_rx);
 
-		if (can_rx.StdId == CAN_CTRL_ID && can_rx.Data[0] == CAN_CTRL_TS_OFF) {
+		if (can_rx.StdId == CAN_CTRL_ID && can_rx.Data[0] == CAN_CTRL_TS_OFF)
+		{
 			// TS Off
 			HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_RESET);
 			state = BMS_OFF;
 
 			can_send_ts_off(&hcan);
+		}
 
-		} else if (can_rx.StdId == 0xA8) { // "Initial check". TODO: When is it called?
-			uint8_t  i;
+		else if (can_rx.StdId == 0xA8)
+		{ // "Initial check". TODO: When is it called?
+			uint8_t i;
 
 			CELL_T *cells[PACK_CELL_COUNT];
 			pack_get_cells(cells);
-			for (i = 0; i < PACK_CELL_COUNT; i += 3) {
+			for (i = 0; i < PACK_CELL_COUNT; i += 3)
+			{
 
 				data[0] = i;
 				data[1] = (uint8_t) (cells[i]->voltage / 400);   //*0.04
@@ -119,7 +124,11 @@ int main(void) {
 
 		pack_update_status(&pack);
 
-		check_pack();
+		if (error_check_fatal(HAL_GetTick()))
+		{
+			// STACCAH STACCAH
+			break;
+		}
 
 		can_send_pack_state(&hcan, pack);
 		can_send_current(&hcan, pack.current);
@@ -127,7 +136,7 @@ int main(void) {
 		switch (state)
 		{
 		case BMS_PRECHARGE:
-			precharge();
+			precharge_check();
 			break;
 		case BMS_OFF:
 			if (can_rx.StdId == CAN_CTRL_ID)
@@ -139,27 +148,20 @@ int main(void) {
 					if (can_rx.Data[1] == 0x00)
 					{
 						// Precharge
+						precharge_start();
 
-						HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_SET);
-						state = BMS_PRECHARGE;
-						precharge_timer = 0;
+						precharge_timer = HAL_GetTick();
 						bus_voltage = 0;
 
 						can_filter_precharge(&hcan);
-
 					}
 					else if (can_rx.Data[1] == 0x01)
 					{ 	// TODO: Undocumented
 						// Direct TS ON
+						precharge_start();
 
-						HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_SET);
 						HAL_Delay(15000); // TODO: Use a timer
-						HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-						HAL_Delay(1);
-						HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-						can_send_ts_on(&hcan);
-
-						state = BMS_ON;
+						precharge_end();
 					}
 				}
 			}
@@ -167,82 +169,57 @@ int main(void) {
 			break;
 		case BMS_ON:
 			break;
-		case BMS_CAN_ERROR:
-		case BMS_LTC6804_ERROR:
-		case BMS_PACK_ERROR:
-		case BMS_PRECHARGE_ERROR:
-			break;
-		default:
-			state = BMS_OFF;
-			break;
 		}
 	}
-}
 
-void check_pack() {
+	// In case of fatal error
 
-	switch (pack.state)
+	// Set the BMS to fault
+	state = BMS_HALT;
+	HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_RESET);
+
+	can_send_error(&hcan, error_get(), &pack);
+
+	while (1)
 	{
-	case PACK_INIT:
-		break;
-	case PACK_WARNING: // Cell error
-
-		fault_counter++;
-		if (fault_counter > 15)
-		{
-
-			// Set the BMS to fault
-			state = BMS_PACK_ERROR;
-			HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_RESET);
-
-			uint8_t i;
-			CELL_T *cells[PACK_CELL_COUNT];
-			pack_get_cells(cells);
-
-			for (i = 0; i < PACK_CELL_COUNT; i++)
-			{
-				//Sends the error message indicating the fault and the TS OFF
-				can_send_cell_error(&hcan, i, *(cells)[i]);
-			}
-		}
-		break;
-	case PACK_COMMUNICATION_ERROR:	// LTC error
-		state = BMS_LTC6804_ERROR;
-		HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_RESET);
-
-		uint8_t i;
-		LTC6804_T ltc[LTC6804_COUNT];
-		pack_get_ltcs(ltc);
-
-		for (i = 0; i < LTC6804_COUNT; i++)
-		{
-			can_send_ltc_error(&hcan, i, ltc[i]);
-		}
-		break;
-	case PACK_OK:
-
-		fault_counter = 0;
-		if (state == BMS_PACK_ERROR)
-		{
-			HAL_Delay(10);
-			state = BMS_ON;
-			HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_SET);
-
-		}
-		break;
+		// TODO: add some command to restart the bms by breaking this cycle
 	}
+
+	return 0;
 }
 
-void precharge() {
+void precharge_start()
+{
+	HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_SET);
+	state = BMS_PRECHARGE;
+}
 
+void precharge_end()
+{
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+	HAL_Delay(1);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+
+	can_filter_normal(&hcan);
+	can_send_ts_on(&hcan);
+
+	state = BMS_ON;
+}
+
+void precharge_check()
+{
 	//inverter1 bus voltage request
 	can_request_inverter_voltage(&hcan);
 
-	for (uint8_t i = 0; i < 2; i++) { // Why this cycle?
+	for (uint8_t i = 0; i < 2; i++)
+	{ // Why this cycle?
 
-		if (can_receive(&hcan, &can_rx)) {
+		if (can_receive(&hcan, &can_rx))
+		{
 			// check bus voltage from inverter
-			if (can_rx.StdId == 0x181 && can_rx.Data[0] == 0xEB) {
+			if (can_rx.StdId == 0x181 && can_rx.Data[0] == 0xEB)
+			{
 
 				bus_voltage = can_rx.Data[2] << 8;
 				bus_voltage += can_rx.Data[1];
@@ -250,25 +227,22 @@ void precharge() {
 
 		}
 	}
+
 	bus_voltage = bus_voltage * 10000 / 31.499;
 
-	if (bus_voltage > pack.voltage * 0.90) {
+	if (bus_voltage > pack.voltage * 0.90)
+	{
 		HAL_Delay(1000); // TODO: use a timer
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-		HAL_Delay(1);
-		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-		state = BMS_ON;
 
-		can_filter_normal(&hcan);
-
-		can_send_ts_on(&hcan);
-
+		precharge_end();
 	}
 
-	if (++precharge_timer > 450) { // Timeout. TODO: Use a timer
+	if (HAL_GetTick() - precharge_timer > 450)
+	{ // Timeout
 
 		HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_RESET);
-		state = BMS_PRECHARGE_ERROR;
+
+		error_set(ERROR_PRECHARGE_ERROR, HAL_GetTick());
 
 		can_filter_normal(&hcan);
 
@@ -280,7 +254,8 @@ void precharge() {
  * @brief System Clock Configuration
  * @retval None
  */
-void SystemClock_Config(void) {
+void SystemClock_Config(void)
+{
 
 	RCC_OscInitTypeDef RCC_OscInitStruct;
 	RCC_ClkInitTypeDef RCC_ClkInitStruct;
@@ -293,7 +268,8 @@ void SystemClock_Config(void) {
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
 	RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
-	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+	{
 		_Error_Handler(__FILE__, __LINE__);
 	}
 
@@ -306,7 +282,8 @@ void SystemClock_Config(void) {
 	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
 	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+	{
 		_Error_Handler(__FILE__, __LINE__);
 	}
 
@@ -323,7 +300,8 @@ void SystemClock_Config(void) {
 }
 
 /* ADC1 init function */
-static void MX_ADC1_Init(void) {
+static void MX_ADC1_Init(void)
+{
 
 	ADC_MultiModeTypeDef multimode;
 	ADC_ChannelConfTypeDef sConfig;
@@ -344,14 +322,16 @@ static void MX_ADC1_Init(void) {
 	hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
 	hadc1.Init.LowPowerAutoWait = DISABLE;
 	hadc1.Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
-	if (HAL_ADC_Init(&hadc1) != HAL_OK) {
+	if (HAL_ADC_Init(&hadc1) != HAL_OK)
+	{
 		_Error_Handler(__FILE__, __LINE__);
 	}
 
 	/**Configure the ADC multi-mode
 	 */
 	multimode.Mode = ADC_MODE_INDEPENDENT;
-	if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK) {
+	if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
+	{
 		_Error_Handler(__FILE__, __LINE__);
 	}
 
@@ -363,7 +343,8 @@ static void MX_ADC1_Init(void) {
 	sConfig.SamplingTime = ADC_SAMPLETIME_601CYCLES_5;
 	sConfig.OffsetNumber = ADC_OFFSET_NONE;
 	sConfig.Offset = 0;
-	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
+	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+	{
 		_Error_Handler(__FILE__, __LINE__);
 	}
 
@@ -393,7 +374,8 @@ static void MX_SPI1_Init(void)
 }
 
 /* CAN init function */
-static void MX_CAN_Init(void) {
+static void MX_CAN_Init(void)
+{
 
 	hcan.Instance = CAN;
 	hcan.Init.Prescaler = 4;
@@ -407,14 +389,16 @@ static void MX_CAN_Init(void) {
 	hcan.Init.NART = DISABLE;
 	hcan.Init.RFLM = DISABLE;
 	hcan.Init.TXFP = DISABLE;
-	if (HAL_CAN_Init(&hcan) != HAL_OK) {
+	if (HAL_CAN_Init(&hcan) != HAL_OK)
+	{
 		_Error_Handler(__FILE__, __LINE__);
 	}
 
 }
 
 /* TIM6 init function */
-static void MX_TIM6_Init(void) {
+static void MX_TIM6_Init(void)
+{
 
 	TIM_MasterConfigTypeDef sMasterConfig;
 
@@ -423,14 +407,15 @@ static void MX_TIM6_Init(void) {
 	htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
 	htim6.Init.Period = 0;
 	htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-	if (HAL_TIM_Base_Init(&htim6) != HAL_OK) {
+	if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+	{
 		_Error_Handler(__FILE__, __LINE__);
 	}
 
 	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
 	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-	if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig)
-			!= HAL_OK) {
+	if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+	{
 		_Error_Handler(__FILE__, __LINE__);
 	}
 
@@ -439,7 +424,8 @@ static void MX_TIM6_Init(void) {
 /**
  * Enable DMA controller clock
  */
-static void MX_DMA_Init(void) {
+static void MX_DMA_Init(void)
+{
 	/* DMA controller clock enable */
 	__HAL_RCC_DMA1_CLK_ENABLE()
 	;
@@ -458,7 +444,8 @@ static void MX_DMA_Init(void) {
  * EVENT_OUT
  * EXTI
  */
-static void MX_GPIO_Init(void) {
+static void MX_GPIO_Init(void)
+{
 
 	GPIO_InitTypeDef GPIO_InitStruct;
 
@@ -497,10 +484,12 @@ static void MX_GPIO_Init(void) {
  * @param  line: The line in file as a number.
  * @retval None
  */
-void _Error_Handler(char *file, int line) {
+void _Error_Handler(char *file, int line)
+{
 	/* USER CODE BEGIN Error_Handler_Debug */
 	/* User can add his own implementation to report the HAL error return state */
-	while (1) {
+	while (1)
+	{
 	}
 	/* USER CODE END Error_Handler_Debug */
 }

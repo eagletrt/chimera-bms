@@ -5,28 +5,20 @@
  *      Author: bonnee
  */
 
+#include <error.h>
 #include "ltc6804.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-void ltc6804_init(LTC6804_T *ltc, uint8_t address)
+void cells_init(CELL_T *cells)
 {
-	ltc->status = LTC6804_STATUS_NONE;
-	ltc->address = address;
-
-	ltc->cell_voltage = 0;
-	ltc->avg_cell_temperature = 0;
-	ltc->max_cell_temperature = 0;
-
 	uint8_t i;
 	for (i = 0; i < LTC6804_CELL_COUNT; i++)
 	{
-		ltc->cells[i].voltage = 0;
-		ltc->cells[i].temperature = 0;
-		ltc->cells[i].voltage_faults = 0;
-		ltc->cells[i].temperature_faults = 0;
-		ltc->cells[i].state = CELL_NONE;
+		cells[i].voltage = 0;
+		cells[i].temperature = 0;
+		cells[i].state = CELL_NONE;
 	}
 }
 
@@ -36,10 +28,8 @@ void ltc6804_init(LTC6804_T *ltc, uint8_t address)
  * 				the configuration information for SPI module.
  * @param		Pointer to the LTC6804_T.
  */
-LTC6804_STATUS_T ltc6804_read_voltages(SPI_HandleTypeDef *hspi, LTC6804_T *ltc)
+void ltc6804_read_voltages(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, CELL_T *cells)
 {
-	ltc->status = LTC6804_STATUS_OK;
-
 	_ltc6804_adcv(hspi, 0);
 
 	uint8_t cmd[4];
@@ -67,58 +57,30 @@ LTC6804_STATUS_T ltc6804_read_voltages(SPI_HandleTypeDef *hspi, LTC6804_T *ltc)
 
 		uint8_t pec = _pec15(6, data) == (uint16_t) (data[6] * 256 + data[7]);
 
-		uint8_t cell = 0; // Counts the cell inside the register
-		for (cell = 0; cell < LTC6804_REG_CELL_COUNT; cell++)
+		if (pec)
 		{
-			if (cell_distribution[reg * LTC6804_REG_CELL_COUNT + cell])
+			error_unset(ERROR_LTC6804_PEC_ERROR);
+
+			uint8_t cell = 0; // Counts the cell inside the register
+			for (cell = 0; cell < LTC6804_REG_CELL_COUNT; cell++)
 			{
-				// If cell is present
-				if (pec)
+				if (ltc->cell_distribution[reg * LTC6804_REG_CELL_COUNT + cell])
 				{
-					ltc->cells[count].voltage = _convert_voltage(&data[2 * cell]);
-					ltc->cells[count].voltage_faults = 0;
+					// If cell is present
+
+					cells[count].voltage = _convert_voltage(&data[2 * cell]);
 
 					count++;
-				}
-				else
-				{
-					ltc->cells[count].voltage_faults++;
-					ltc->status = LTC6804_STATUS_PEC_ERROR;
-				}
 
-				if (ltc6804_update_state(&ltc->cells[count]) != CELL_OK)
-				{
-					// Report an error if cell is not ok
-					ltc->status = LTC6804_STATUS_CELL_ERROR;
+					ltc6804_update_state(&cells[count]);
 				}
 			}
 		}
-	}
-
-	ltc6804_compute_total_values(ltc);
-	return ltc->status;
-}
-
-void ltc6804_compute_total_values(LTC6804_T *ltc)
-{
-	ltc->cell_voltage = 0;
-	ltc->avg_cell_temperature = 0;
-	ltc->max_cell_temperature = 0;
-
-	uint32_t tmp_temperature = 0;
-	uint8_t i;
-	for (i = 0; i < LTC6804_CELL_COUNT; i++)
-	{
-		ltc->cell_voltage += ltc->cells[i].voltage;
-		tmp_temperature += ltc->cells[i].temperature;
-
-		if (ltc->cells[i].temperature > ltc->max_cell_temperature)
+		else
 		{
-			ltc->max_cell_temperature = ltc->cells[i].temperature;
+			error_set(ERROR_LTC6804_PEC_ERROR, HAL_GetTick());
 		}
 	}
-
-	ltc->avg_cell_temperature = (uint16_t) tmp_temperature / LTC6804_CELL_COUNT;
 }
 
 /**
@@ -147,7 +109,7 @@ void _ltc6804_adcv(SPI_HandleTypeDef *hspi, uint8_t DCP)
 /**
  * @brief		Enable or disable the temperature measurement through balancing
  * @param		1 to start temperature measurement and 0 to stop it
- * @param		uint8_t that indicates if we are reading even or odd temperatures
+ * @param		Indicates whether we're reading even (1) or odd (0) cells
  * @param		hspi pointer to a SPI_HandleTypeDef structure that contains
  * 				the configuration information for SPI module.
  */
@@ -206,19 +168,25 @@ void _ltc6804_command_temperatures(SPI_HandleTypeDef *hspi, uint8_t start,
 	_ltc6804_adcv(hspi, start);
 }
 
-LTC6804_STATUS_T ltc6804_read_temperatures(SPI_HandleTypeDef *hspi,
-		uint8_t parity, LTC6804_T *ltc)
+void ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, CELL_T *cells)
 {
-	ltc->status = LTC6804_STATUS_OK;
+	uint8_t parity;
+	for (parity = 0; parity < 2; parity++)
+	{
+		_rdcv_temp(hspi, parity, ltc, cells);
+	}
+}
+
+LTC6804_STATUS_T _rdcv_temp(SPI_HandleTypeDef *hspi, uint8_t parity, LTC6804_T *ltc, CELL_T *cells)
+{
+	LTC6804_STATUS_T status = LTC6804_STATUS_OK;
 
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
 	uint8_t data[8];
 
 	_ltc6804_command_temperatures(hspi, 1, parity); // switch between even and odd
-	//HAL_Delay(5);
 	_ltc6804_adcv(hspi, 1);
-
 
 	cmd[0] = (uint8_t) 0x80 + ltc->address;
 
@@ -243,114 +211,117 @@ LTC6804_STATUS_T ltc6804_read_temperatures(SPI_HandleTypeDef *hspi,
 
 		uint8_t pec = _pec15(6, data) == (uint16_t) (data[6] * 256 + data[7]);
 
-		uint8_t cell = 0; // Counts the cell inside the register
-		for (cell = 0; cell < LTC6804_REG_CELL_COUNT; cell++)
+		if (pec)
 		{
-			uint8_t reg_cell = reg * LTC6804_REG_CELL_COUNT;
+			error_unset(ERROR_LTC6804_PEC_ERROR);
 
-			if (parity)		// If we're reading even cells
+			uint8_t cell = 0; // Counts the cell inside the register
+			for (cell = 0; cell < LTC6804_REG_CELL_COUNT; cell++)
 			{
-				if (count % 2 == 0)		// If the cell is even
+				uint8_t reg_cell = reg * LTC6804_REG_CELL_COUNT;
+
+				if (parity)		// If we're reading even cells
 				{
-					if (cell_distribution[reg_cell + cell])		// If the cell is present
+					if (count % 2 == 0)		// If the cell is even
 					{
-						if (pec)
+						if (ltc->cell_distribution[reg_cell + cell])// If the cell is present
 						{
-							ltc->cells[count].temperature = _convert_temp(_convert_voltage(&data[2 * cell]));
-							ltc->cells[count].temperature_faults = 0;
-						}
-						else
-						{
-							ltc->cells[count].temperature_faults++;
-							ltc->status = LTC6804_STATUS_PEC_ERROR;
-						}
 
-						ltc6804_update_state(&(ltc->cells[count]));
-						count++;
+							cells[count].temperature = _convert_temp(
+									_convert_voltage(&data[2 * cell]));
+
+							ltc6804_update_state(&(cells[count]));
+							count++;
+						}
 					}
-				}
-				else{
-					if (cell_distribution[reg_cell + cell])
+					else
 					{
-						count++;
-					}
-				}
-			}
-			else
-			{
-				if (count % 2 != 0)		// If the cell is odd
-				{
-					if (cell_distribution[reg_cell + cell])
-					{
-						if (pec)
+						/* Skip a cell as it has already been filled by parity=0 */
+						if (ltc->cell_distribution[reg_cell + cell])
 						{
-							ltc->cells[count].temperature = _convert_temp(_convert_voltage(&data[2 * cell]));
-							ltc->cells[count].temperature_faults = 0;
-
+							count++;
 						}
-						else
-						{
-							ltc->cells[count].temperature_faults++;
-							ltc->status = LTC6804_STATUS_PEC_ERROR;
-						}
-
-						ltc6804_update_state(&(ltc->cells[count]));
-						count++;
 					}
 				}
 				else
 				{
-
-					// Skip middle cell
-					if (cell_distribution[reg_cell + cell])
+					if (count % 2 != 0)		// If the cell is odd
 					{
-						count++;
+						if (ltc->cell_distribution[reg_cell + cell])
+						{
+							cells[count].temperature = _convert_temp(
+									_convert_voltage(&data[2 * cell]));
+
+							ltc6804_update_state(&(cells[count]));
+							count++;
+						}
+					}
+					else
+					{
+						/* Leave an empty slot to be filled by parity=1 */
+						if (ltc->cell_distribution[reg_cell + cell])
+						{
+							count++;
+						}
 					}
 				}
 			}
+		}
+		else
+		{
+			error_set(ERROR_LTC6804_PEC_ERROR, HAL_GetTick());
 		}
 
 	}
 
 	_ltc6804_command_temperatures(hspi, 0, 0);	// turn off temp reading
 
-	ltc6804_compute_total_values(ltc);
-	return ltc->status;
+	return status;
 }
 
-CELL_STATE_T ltc6804_update_state(CELL_T *cell)
+void ltc6804_update_state(CELL_T *cell)
 {
-	if (!cell->voltage_faults && !cell->temperature_faults)
+	cell->state=CELL_OK;
+
+	if (cell->voltage < CELL_MIN_VOLTAGE)
 	{
-		cell->state = CELL_OK;
+		cell->state=CELL_UNDER_VOLTAGE;
+		error_set(ERROR_CELL_UNDER_VOLTAGE, HAL_GetTick());
+	}
+	else
+	{
+		error_unset(ERROR_CELL_UNDER_VOLTAGE);
 	}
 
-	if (cell->voltage < CELL_MIN_VOLTAGE && !cell->voltage_faults)
+	if (cell->voltage > CELL_MAX_VOLTAGE)
 	{
-		cell->state = CELL_UNDER_VOLTAGE;
+		cell->state=CELL_OVER_VOLTAGE;
+		error_set(ERROR_CELL_OVER_VOLTAGE, HAL_GetTick());
+	}
+	else
+	{
+		error_unset(ERROR_CELL_OVER_VOLTAGE);
 	}
 
-	if (cell->voltage > CELL_MAX_VOLTAGE && !cell->voltage_faults)
+	if (cell->temperature >= CELL_MAX_TEMPERATURE)
 	{
-		cell->state = CELL_OVER_VOLTAGE;
+		cell->state=CELL_OVER_TEMPERATURE;
+		error_set(ERROR_CELL_OVER_TEMPERATURE, HAL_GetTick());
+	}
+	else
+	{
+		error_unset(ERROR_CELL_OVER_TEMPERATURE);
 	}
 
-	if (cell->temperature >= CELL_MAX_TEMPERATURE && !cell->temperature_faults)
+	if (cell->temperature <= CELL_MIN_TEMPERATURE && cell->temperature!=0)
 	{
-		cell->state = CELL_OVER_TEMPERATURE;
+		cell->state=CELL_UNDER_TEMPERATURE;
+		error_set(ERROR_CELL_UNDER_TEMPERATURE, HAL_GetTick());
 	}
-
-	if (cell->temperature <= CELL_MIN_TEMPERATURE && !cell->temperature_faults)
+	else
 	{
-		cell->state = CELL_UNDER_TEMPERATURE;
+		error_unset(ERROR_CELL_UNDER_TEMPERATURE);
 	}
-
-	/*if (cell->voltage_faults > 0 || cell->temperature_faults > 0)
-	{
-		cell->state = CELL_DATA_NOT_UPDATED;
-	}*/
-
-	return cell->state;
 }
 
 /**

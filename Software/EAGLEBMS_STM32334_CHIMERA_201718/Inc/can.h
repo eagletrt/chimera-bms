@@ -9,6 +9,7 @@
 #ifndef CAN_H_
 #define CAN_H_
 
+#include <error.h>
 #include <stm32f3xx_hal.h>
 #include "pack.h"
 #include "ltc6804.h"
@@ -16,7 +17,8 @@
 /**
  * Defines CAN message codes
  */
-typedef enum {
+typedef enum
+{
 	CAN_PACK_STATE = 0x01,
 	CAN_INITIAL_CHECK = 0x02,
 	CAN_CONFIRM_START = 0x03,
@@ -27,8 +29,8 @@ typedef enum {
 	CAN_ERROR = 0x08,
 
 	CAN_CTRL_ID = 0x55,
-	CAN_CTRL_TS_ON=0x0A,
-	CAN_CTRL_TS_OFF=0x0B
+	CAN_CTRL_TS_ON = 0x0A,
+	CAN_CTRL_TS_OFF = 0x0B
 } CAN_CODE_T;
 
 void can_init(CAN_HandleTypeDef *canh);
@@ -38,8 +40,7 @@ uint8_t can_receive(CAN_HandleTypeDef *canh, CanRxMsgTypeDef*rx);
 
 void can_send_current(CAN_HandleTypeDef *canh, int32_t current);
 void can_send_pack_state(CAN_HandleTypeDef *canh, PACK_T pack);
-void can_send_cell_error(CAN_HandleTypeDef *canh, uint8_t index, CELL_T cell);
-void can_send_ltc_error(CAN_HandleTypeDef *canh, uint8_t index, LTC6804_T ltc);
+void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, PACK_T *pack);
 
 void can_request_inverter_voltage(CAN_HandleTypeDef *canh);
 void can_send_ts_off(CAN_HandleTypeDef *canh);

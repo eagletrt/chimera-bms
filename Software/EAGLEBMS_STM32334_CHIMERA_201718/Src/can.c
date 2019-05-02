@@ -7,7 +7,7 @@
  */
 
 #include <can.h>
-#include "ltc6804.h"
+#include <error.h>
 
 static const uint8_t CAN_INV_BUS_VOLTAGE[] =
 { 0x3D, 0xEB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
@@ -65,10 +65,10 @@ void can_filter_normal(CAN_HandleTypeDef *canh)
 
 uint8_t can_check_error(CAN_HandleTypeDef *canh)
 {
-//	if (HAL_CAN_GetState(canh) == HAL_CAN_ERROR_BOF)
-//	{
-//		return 1;
-//	}
+	if (HAL_CAN_GetState(canh) == HAL_CAN_ERROR_BOF)
+	{
+		return 1;
+	}
 	return 0;
 }
 
@@ -142,79 +142,73 @@ void can_send_pack_state(CAN_HandleTypeDef *canh, PACK_T pack)
 	data[1] = (uint8_t) (pack.voltage >> 16);
 	data[2] = (uint8_t) (pack.voltage >> 8);
 	data[3] = (uint8_t) (pack.voltage);
-	data[4] = (uint8_t) (pack.temperature >> 8);
-	data[5] = (uint8_t) (pack.temperature);
+	data[4] = (uint8_t) (pack.avg_temperature >> 8);
+	data[5] = (uint8_t) (pack.avg_temperature);
 	data[6] = (uint8_t) (pack.max_temperature >> 8);
 	data[7] = (uint8_t) (pack.max_temperature);
 	can_transmit(canh, 0xAA, 8, data);
 }
 
-void can_send_ltc_error(CAN_HandleTypeDef *canh, uint8_t index, LTC6804_T ltc)
+void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, PACK_T *pack)
 {
 	uint8_t data[8];
 
-	switch (ltc.status)
+	switch(error)
 	{
-	case LTC6804_STATUS_OK:
-	case LTC6804_STATUS_NONE:
-	case LTC6804_STATUS_CELL_ERROR:
-		break;
-	case LTC6804_STATUS_PEC_ERROR:
+	case ERROR_LTC6804_PEC_ERROR:
 		data[0] = 0x08;
 		data[1] = 0x02;
 		data[2] = 0x00;
-		data[3] = index;
+		data[3] = 0;	// Should be ltc index
 		data[4] = 0;
 		data[5] = 0;
 		data[6] = 0;
 		data[7] = 0;
 		break;
-	}
-
-	can_transmit(canh,0xAA,8,data);
-}
-
-void can_send_cell_error(CAN_HandleTypeDef *canh, uint8_t index, CELL_T cell)
-{
-
-	uint8_t data[8];
-
-	switch (cell.state)
-	{
-	case CELL_UNDER_VOLTAGE:
+	case ERROR_CELL_UNDER_VOLTAGE:
 		data[0] = 0x08;
 		data[1] = 0x02;
 		data[2] = 0x01;
-		data[3] = index;
-		data[4] = (uint8_t) (cell.voltage >> 8);
-		data[5] = (uint8_t) cell.voltage;
+		data[3] = 0;	// Should be cell index
+		data[4] = (uint8_t) (pack->min_voltage >> 8);
+		data[5] = (uint8_t) pack->min_voltage;
 		data[6] = 0;
 		data[7] = 0;
 		break;
-	case CELL_OVER_VOLTAGE:
+	case ERROR_CELL_OVER_VOLTAGE:
 		data[0] = 0x08;
 		data[1] = 0x02;
 		data[2] = 0x02;
-		data[3] = index;
-		data[4] = (uint8_t) (cell.voltage >> 8);
-		data[5] = (uint8_t) cell.voltage;
+		data[3] = 0;	// Should be cell index
+		data[4] = (uint8_t) (pack->max_voltage >> 8);
+		data[5] = (uint8_t) pack->max_voltage;
 		data[6] = 0;
 		data[7] = 0;
 		break;
-	case CELL_UNDER_TEMPERATURE:
-	case CELL_OVER_TEMPERATURE:
+	case ERROR_CELL_UNDER_TEMPERATURE:
 		data[0] = 0x08;
 		data[1] = 0x03;
 		data[2] = 0x02;
-		data[3] = index;
-		data[4] = (uint8_t) (cell.temperature >> 8);
-		data[5] = (uint8_t) cell.temperature;
+		data[3] = 0;	// Should be cell index
+		data[4] = (uint8_t) (pack->min_temperature >> 8);
+		data[5] = (uint8_t) pack->min_temperature;
 		data[6] = 0;
 		data[7] = 0;
 		break;
-
-	default:
-		return;
+	case ERROR_CELL_OVER_TEMPERATURE:
+		data[0] = 0x08;
+		data[1] = 0x03;
+		data[2] = 0x02;
+		data[3] = 0;	// Should be cell index
+		data[4] = (uint8_t) (pack->max_temperature >> 8);
+		data[5] = (uint8_t) pack->max_temperature;
+		data[6] = 0;
+		data[7] = 0;
+		break;
+	case ERROR_OVER_CURRENT:
+		break;
+	case ERROR_PRECHARGE_ERROR:
+		break;
 	}
 
 	can_transmit(canh, 0xAA, 8, data);

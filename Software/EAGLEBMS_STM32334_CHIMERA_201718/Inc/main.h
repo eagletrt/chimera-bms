@@ -32,7 +32,9 @@
 
 void cells_init();
 
-void precharge();
+void precharge_start();
+void precharge_end();
+void precharge_check();
 void ready();
 uint8_t can_check_error();
 void updateCells();
