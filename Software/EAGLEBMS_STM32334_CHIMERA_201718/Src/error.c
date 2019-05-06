@@ -9,12 +9,18 @@
 
 #include <error.h>
 
+/**
+ * Reaction times by the rules:
+ * 	- 500ms for voltage and current
+ * 	- 1s for temperatures
+ * We stay 100ms below to be safe
+ */
 #define LTC6804_PEC_TIMEOUT_COUNT 1000
-#define CELL_UNDER_VOLTAGE_TIMEOUT_MS 1000
-#define CELL_OVER_VOLTAGE_TIMEOUT_MS 1000
-#define CELL_UNDER_TEMPERATURE_TIMEOUT_MS 10000
-#define CELL_OVER_TEMPERATURE_TIMEOUT_MS 10000
-#define	OVER_CURRENT_TIMEOUT_MS 5000
+#define CELL_UNDER_VOLTAGE_TIMEOUT_MS 400
+#define CELL_OVER_VOLTAGE_TIMEOUT_MS 400
+#define CELL_UNDER_TEMPERATURE_TIMEOUT_MS 900
+#define CELL_OVER_TEMPERATURE_TIMEOUT_MS 900
+#define	OVER_CURRENT_TIMEOUT_MS 500
 #define CAN_TIMEOUT_COUNT 10
 #define PRECHARGE_TIMEOUT_COUNT 1
 
@@ -31,7 +37,9 @@ ERROR_LIMITS_T timeout[ERROR_NUM_ERRORS] =
 { PRECHARGE_TIMEOUT_COUNT, 0 } };
 
 /**
- * @brief Initializes an error struct
+ * @brief Initializes an error structure
+ *
+ * @param	error	The error structure to initialize
  */
 void error_init(ERROR_STATUS_T *error)
 {
