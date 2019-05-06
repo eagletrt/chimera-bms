@@ -15,21 +15,6 @@
 #include "chimera_config.h"
 #include "error.h"
 
-/** @brief Definition of a single cell
- *	@details This should be the primitive block on which a battery pack is constructed.
- *
- *	@warning This does assume that for every cell there's a temperature sensor.
- */
-/*
-typedef struct
-{
-	uint16_t voltage; //!< voltage of the cell
-	uint16_t temperature; //!< temperature of the cell
-
-	ERROR_STATUS_T voltage_error;
-	ERROR_STATUS_T temperature_error;
-} CELL_T;*/
-
 /** @brief Basic definition of a LTC6804 */
 typedef struct
 {

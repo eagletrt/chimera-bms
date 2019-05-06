@@ -140,7 +140,7 @@ int main(void)
 
 		// Current
 		error = ERROR_OK;
-		pack_update_current(&pack, &error);
+		pack_update_current(&pack.current, &error);
 
 		if (error != ERROR_OK)
 		{

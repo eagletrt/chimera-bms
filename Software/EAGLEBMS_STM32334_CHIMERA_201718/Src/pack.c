@@ -44,7 +44,8 @@ void pack_init(ADC_HandleTypeDef *adc, PACK_T *pack)
 	for (i = 0; i < LTC6804_COUNT; i++)
 	{
 		ltc[i].address = (uint8_t) 8 * i;
-		ltc[i].cell_distribution = cell_distribution;// cell_distribution is not duplicated through the array of ltcs.
+		// cell_distribution is not duplicated through the array of ltcs
+		ltc[i].cell_distribution = cell_distribution;
 
 		error_init(&ltc[i].error);
 	}
@@ -64,7 +65,7 @@ void pack_init(ADC_HandleTypeDef *adc, PACK_T *pack)
 /**
  * @brief	Polls all the LTCs for voltages
  *
- * @param	spi			isoSPI configuration struct
+ * @param	spi			isoSPI configuration structure
  * @param	voltages	The array of voltages
  * @param	error		Error return value
  */
@@ -85,7 +86,7 @@ void pack_update_voltages(SPI_HandleTypeDef *spi, ER_UINT16_T *voltages,
 /**
  * @brief	Polls all the LTCs for temperatures
  *
- * @param	spi				isoSPI configuration struct
+ * @param	spi				isoSPI configuration structure
  * @param	temperatures	The array of temperatures
  * @param	error			Error return value
  */
@@ -105,10 +106,10 @@ void pack_update_temperatures(SPI_HandleTypeDef *spi, ER_UINT16_T *temperatures,
 /**
  * @brief	Updates the current draw.
  *
- * @param	pack	The struct to save the data to
+ * @param	current	The current value
  * @param	error	The error return value
  */
-void pack_update_current(PACK_T *pack, ERROR_T *error)
+void pack_update_current(ER_INT32_T *current, ERROR_T *error)
 {
 	instCurrent = 0;
 	for (int i = 0; i < 512; i++)
@@ -116,18 +117,18 @@ void pack_update_current(PACK_T *pack, ERROR_T *error)
 	instCurrent /= 512;
 
 	float tmp_cur = (((float) instCurrent * 3.3) / 4096 - 2.048);
-	pack->current.value = round((tmp_cur * 200 / 1.25) * 10);
+	current->value = round((tmp_cur * 200 / 1.25) * 10);
 
-	if (pack->current.value > PACK_MAX_CURRENT)
+	if (current->value > PACK_MAX_CURRENT)
 	{
-		error_set(ERROR_OVER_CURRENT, &pack->current.error, HAL_GetTick());
+		error_set(ERROR_OVER_CURRENT, &current->error, HAL_GetTick());
 	}
 	else
 	{
-		error_unset(ERROR_OVER_CURRENT, &pack->current.error);
+		error_unset(ERROR_OVER_CURRENT, &current->error);
 	}
 
-	error_check_fatal(&pack->current.error, HAL_GetTick(), error);
+	error_check_fatal(&current->error, HAL_GetTick(), error);
 	ER_CHK(error);
 
 	End: ;
@@ -135,6 +136,7 @@ void pack_update_current(PACK_T *pack, ERROR_T *error)
 
 /**
  * @brief	Updates the pack's stats
+ * @details	It updates *_voltage and *_temperature with the data of the pack
  *
  * @param	pack	The struct to save the data to
  */

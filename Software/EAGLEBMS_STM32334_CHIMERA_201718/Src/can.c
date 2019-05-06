@@ -115,6 +115,12 @@ void can_send_ts_on(CAN_HandleTypeDef *canh)
 	can_send(canh, 0xAA, 8, CAN_TS_ON);
 }
 
+/**
+ * @brief	Send current data via CAN
+ *
+ * @param	canh	CAN configuration structure
+ * @param	current	The current variable
+ */
 void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
 {
 	// Send current data via CAN
@@ -132,10 +138,14 @@ void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
 	can_send(canh, 0xAA, 8, data);
 }
 
+/**
+ * @brief	Send pack data via CAN
+ *
+ * @param	canh	CAN configuration structure
+ * @param	pack	The pack structure with data to send
+ */
 void can_send_pack_state(CAN_HandleTypeDef *canh, PACK_T pack)
 {
-	// Send pack data via CAN
-
 	uint8_t data[8];
 
 	data[0] = CAN_PACK_STATE;
@@ -149,6 +159,13 @@ void can_send_pack_state(CAN_HandleTypeDef *canh, PACK_T pack)
 	can_send(canh, 0xAA, 8, data);
 }
 
+/**
+ * @brief	Recognise and send errors over can
+ *
+ * @param	canh	CAN configuration structure
+ * @param	error	The error type to send
+ * @param	pack	The pack structure with data to send
+ */
 void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, PACK_T *pack)
 {
 	uint8_t data[8];
