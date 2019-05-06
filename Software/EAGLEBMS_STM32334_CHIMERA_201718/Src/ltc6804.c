@@ -1,36 +1,27 @@
-/*
- * ltc6804.c
+/**
+ * @file	ltc6804.c
+ * @brief	This file contains the functions to communicate with the LTCs
  *
- *  Created on: Apr 11, 2019
- *      Author: bonnee
+ * @date	Apr 11, 2019
+ * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
  */
 
-#include <error.h>
 #include "ltc6804.h"
 
-#include <stdlib.h>
-#include <string.h>
-
-void cells_init(CELL_T *cells)
-{
-	uint8_t i;
-	for (i = 0; i < LTC6804_CELL_COUNT; i++)
-	{
-		cells[i].voltage = 0;
-		cells[i].temperature = 0;
-		cells[i].state = CELL_NONE;
-	}
-}
-
 /**
- * @brief		Polls all the registers of the LTC6804 and updates the cell array
- * @param 		hspi pointer to a SPI_HandleTypeDef structure that contains
- * 				the configuration information for SPI module.
- * @param		Pointer to the LTC6804_T.
+ * @brief	Polls all the registers of the LTC6804 and updates the cell array
+ * @details	It executes multiple rdcv requests to the LTCs and saves the values
+ * 			in the .voltage variable of the CELL_Ts.
+ *
+ * @param	spi	The isoSPI configuration structure
+ * @param	ltc		The array of LTC6804 configurations
+ * @param	volts	The array of voltages
+ * @param	error	The error return value
  */
-void ltc6804_read_voltages(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, CELL_T *cells)
+void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
+		ER_UINT16_T *volts, ERROR_T *error)
 {
-	_ltc6804_adcv(hspi, 0);
+	_ltc6804_adcv(spi, 0);
 
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
@@ -47,19 +38,19 @@ void ltc6804_read_voltages(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, CELL_T *cell
 		cmd[2] = (uint8_t) (cmd_pec >> 8);
 		cmd[3] = (uint8_t) (cmd_pec);
 
-		_wakeup_idle(hspi);
+		_wakeup_idle(spi);
 
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-		HAL_SPI_Transmit(hspi, cmd, 4, 100);
+		HAL_SPI_Transmit(spi, cmd, 4, 100);
 
-		HAL_SPI_Receive(hspi, data, 8, 100);
+		HAL_SPI_Receive(spi, data, 8, 100);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
 		uint8_t pec = _pec15(6, data) == (uint16_t) (data[6] * 256 + data[7]);
 
 		if (pec)
 		{
-			error_unset(ERROR_LTC6804_PEC_ERROR);
+			error_unset(ERROR_LTC6804_PEC_ERROR, &ltc->error);
 
 			uint8_t cell = 0; // Counts the cell inside the register
 			for (cell = 0; cell < LTC6804_REG_CELL_COUNT; cell++)
@@ -68,28 +59,35 @@ void ltc6804_read_voltages(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, CELL_T *cell
 				{
 					// If cell is present
 
-					cells[count].voltage = _convert_voltage(&data[2 * cell]);
+					volts[count].value = _convert_voltage(&data[2 * cell]);
+
+					ltc6804_check_voltage(&volts[count], error);
+					ER_CHK(error);
 
 					count++;
-
-					ltc6804_update_state(&cells[count]);
 				}
 			}
+
 		}
 		else
 		{
-			error_set(ERROR_LTC6804_PEC_ERROR, HAL_GetTick());
+			error_set(ERROR_LTC6804_PEC_ERROR, &ltc->error, HAL_GetTick());
 		}
+
+		error_check_fatal(&ltc->error, HAL_GetTick(), error);
+		ER_CHK(error);
+
+		End: ;
 	}
 }
 
 /**
- * @brief		Starts the LTC6804 ADC voltage conversion
- * @param		DCP: 0 to read voltages and 1 to read temperatures
- * @param		hspi pointer to a SPI_HandleTypeDef structure that contains
- * 				the configuration information for SPI module.
+ * @brief	Starts the LTC6804 ADC voltage conversion
+ *
+ * @param	spi	The isoSPI configuration structure
+ * @param	DCP		false to read voltages and true to read temperatures
  */
-void _ltc6804_adcv(SPI_HandleTypeDef *hspi, uint8_t DCP)
+void _ltc6804_adcv(SPI_HandleTypeDef *spi, bool DCP)
 {
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
@@ -99,26 +97,31 @@ void _ltc6804_adcv(SPI_HandleTypeDef *hspi, uint8_t DCP)
 	cmd[2] = (uint8_t) (cmd_pec >> 8);
 	cmd[3] = (uint8_t) (cmd_pec);
 
-	_wakeup_idle(hspi);
+	_wakeup_idle(spi);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(hspi, cmd, 4, 100);
+	HAL_SPI_Transmit(spi, cmd, 4, 100);
 	HAL_Delay(1);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 }
 
 /**
- * @brief		Enable or disable the temperature measurement through balancing
- * @param		1 to start temperature measurement and 0 to stop it
- * @param		Indicates whether we're reading even (1) or odd (0) cells
- * @param		hspi pointer to a SPI_HandleTypeDef structure that contains
- * 				the configuration information for SPI module.
+ * @brief	Enable or disable the temperature measurement through balancing
+ * @details	Since it's not possible to read the temperatures from adiacent
+ * 			cells at the same time, We split the measurement into two times:
+ * 			We read odd cells, and then even ones.
+ *
+ * @param	hspi		The isoSPI configuration structure
+ * @param	start_bal	whether to start temperature measurement
+ * @param	is_even		Indicates whether we're reading odd or even cells
  */
-void _ltc6804_command_temperatures(SPI_HandleTypeDef *hspi, uint8_t start,
-		uint8_t parity)
+void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start_bal, bool is_even)
 {
-	uint8_t cmd[4];	// WRCFG command
-	uint8_t cfng[8];// Set which cells to balance. It is necessary to not read adiacent cells at the same time, that's the purpose of the parity variable
+	// WRCFG command
+	uint8_t cmd[4];
+	uint8_t cfng[8];
+
 	uint16_t cmd_pec;
+
 	cmd[0] = 0x00;
 	cmd[1] = 0x01;
 	cmd_pec = _pec15(2, cmd);
@@ -130,9 +133,9 @@ void _ltc6804_command_temperatures(SPI_HandleTypeDef *hspi, uint8_t start,
 	cfng[2] = 0x00;
 	cfng[3] = 0x00;
 
-	if (start)
+	if (start_bal)
 	{
-		if (parity)
+		if (is_even)
 		{
 			// Command to balance cells (in order) 8,5,3,1 and 10
 			cfng[4] = 0b10010101;
@@ -142,7 +145,8 @@ void _ltc6804_command_temperatures(SPI_HandleTypeDef *hspi, uint8_t start,
 		{
 			// Command to balance cells (in order) 7,4,2 and 9
 			cfng[4] = 0b01001010;
-			cfng[5] = 0b00000001; // First 4 zeros are for DCT0 and should remain 0
+			// First 4 bits are for DCT0 and should remain 0
+			cfng[5] = 0b00000001;
 		}
 	}
 	else
@@ -165,28 +169,55 @@ void _ltc6804_command_temperatures(SPI_HandleTypeDef *hspi, uint8_t start,
 
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
-	_ltc6804_adcv(hspi, start);
+	_ltc6804_adcv(hspi, start_bal);
 }
 
-void ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, CELL_T *cells)
+/**
+ * @brief Convenience function to iterate _rdc_temp
+ * @details	This function calls wrcfg to set the right cells to balance, then
+ * 			proceeds with the series of rdcv readings.
+ *
+ * @param	hspi	The isoSPI configuration structure
+ * @param	ltc		The array of LTC6804 configurations
+ * @param	temps	The array of temperatures
+ * @param	error	The error return value
+ */
+void ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
+		ER_UINT16_T *temps, ERROR_T *error)
 {
-	uint8_t parity;
-	for (parity = 0; parity < 2; parity++)
+
+	uint8_t is_even;
+	for (is_even = 0; is_even < 2; is_even++)
 	{
-		_rdcv_temp(hspi, parity, ltc, cells);
+		_ltc6804_wrcfg(hspi, 1, is_even); // switch between even and odd
+		_ltc6804_adcv(hspi, 1);
+
+		_rdcv_temp(hspi, is_even, ltc, temps, error);
+		ER_CHK(error);
 	}
+
+	End: ;
+	_ltc6804_wrcfg(hspi, 0, 0); // turn off temp reading
 }
 
-LTC6804_STATUS_T _rdcv_temp(SPI_HandleTypeDef *hspi, uint8_t parity, LTC6804_T *ltc, CELL_T *cells)
+/**
+ * @brief	This function is used to fetch the temperatures.
+ * @details	The workings of this function are very similar to read_voltages,
+ * 			the main difference is the presence of the is_even parameter.
+ *
+ * @param	hspi	The isoSPI configuration structure
+ * @param	is_even	indicates which set of cells is currently being balanced:
+ * 					false for odd and true for even cells
+ * @param	ltc		The array of LTC6804 configurations
+ * @param	temps	The array of temperatures
+ * @param	error	The error return value
+ */
+void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
+		ER_UINT16_T *temps, ERROR_T *error)
 {
-	LTC6804_STATUS_T status = LTC6804_STATUS_OK;
-
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
 	uint8_t data[8];
-
-	_ltc6804_command_temperatures(hspi, 1, parity); // switch between even and odd
-	_ltc6804_adcv(hspi, 1);
 
 	cmd[0] = (uint8_t) 0x80 + ltc->address;
 
@@ -213,121 +244,123 @@ LTC6804_STATUS_T _rdcv_temp(SPI_HandleTypeDef *hspi, uint8_t parity, LTC6804_T *
 
 		if (pec)
 		{
-			error_unset(ERROR_LTC6804_PEC_ERROR);
+			error_unset(ERROR_LTC6804_PEC_ERROR, &ltc->error);
 
 			uint8_t cell = 0; // Counts the cell inside the register
 			for (cell = 0; cell < LTC6804_REG_CELL_COUNT; cell++)
 			{
 				uint8_t reg_cell = reg * LTC6804_REG_CELL_COUNT;
 
-				if (parity)		// If we're reading even cells
+				bool even = count % 2 == 0;
+				if (is_even == even)
 				{
-					if (count % 2 == 0)		// If the cell is even
+					// If the cell is present
+					if (ltc->cell_distribution[reg_cell + cell])
 					{
-						if (ltc->cell_distribution[reg_cell + cell])// If the cell is present
-						{
 
-							cells[count].temperature = _convert_temp(
-									_convert_voltage(&data[2 * cell]));
+						temps[count].value = _convert_temp(
+								_convert_voltage(&data[2 * cell]));
 
-							ltc6804_update_state(&(cells[count]));
-							count++;
-						}
-					}
-					else
-					{
-						/* Skip a cell as it has already been filled by parity=0 */
-						if (ltc->cell_distribution[reg_cell + cell])
-						{
-							count++;
-						}
+						ltc6804_check_temperature(&temps[count], error);
+						ER_CHK(error);
+
+						count++;
 					}
 				}
 				else
 				{
-					if (count % 2 != 0)		// If the cell is odd
+					// Leave an empty slot
+					if (ltc->cell_distribution[reg_cell + cell])
 					{
-						if (ltc->cell_distribution[reg_cell + cell])
-						{
-							cells[count].temperature = _convert_temp(
-									_convert_voltage(&data[2 * cell]));
+						count++;
+					}
 
-							ltc6804_update_state(&(cells[count]));
-							count++;
-						}
-					}
-					else
-					{
-						/* Leave an empty slot to be filled by parity=1 */
-						if (ltc->cell_distribution[reg_cell + cell])
-						{
-							count++;
-						}
-					}
 				}
 			}
 		}
 		else
 		{
-			error_set(ERROR_LTC6804_PEC_ERROR, HAL_GetTick());
+			error_set(ERROR_LTC6804_PEC_ERROR, &ltc->error, HAL_GetTick());
 		}
-
 	}
 
-	_ltc6804_command_temperatures(hspi, 0, 0);	// turn off temp reading
+	error_check_fatal(&ltc->error, HAL_GetTick(), error);
+	ER_CHK(error);	// In case of error, set the error and goto label End
 
-	return status;
-}
+	// Label in case of error
+	End:;
 
-void ltc6804_update_state(CELL_T *cell)
-{
-	cell->state=CELL_OK;
-
-	if (cell->voltage < CELL_MIN_VOLTAGE)
-	{
-		cell->state=CELL_UNDER_VOLTAGE;
-		error_set(ERROR_CELL_UNDER_VOLTAGE, HAL_GetTick());
-	}
-	else
-	{
-		error_unset(ERROR_CELL_UNDER_VOLTAGE);
-	}
-
-	if (cell->voltage > CELL_MAX_VOLTAGE)
-	{
-		cell->state=CELL_OVER_VOLTAGE;
-		error_set(ERROR_CELL_OVER_VOLTAGE, HAL_GetTick());
-	}
-	else
-	{
-		error_unset(ERROR_CELL_OVER_VOLTAGE);
-	}
-
-	if (cell->temperature >= CELL_MAX_TEMPERATURE)
-	{
-		cell->state=CELL_OVER_TEMPERATURE;
-		error_set(ERROR_CELL_OVER_TEMPERATURE, HAL_GetTick());
-	}
-	else
-	{
-		error_unset(ERROR_CELL_OVER_TEMPERATURE);
-	}
-
-	if (cell->temperature <= CELL_MIN_TEMPERATURE && cell->temperature!=0)
-	{
-		cell->state=CELL_UNDER_TEMPERATURE;
-		error_set(ERROR_CELL_UNDER_TEMPERATURE, HAL_GetTick());
-	}
-	else
-	{
-		error_unset(ERROR_CELL_UNDER_TEMPERATURE);
-	}
 }
 
 /**
- * @brief		Wakes up all the devices connected to the isoSPI bus
- * @param		hspi pointer to a SPI_HandleTypeDef structure that contains
- * 				the configuration information for SPI module.
+ * @brief	Checks that voltage is between its thresholds.
+ *
+ * @param	volts	The voltage
+ * @param	error	The error return code
+ */
+void ltc6804_check_voltage(ER_UINT16_T *volts, ERROR_T *error)
+{
+	if (volts->value < CELL_MIN_VOLTAGE)
+	{
+		error_set(ERROR_CELL_UNDER_VOLTAGE, &volts->error, HAL_GetTick());
+	}
+	else
+	{
+		error_unset(ERROR_CELL_UNDER_VOLTAGE, &volts->error);
+	}
+
+	if (volts->value > CELL_MAX_VOLTAGE)
+	{
+		error_set(ERROR_CELL_OVER_VOLTAGE, &volts->error, HAL_GetTick());
+	}
+	else
+	{
+		error_unset(ERROR_CELL_OVER_VOLTAGE, &volts->error);
+	}
+
+	error_check_fatal(&volts->error, HAL_GetTick(), error);
+	ER_CHK(error);
+
+	End: ;
+}
+
+/**
+ * @brief	Checks that temperature is between its thresholds.
+ *
+ * @param	temp	The temperature
+ * @param	error	The error return code
+ */
+void ltc6804_check_temperature(ER_UINT16_T *temp, ERROR_T *error)
+{
+	if (temp->value >= CELL_MAX_TEMPERATURE)
+	{
+		error_set(ERROR_CELL_OVER_TEMPERATURE, &temp->error, HAL_GetTick());
+	}
+	else
+	{
+		error_unset(ERROR_CELL_OVER_TEMPERATURE, &temp->error);
+	}
+
+	// Do we need under temperature?
+	/*if (temp->value <= CELL_MIN_TEMPERATURE && temp->value != 0)
+	{
+		error_set(ERROR_CELL_UNDER_TEMPERATURE, &temp->error, HAL_GetTick());
+	}
+	else
+	{
+		error_unset(ERROR_CELL_UNDER_TEMPERATURE, &temp->error);
+	}*/
+
+	error_check_fatal(&temp->error, HAL_GetTick(), error);
+	ER_CHK(error);
+
+	End: ;
+}
+
+/**
+ * @brief	Wakes up all the devices connected to the isoSPI bus
+ *
+ * @param	hspi	The isoSPI configuration structure
  */
 void _wakeup_idle(SPI_HandleTypeDef *hspi)
 {
@@ -339,11 +372,10 @@ void _wakeup_idle(SPI_HandleTypeDef *hspi)
 }
 
 /**
- * @brief		This function is used to calculate the PEC value
- * @param		Length of the data array
- * @param		Array of data
- * @param		CRC table
- * @retval		16 bit unsigned integer containing the two PEC bytes
+ * @brief	This function is used to calculate the PEC value
+ *
+ * @param	len		Length of the data array
+ * @param	data	Array of data
  */
 uint16_t _pec15(uint8_t len, uint8_t data[])
 {
@@ -351,19 +383,22 @@ uint16_t _pec15(uint8_t len, uint8_t data[])
 	remainder = 16;					// PEC seed
 	for (int i = 0; i < len; i++)
 	{
-
-		address = ((remainder >> 7) ^ data[i]) & 0xff;//calculate PEC table address
+		//calculate PEC table address
+		address = ((remainder >> 7) ^ data[i]) & 0xff;
 		remainder = (remainder << 8) ^ crcTable[address];
 
 	}
-	return (remainder * 2);	//The CRC15 has a 0 in the LSB so the final value must be multiplied by 2
+	//The CRC15 has a 0 in the LSB so the final value must be multiplied by 2
+	return (remainder * 2);
 }
 
 /**
- * @brief		This function is used to convert the 2 byte raw data from the
+ * @brief	This function is used to convert the 2 byte raw data from the
  * 			LTC68xx to a 16 bit unsigned integer
- * @param 		Raw data bytes
- * @retval		Voltage read from the LTC68xx
+ *
+ * @param 	v_data	Raw data bytes
+ *
+ * @retval	Voltage [mV]
  */
 uint16_t _convert_voltage(uint8_t v_data[])
 {
@@ -371,10 +406,12 @@ uint16_t _convert_voltage(uint8_t v_data[])
 }
 
 /**
- * @brief		This function converts a voltage data from the zener sensor
+ * @brief	This function converts a voltage data from the zener sensor
  * 			to a temperature
- * @param		Voltage read from the LTC68xx
- * @retval 	Temperature of the cell multiplied by 100
+ *
+ * @param	volt	Voltage [mV]
+ *
+ * @retval 	Temperature [C° * 100]
  */
 uint16_t _convert_temp(uint16_t volt)
 {

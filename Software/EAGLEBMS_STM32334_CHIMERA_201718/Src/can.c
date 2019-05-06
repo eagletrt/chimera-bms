@@ -1,13 +1,13 @@
 /**
- ******************************************************************************
- * @file	can.c
- * @author	Gregor
+ * @file	can.h
  * @brief	This file contains some CAN functions to ease data transmission
- ******************************************************************************
- */
+ *
+ * @author	Gregor
+ * @author  Matteo Bonora [matteo.bonora@studenti.unitn.it]
+*/
 
-#include <can.h>
-#include <error.h>
+#include "can.h"
+#include <stm32f3xx_hal.h>
 
 static const uint8_t CAN_INV_BUS_VOLTAGE[] =
 { 0x3D, 0xEB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
@@ -79,7 +79,7 @@ uint8_t can_check_error(CAN_HandleTypeDef *canh)
  * @param		Data array
  * @retval		16 bit unsigned integer containing the two PEC bytes
  */
-void can_transmit(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
+void can_send(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
 		const uint8_t data[])
 {
 
@@ -102,17 +102,17 @@ void can_transmit(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
 
 void can_request_inverter_voltage(CAN_HandleTypeDef *canh)
 {
-	can_transmit(canh, 0x201, 3, CAN_INV_BUS_VOLTAGE);
+	can_send(canh, 0x201, 3, CAN_INV_BUS_VOLTAGE);
 }
 
 void can_send_ts_off(CAN_HandleTypeDef *canh)
 {
-	can_transmit(canh, 0xAA, 8, CAN_TS_OFF);
+	can_send(canh, 0xAA, 8, CAN_TS_OFF);
 }
 
 void can_send_ts_on(CAN_HandleTypeDef *canh)
 {
-	can_transmit(canh, 0xAA, 8, CAN_TS_ON);
+	can_send(canh, 0xAA, 8, CAN_TS_ON);
 }
 
 void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
@@ -129,7 +129,7 @@ void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
 	data[5] = 0;
 	data[6] = 0;
 	data[7] = 0;
-	can_transmit(canh, 0xAA, 8, data);
+	can_send(canh, 0xAA, 8, data);
 }
 
 void can_send_pack_state(CAN_HandleTypeDef *canh, PACK_T pack)
@@ -139,14 +139,14 @@ void can_send_pack_state(CAN_HandleTypeDef *canh, PACK_T pack)
 	uint8_t data[8];
 
 	data[0] = CAN_PACK_STATE;
-	data[1] = (uint8_t) (pack.voltage >> 16);
-	data[2] = (uint8_t) (pack.voltage >> 8);
-	data[3] = (uint8_t) (pack.voltage);
+	data[1] = (uint8_t) (pack.total_voltage >> 16);
+	data[2] = (uint8_t) (pack.total_voltage >> 8);
+	data[3] = (uint8_t) (pack.total_voltage);
 	data[4] = (uint8_t) (pack.avg_temperature >> 8);
 	data[5] = (uint8_t) (pack.avg_temperature);
 	data[6] = (uint8_t) (pack.max_temperature >> 8);
 	data[7] = (uint8_t) (pack.max_temperature);
-	can_transmit(canh, 0xAA, 8, data);
+	can_send(canh, 0xAA, 8, data);
 }
 
 void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, PACK_T *pack)
@@ -185,7 +185,7 @@ void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, PACK_T *pack)
 		data[6] = 0;
 		data[7] = 0;
 		break;
-	case ERROR_CELL_UNDER_TEMPERATURE:
+	/*case ERROR_CELL_UNDER_TEMPERATURE:
 		data[0] = 0x08;
 		data[1] = 0x03;
 		data[2] = 0x02;
@@ -194,7 +194,7 @@ void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, PACK_T *pack)
 		data[5] = (uint8_t) pack->min_temperature;
 		data[6] = 0;
 		data[7] = 0;
-		break;
+		break;*/
 	case ERROR_CELL_OVER_TEMPERATURE:
 		data[0] = 0x08;
 		data[1] = 0x03;
@@ -211,5 +211,5 @@ void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, PACK_T *pack)
 		break;
 	}
 
-	can_transmit(canh, 0xAA, 8, data);
+	can_send(canh, 0xAA, 8, data);
 }

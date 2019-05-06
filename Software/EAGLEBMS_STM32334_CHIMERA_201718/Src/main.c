@@ -1,20 +1,18 @@
 /**
- ******************************************************************************
- * @file           : main.c
- * @brief          : Main program body
- ******************************************************************************
- */
+ * @file	main.c
+ * @brief	Main program body
+ *
+ * @author	Gregor
+ * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
+*/
 
-#include <error.h>
 #include "main.h"
-
-#include <string.h>
-#include <stdlib.h>
 
 #include "stm32f3xx_hal.h"
 #include "chimera_config.h"
 #include "pack.h"
 #include "can.h"
+#include "error.h"
 
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
@@ -35,6 +33,9 @@ CAN_HandleTypeDef hcan;
 TIM_HandleTypeDef htim6;
 
 PACK_T pack;
+
+ERROR_STATUS_T can_error;
+ERROR_T error = ERROR_OK;
 
 uint8_t data[8];
 
@@ -63,6 +64,7 @@ int main(void)
 	MX_SPI1_Init();
 
 	can_init(&hcan);
+	error_init(&can_error);
 
 	pack_init(&hadc1, &pack);
 
@@ -74,11 +76,18 @@ int main(void)
 	{
 		if (can_check_error(&hcan))
 		{
-			error_set(ERROR_CAN, HAL_GetTick());
+			error_set(ERROR_CAN, &can_error, HAL_GetTick());
 		}
 		else
 		{
-			error_unset(ERROR_CAN);
+			error_unset(ERROR_CAN, &can_error);
+		}
+
+		error = ERROR_OK;
+		error_check_fatal(&can_error, HAL_GetTick(), &error);
+		if (error != ERROR_OK)
+		{
+			break;
 		}
 
 		can_receive(&hcan, &can_rx);
@@ -96,42 +105,53 @@ int main(void)
 		{ // "Initial check". TODO: When is it called?
 			uint8_t i;
 
-			CELL_T *cells[PACK_CELL_COUNT];
-			pack_get_cells(cells);
-			for (i = 0; i < PACK_CELL_COUNT; i += 3)
+			for (i = 0; i < PACK_MODULE_COUNT; i += 3)
 			{
-
 				data[0] = i;
-				data[1] = (uint8_t) (cells[i]->voltage / 400);   //*0.04
-				data[2] = (uint8_t) (cells[i]->temperature / 40);   //*.4
-				data[3] = (uint8_t) (cells[i + 1]->voltage / 400);
-				data[4] = (uint8_t) (cells[i + 1]->temperature / 40);
-				data[5] = (uint8_t) (cells[i + 2]->voltage / 400);
-				data[6] = (uint8_t) (cells[i + 2]->temperature / 40);
+				data[1] = (uint8_t) (pack.voltages[i].value / 400);   //*0.04
+				data[2] = (uint8_t) (pack.temperatures[i].value / 40);   //*.4
+				data[3] = (uint8_t) (pack.voltages[i + 1].value / 400);
+				data[4] = (uint8_t) (pack.temperatures[i + 1].value / 40);
+				data[5] = (uint8_t) (pack.voltages[i + 2].value / 400);
+				data[6] = (uint8_t) (pack.temperatures[i + 2].value / 40);
 				data[7] = 0;
-				can_transmit(&hcan, 0xAB, 8, data);
+				can_send(&hcan, 0xAB, 8, data);
 				HAL_Delay(10);
 			}
 		}
 
 		// Voltages
-		pack_update_voltages(&hspi1, &pack);
+		error = ERROR_OK;
+		pack_update_voltages(&hspi1, pack.voltages, &error);
 
-		// Temperatures
-		pack_update_temperatures(&hspi1, &pack);
-
-		pack_update_current(&pack);
-
-		pack_update_status(&pack);
-
-		if (error_check_fatal(HAL_GetTick()))
+		if (error != ERROR_OK)
 		{
-			// STACCAH STACCAH
 			break;
 		}
 
+		// Temperatures
+		error = ERROR_OK;
+		pack_update_temperatures(&hspi1, pack.temperatures, &error);
+
+		if (error != ERROR_OK)
+		{
+			break;
+		}
+
+		// Current
+		error = ERROR_OK;
+		pack_update_current(&pack, &error);
+
+		if (error != ERROR_OK)
+		{
+			break;
+		}
+
+		// Update total values
+		pack_update_status(&pack);
+
 		can_send_pack_state(&hcan, pack);
-		can_send_current(&hcan, pack.current);
+		can_send_current(&hcan, pack.current.value);
 
 		switch (state)
 		{
@@ -179,7 +199,7 @@ int main(void)
 	HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_RESET);
 
-	can_send_error(&hcan, error_get(), &pack);
+	can_send_error(&hcan, error, &pack);
 
 	while (1)
 	{
@@ -230,7 +250,7 @@ void precharge_check()
 
 	bus_voltage = bus_voltage * 10000 / 31.499;
 
-	if (bus_voltage > pack.voltage * 0.90)
+	if (bus_voltage > pack.total_voltage * 0.90)
 	{
 		HAL_Delay(1000); // TODO: use a timer
 
@@ -242,7 +262,7 @@ void precharge_check()
 
 		HAL_GPIO_WritePin(GPIOA, PIN_TS_ON, GPIO_PIN_RESET);
 
-		error_set(ERROR_PRECHARGE_ERROR, HAL_GetTick());
+		//error_set(ERROR_PRECHARGE_ERROR, HAL_GetTick());
 
 		can_filter_normal(&hcan);
 

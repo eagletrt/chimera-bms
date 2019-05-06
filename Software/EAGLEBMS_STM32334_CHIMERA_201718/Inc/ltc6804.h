@@ -1,72 +1,44 @@
-/*
- * ltc_types.h
+/**
+ * @file	ltc6804.h
+ * @brief	This file contains the functions to communicate with the LTCs
  *
- *  Created on: Apr 11, 2019
- *      Author: bonnee
- */
+ * @date	Apr 11, 2019
+ * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
+*/
 
 #ifndef LTC6804_H_
 #define LTC6804_H_
 
 #include <inttypes.h>
-#include "stm32f3xx_hal.h"
+#include <stdbool.h>
+#include <stm32f3xx_hal.h>
 #include "chimera_config.h"
+#include "error.h"
 
-typedef enum
-{
-	LTC6804_STATUS_NONE,		/*< LTC is not initialized */
-	LTC6804_STATUS_OK,			/*< LTC operating normally */
-} LTC6804_STATUS_T;
-
-/**
- * @defgroup single cell status
+/** @brief Definition of a single cell
+ *	@details This should be the primitive block on which a battery pack is constructed.
+ *
+ *	@warning This does assume that for every cell there's a temperature sensor.
  */
-typedef enum
-{
-	CELL_NONE,				/*!< Cell is not yet initialized */
-	CELL_OK,				/*!< Cell is OK */
-	CELL_UNDER_VOLTAGE,
-	CELL_OVER_VOLTAGE,
-	CELL_UNDER_TEMPERATURE,
-	CELL_OVER_TEMPERATURE
-} CELL_STATE_T;
-
-/*	Cell basic info */
-typedef struct
-{
-	uint16_t voltage; /*!< voltage of the cell */
-	uint16_t temperature; /*!< temperature of the cell */
-
-	//uint8_t voltage_faults; /*!< fault counter for voltage readings */
-	//uint8_t temperature_faults; /*!< fault counter for temperature readings */
-
-	CELL_STATE_T state;
-} CELL_T;
-
-typedef struct
-{
-	uint8_t address;	/*!<  The isoSPI bus address */
-	uint8_t *cell_distribution;		/*!<		distribution of cells across the registers	*/
-	//LTC6804_STATUS_T status;		/*!<	General status	*/
-} LTC6804_T;
-
 /*
 typedef struct
 {
-	uint8_t address;
+	uint16_t voltage; //!< voltage of the cell
+	uint16_t temperature; //!< temperature of the cell
 
-	//uint8_t *cell_distribution;
-	CELL_T cells[LTC6804_CELL_COUNT];
+	ERROR_STATUS_T voltage_error;
+	ERROR_STATUS_T temperature_error;
+} CELL_T;*/
 
-	uint32_t cell_voltage;
-	uint16_t avg_cell_temperature;
-	uint16_t max_cell_temperature;
-
-	LTC6804_STATUS_T status;
-
+/** @brief Basic definition of a LTC6804 */
+typedef struct
+{
+	uint8_t address;			//!< The isoSPI bus address
+	bool *cell_distribution;	//!< distribution of cells across the registers
+	ERROR_STATUS_T error;		//!< Error status for the LTC
 } LTC6804_T;
-*/
 
+/** @brief Table used to calculate the pec for messaging */
 static const uint16_t crcTable[256] = { 0x0, 0xc599, 0xceab, 0xb32, 0xd8cf,
 		0x1d56, 0x1664, 0xd3fd, 0xf407, 0x319e, 0x3aac, 0xff35, 0x2cc8, 0xe951,
 		0xe263, 0x27fa, 0xad97, 0x680e, 0x633c, 0xa6a5, 0x7558, 0xb0c1, 0xbbf3,
@@ -97,12 +69,17 @@ static const uint16_t crcTable[256] = { 0x0, 0xc599, 0xceab, 0xb32, 0xd8cf,
 		0x2d02, 0xa76f, 0x62f6, 0x69c4, 0xac5d, 0x7fa0, 0xba39, 0xb10b, 0x7492,
 		0x5368, 0x96f1, 0x9dc3, 0x585a, 0x8ba7, 0x4e3e, 0x450c, 0x8095 };
 
+/**
+ * @brief rdcv command registers
+ * @details As defined in the LTC6804 datasheet, theese are the bits to access
+ * 			the four different registers of the LTC
+ */
 static const uint8_t rdcv_cmd[LTC6804_REG_COUNT] =
 {
-	0x04,	// A
-	0x06,	// B
-	0x08,	// C
-	0x0A	// D
+	0b0100,	// A
+	0b0110,	// B
+	0b1000,	// C
+	0b1010	// D
 };
 
 uint16_t _pec15(uint8_t len, uint8_t data[]);
@@ -110,15 +87,16 @@ uint16_t _convert_voltage(uint8_t v_data[]);
 uint16_t _convert_temp(uint16_t volt);
 void _wakeup_idle(SPI_HandleTypeDef *hspi);
 
-void _ltc6804_adcv(SPI_HandleTypeDef *hspi, uint8_t DCP);
-void _ltc6804_command_temperatures(SPI_HandleTypeDef *hspi, uint8_t start,
-		uint8_t parity);
-LTC6804_STATUS_T _rdcv_temp(SPI_HandleTypeDef *hspi, uint8_t parity, LTC6804_T *config, CELL_T *cells);
+void _ltc6804_adcv(SPI_HandleTypeDef *hspi, bool DCP);
+void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start, bool parity);
+void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
+		ER_UINT16_T *temps, ERROR_T *error);
 
-void cells_init(CELL_T *cells);
-void ltc6804_update_state(CELL_T *cell);
-void ltc6804_compute_total_values(CELL_T *ltc);
-void ltc6804_read_voltages(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, CELL_T *cells);
-void ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, CELL_T *cells);
+void ltc6804_check_voltage(ER_UINT16_T *volts, ERROR_T *error);
+void ltc6804_check_temperature(ER_UINT16_T *temp, ERROR_T *error);
+void ltc6804_read_voltages(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
+		ER_UINT16_T *volts, ERROR_T *error);
+void ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
+		ER_UINT16_T *temps, ERROR_T *error);
 
 #endif /* LTC6804_H_ */

@@ -1,101 +1,126 @@
-/*
- * error_handler.c
+/**
+ * @file	error.c
+ * @brief	This file contains the functions to handle errors.
  *
- *  Created on: May 1, 2019
- *      Author: bonnee
- */
+ * @date	May 1, 2019
+ *
+ * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
+*/
 
 #include <error.h>
 
-#define LTC6804_PEC_TIMEOUT_COUNT 10
+#define LTC6804_PEC_TIMEOUT_COUNT 1000
 #define CELL_UNDER_VOLTAGE_TIMEOUT_MS 1000
 #define CELL_OVER_VOLTAGE_TIMEOUT_MS 1000
 #define CELL_UNDER_TEMPERATURE_TIMEOUT_MS 10000
 #define CELL_OVER_TEMPERATURE_TIMEOUT_MS 10000
-#define	OVER_CURRENT_TIMEOUT_MS 1000
+#define	OVER_CURRENT_TIMEOUT_MS 5000
 #define CAN_TIMEOUT_COUNT 10
 #define PRECHARGE_TIMEOUT_COUNT 1
 
-ERROR_STATUS_T errors[ERROR_NUM_ERRORS];
+/** @brief	Defines the timeout in count or time for each error type */
 ERROR_LIMITS_T timeout[ERROR_NUM_ERRORS] =
 {
 { LTC6804_PEC_TIMEOUT_COUNT, 0 },
 { 0, CELL_UNDER_VOLTAGE_TIMEOUT_MS },
 { 0, CELL_OVER_VOLTAGE_TIMEOUT_MS },
-{ 0, CELL_UNDER_TEMPERATURE_TIMEOUT_MS },
+//{ 0, CELL_UNDER_TEMPERATURE_TIMEOUT_MS },
 { 0, CELL_OVER_TEMPERATURE_TIMEOUT_MS },
 { 0, OVER_CURRENT_TIMEOUT_MS },
 { CAN_TIMEOUT_COUNT, 0 },
 { PRECHARGE_TIMEOUT_COUNT, 0 } };
 
-void error_init()
+/**
+ * @brief Initializes an error struct
+ */
+void error_init(ERROR_STATUS_T *error)
 {
-	uint8_t i;
-	for (i = 0; i < ERROR_NUM_ERRORS; i++)
-	{
-		errors[i].count = 0;
-		errors[i].error = false;
-		errors[i].thrown = false;
-		errors[i].time_stamp = 0;
-	}
+	error->type = ERROR_OK;
+	error->count = 0;
+	error->active = false;
+	error->fatal = false;
+	error->time_stamp = 0;
 }
 
-void error_set(ERROR_T er, uint32_t time_stamp)
+/**
+ * @brief	Activates an error.
+ *
+ * @param	type	The error type
+ * @param	er		The error "instance" to activate
+ * @param	now		The current time
+ */
+void error_set(ERROR_T type, ERROR_STATUS_T *er, uint32_t now)
 {
-	if (errors[er].error)
+	// If the error is already enabled
+	if (er->active)
 	{
-		errors[er].count++;
+		// and it's the same error type
+		if (er->type == type)
+		{
+			er->count++;
+		}
 	}
 	else
 	{
-		errors[er].error = true;
-		errors[er].time_stamp = time_stamp;
-		errors[er].count = 1;
+		er->type = type;
+		er->active = true;
+		er->time_stamp = now;
+		er->count = 1;
 	}
 }
 
-void error_unset(ERROR_T er)
+/**
+ * @brief	Deactivates an error.
+ *
+ * @param	type	The type of error to deactivate
+ * @param	er		The error "instance" to deactivate
+ */
+void error_unset(ERROR_T type, ERROR_STATUS_T *er)
 {
-	errors[er].error = false;
-	errors[er].thrown = false;
+	// Disable only if the types are the same. We don't want to disable a different errors
+	if (er->type == type)
+	{
+		er->type = ERROR_OK;
+		er->active = false;
+		er->fatal = false;
+	}
 }
 
-ERROR_T error_get()
+/**
+ * @brief	Checks if an error has become fatal.
+ *
+ * @param	error	The error "instance" to check.
+ * @param	now		The current time.
+ * @param	halt	The error return value.
+ */
+void error_check_fatal(ERROR_STATUS_T *error, uint32_t now, ERROR_T *halt)
 {
-	uint8_t i;
-	for (i = 0; i < ERROR_NUM_ERRORS; i++)
+	if (error->active)
 	{
-		if (errors[i].error && errors[i].thrown)
+		if (_error_check_count(error) || _error_check_timeout(error, now))
 		{
-			return i;
+			error->fatal = true;
+			ER_RAISE(halt, error->type);
 		}
 	}
-	return ERROR_NUM_ERRORS;
+
+	End: ;
 }
 
-bool error_check_fatal(uint32_t time_stamp)
+/**
+ * @brief	Checks whether to trigger an error based on number of occurrences.
+ * @details	This will trigger the error if the number of occurrences exceeds the count parameter.
+ *
+ * @param	error	The error structure to check
+ *
+ * @retval	true for error, false for OK
+ */
+bool _error_check_count(ERROR_STATUS_T *error)
 {
-	bool halt = false;
-
-	uint8_t i;
-	for (i = 0; i < ERROR_NUM_ERRORS; i++)
+	if (timeout[error->type].count)
 	{
-		if (errors[i].error)
-		{
-			halt = _error_check_count(i, errors[i].count);
-			halt = _error_check_timeout(i, errors[i].time_stamp);
-			errors[i].thrown = halt;
-		}
-	}
-
-	return false;//return halt;
-}
-
-bool _error_check_count(ERROR_T er, uint16_t count)
-{
-	if (count)
-	{
-		if (errors[er].count > timeout[er].count)
+		/** Compares the actual count to the timeout for this error type */
+		if (error->count > timeout[error->type].count)
 		{
 			return true;
 		}
@@ -104,11 +129,21 @@ bool _error_check_count(ERROR_T er, uint16_t count)
 	return false;
 }
 
-bool _error_check_timeout(ERROR_T er, uint32_t time_stamp)
+/**
+ * @brief	Checks whether to trigger an error based on time.
+ * @details This will trigger the error if the time elapsed between the first
+ * 			occurrence of the error and the current time is more than the timeout.
+ *
+ * @param	error	The error struct to check
+ * @param	now		The current time
+ *
+ * @retval	true for error, false for OK
+ */
+bool _error_check_timeout(ERROR_STATUS_T *error, uint32_t now)
 {
-	if (time_stamp)
+	if (timeout[error->type].timeout)
 	{
-		if (time_stamp - errors[er].time_stamp < timeout[er].timeout)
+		if (now - error->time_stamp > timeout[error->type].timeout)
 		{
 			return true;
 		}

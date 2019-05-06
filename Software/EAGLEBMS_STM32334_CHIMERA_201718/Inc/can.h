@@ -1,18 +1,16 @@
 /**
- ******************************************************************************
  * @file	can.h
- * @author	Gregor
  * @brief	This file contains some CAN functions to ease data transmission
- ******************************************************************************
- */
+ *
+ * @author	Gregor
+ * @author  Matteo Bonora [matteo.bonora@studenti.unitn.it]
+*/
 
 #ifndef CAN_H_
 #define CAN_H_
 
-#include <error.h>
-#include <stm32f3xx_hal.h>
 #include "pack.h"
-#include "ltc6804.h"
+#include "error.h"
 
 /**
  * Defines CAN message codes
@@ -34,7 +32,7 @@ typedef enum
 } CAN_CODE_T;
 
 void can_init(CAN_HandleTypeDef *canh);
-void can_transmit(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
+void can_send(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
 		const uint8_t data[]);
 uint8_t can_receive(CAN_HandleTypeDef *canh, CanRxMsgTypeDef*rx);
 
