@@ -32,6 +32,7 @@
 
 void cells_init();
 
+void mandatory_checks();
 void precharge_start();
 void precharge_end();
 void precharge_check();

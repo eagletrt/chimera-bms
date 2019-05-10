@@ -26,7 +26,7 @@ typedef enum
 	CAN_MAX_TEMP = 0x07,
 	CAN_ERROR = 0x08,
 
-	CAN_CTRL_ID = 0x55,
+	CAN_CTRL_ID = 0x55,	// ECU
 	CAN_CTRL_TS_ON = 0x0A,
 	CAN_CTRL_TS_OFF = 0x0B
 } CAN_CODE_T;

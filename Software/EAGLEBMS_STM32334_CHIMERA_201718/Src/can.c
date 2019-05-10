@@ -11,6 +11,7 @@
 
 static const uint8_t CAN_INV_BUS_VOLTAGE[] =
 { 0x3D, 0xEB, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
 static const uint8_t CAN_TS_ON[] =
 { CAN_CONFIRM_START, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 static const uint8_t CAN_TS_OFF[] =
@@ -175,7 +176,7 @@ void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, PACK_T *pack)
 	case ERROR_LTC6804_PEC_ERROR:
 		data[0] = 0x08;
 		data[1] = 0x02;
-		data[2] = 0x00;
+		data[2] = 0;
 		data[3] = 0;	// Should be ltc index
 		data[4] = 0;
 		data[5] = 0;

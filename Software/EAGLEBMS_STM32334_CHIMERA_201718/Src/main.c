@@ -69,9 +69,10 @@ int main(void)
 	pack_init(&hadc1, &pack);
 
 	// BMS Status OFF
-	HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, PIN_BMS_FAULT, GPIO_PIN_SET);
 
 	state = BMS_OFF;
+
 	while (1)
 	{
 		if (can_check_error(&hcan))
@@ -108,50 +109,47 @@ int main(void)
 			for (i = 0; i < PACK_MODULE_COUNT; i += 3)
 			{
 				data[0] = i;
-				data[1] = (uint8_t) (pack.voltages[i].value / 400);   //*0.04
-				data[2] = (uint8_t) (pack.temperatures[i].value / 40);   //*.4
-				data[3] = (uint8_t) (pack.voltages[i + 1].value / 400);
-				data[4] = (uint8_t) (pack.temperatures[i + 1].value / 40);
-				data[5] = (uint8_t) (pack.voltages[i + 2].value / 400);
-				data[6] = (uint8_t) (pack.temperatures[i + 2].value / 40);
+				data[1] = (uint8_t)(pack.voltages[i].value / 400);		//*0.04
+				data[2] = (uint8_t)(pack.temperatures[i].value / 40); //*.4
+				data[3] = (uint8_t)(pack.voltages[i + 1].value / 400);
+				data[4] = (uint8_t)(pack.temperatures[i + 1].value / 40);
+				data[5] = (uint8_t)(pack.voltages[i + 2].value / 400);
+				data[6] = (uint8_t)(pack.temperatures[i + 2].value / 40);
 				data[7] = 0;
 				can_send(&hcan, 0xAB, 8, data);
 				HAL_Delay(10);
 			}
 		}
 
-		// Voltages
-		error = ERROR_OK;
-		pack_update_voltages(&hspi1, pack.voltages, &error);
-
-		if (error != ERROR_OK)
+		if (can_rx.StdId == CAN_CTRL_ID)
 		{
-			break;
+			if (can_rx.Data[0] == CAN_CTRL_TS_ON)
+			{
+				// TS On
+
+				if (can_rx.Data[1] == 0x00)
+				{
+					// Precharge
+					precharge_start();
+
+					precharge_timer = HAL_GetTick();
+					bus_voltage = 0;
+
+					can_filter_precharge(&hcan);
+				}
+				else if (can_rx.Data[1] == 0x01)
+				{ // TODO: Undocumented
+				  // Direct TS ON
+					precharge_start();
+
+					HAL_Delay(15000); // TODO: Use a timer
+					precharge_end();
+				}
+			}
 		}
 
-		// Temperatures
-		error = ERROR_OK;
-		pack_update_temperatures(&hspi1, pack.temperatures, &error);
 
-		if (error != ERROR_OK)
-		{
-			break;
-		}
-
-		// Current
-		error = ERROR_OK;
-		pack_update_current(&pack.current, &error);
-
-		if (error != ERROR_OK)
-		{
-			break;
-		}
-
-		// Update total values
-		pack_update_status(&pack);
-
-		can_send_pack_state(&hcan, pack);
-		can_send_current(&hcan, pack.current.value);
+		mandatory_checks(&error);
 
 		switch (state)
 		{
@@ -159,32 +157,7 @@ int main(void)
 			precharge_check();
 			break;
 		case BMS_OFF:
-			if (can_rx.StdId == CAN_CTRL_ID)
-			{
-				if (can_rx.Data[0] == CAN_CTRL_TS_ON)
-				{
-					// TS On
 
-					if (can_rx.Data[1] == 0x00)
-					{
-						// Precharge
-						precharge_start();
-
-						precharge_timer = HAL_GetTick();
-						bus_voltage = 0;
-
-						can_filter_precharge(&hcan);
-					}
-					else if (can_rx.Data[1] == 0x01)
-					{ 	// TODO: Undocumented
-						// Direct TS ON
-						precharge_start();
-
-						HAL_Delay(15000); // TODO: Use a timer
-						precharge_end();
-					}
-				}
-			}
 
 			break;
 		case BMS_ON:
@@ -203,10 +176,51 @@ int main(void)
 
 	while (1)
 	{
-		// TODO: add some command to restart the bms by breaking this cycle
+		mandatory_checks(&error);
+		// TODO: add some command to restart the BMS by breaking this cycle
 	}
 
 	return 0;
+}
+
+/**
+ * @brief Runs all the checks mandated by the rules
+ * @details It runs voltage, temperature and current measurements
+ */
+void mandatory_checks(ERROR_T *error)
+{
+	// Voltages
+	*error = ERROR_OK;
+	pack_update_voltages(&hspi1, pack.voltages, error);
+
+	if (*error != ERROR_OK)
+	{
+		return;
+	}
+
+	// Temperatures
+	*error = ERROR_OK;
+	pack_update_temperatures(&hspi1, pack.temperatures, error);
+
+	if (*error != ERROR_OK)
+	{
+		return;
+	}
+
+	// Current
+	*error = ERROR_OK;
+	pack_update_current(&pack.current, error);
+
+	if (*error != ERROR_OK)
+	{
+		return;
+	}
+
+	// Update total values
+	pack_update_status(&pack);
+
+	can_send_pack_state(&hcan, pack);
+	can_send_current(&hcan, pack.current.value);
 }
 
 void precharge_start()
@@ -244,7 +258,6 @@ void precharge_check()
 				bus_voltage = can_rx.Data[2] << 8;
 				bus_voltage += can_rx.Data[1];
 			}
-
 		}
 	}
 
@@ -295,8 +308,7 @@ void SystemClock_Config(void)
 
 	/**Initializes the CPU, AHB and APB busses clocks
 	 */
-	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
-			| RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
 	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
 	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -367,7 +379,6 @@ static void MX_ADC1_Init(void)
 	{
 		_Error_Handler(__FILE__, __LINE__);
 	}
-
 }
 
 static void MX_SPI1_Init(void)
@@ -413,7 +424,6 @@ static void MX_CAN_Init(void)
 	{
 		_Error_Handler(__FILE__, __LINE__);
 	}
-
 }
 
 /* TIM6 init function */
@@ -438,7 +448,6 @@ static void MX_TIM6_Init(void)
 	{
 		_Error_Handler(__FILE__, __LINE__);
 	}
-
 }
 
 /**
@@ -447,14 +456,12 @@ static void MX_TIM6_Init(void)
 static void MX_DMA_Init(void)
 {
 	/* DMA controller clock enable */
-	__HAL_RCC_DMA1_CLK_ENABLE()
-	;
+	__HAL_RCC_DMA1_CLK_ENABLE();
 
 	/* DMA interrupt init */
 	/* DMA1_Channel1_IRQn interrupt configuration */
 	HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
 	HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-
 }
 
 /** Configure pins as
@@ -470,21 +477,19 @@ static void MX_GPIO_Init(void)
 	GPIO_InitTypeDef GPIO_InitStruct;
 
 	/* GPIO Ports Clock Enable */
-	__HAL_RCC_GPIOA_CLK_ENABLE()
-	;
-	__HAL_RCC_GPIOB_CLK_ENABLE()
-	;
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+	__HAL_RCC_GPIOB_CLK_ENABLE();
 
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(GPIOA, PreChargeEnd_Pin | PIN_TS_ON | PIN_BMS_FAULT,
-			GPIO_PIN_RESET);
+										GPIO_PIN_RESET);
 
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(CS_6820_GPIO_Port, CS_6820_Pin, GPIO_PIN_SET);
 
 	/*Configure GPIO pins : PreChargeEnd_Pin CS_6820_Pin PIN_TS_ON BMS_FAULT_Pin */
 	GPIO_InitStruct.Pin =
-	PreChargeEnd_Pin | CS_6820_Pin | PIN_TS_ON | PIN_BMS_FAULT;
+			PreChargeEnd_Pin | CS_6820_Pin | PIN_TS_ON | PIN_BMS_FAULT;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -495,7 +500,6 @@ static void MX_GPIO_Init(void)
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
 	GPIO_InitStruct.Pull = GPIO_PULLUP;
 	HAL_GPIO_Init(ShutDownStatus_GPIO_Port, &GPIO_InitStruct);
-
 }
 
 /**
@@ -514,7 +518,7 @@ void _Error_Handler(char *file, int line)
 	/* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
  * @brief  Reports the name of the source file and the source line number
  *         where the assert_param error has occurred.
@@ -522,7 +526,7 @@ void _Error_Handler(char *file, int line)
  * @param  line: assert_param error line source number
  * @retval None
  */
-void assert_failed(uint8_t* file, uint32_t line)
+void assert_failed(uint8_t *file, uint32_t line)
 {
 	/* USER CODE BEGIN 6 */
 	/* User can add his own implementation to report the file name and line number,
