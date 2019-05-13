@@ -14,6 +14,8 @@
 #include "can.h"
 #include "error.h"
 
+#define LTC_READ_INTERVAL 400
+
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
@@ -42,6 +44,8 @@ uint8_t data[8];
 BMS_STATUS_T state = BMS_INIT;
 uint32_t precharge_timer;
 int32_t bus_voltage;
+
+int32_t timer_ltc;
 
 /**
  * @brief  The application entry point.
@@ -73,6 +77,7 @@ int main(void)
 
 	state = BMS_OFF;
 
+	timer_ltc = HAL_GetTick();
 	while (1)
 	{
 		if (can_check_error(&hcan))
@@ -142,14 +147,17 @@ int main(void)
 				  // Direct TS ON
 					precharge_start();
 
-					HAL_Delay(15000); // TODO: Use a timer
+					HAL_Delay(8000); // TODO: Use a timer
 					precharge_end();
 				}
 			}
 		}
 
-
-		mandatory_checks(&error);
+		if (HAL_GetTick() - timer_ltc >= LTC_READ_INTERVAL)
+		{
+			timer_ltc=HAL_GetTick();
+			mandatory_checks(&error);
+		}
 
 		switch (state)
 		{
