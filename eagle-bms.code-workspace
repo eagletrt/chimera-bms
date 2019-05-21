@@ -20,5 +20,15 @@
 			"${workspaceRoot}/Drivers/CMSIS/Device/ST/STM32F3xx/Include",
 			"${workspaceRoot}/Drivers/CMSIS/Include"
 		]
+	},
+	"launch": {
+		"configurations": [{
+			"cwd": "${workspaceRoot}",
+			"executable": "${workspaceRoot}/build/EAGLESTM32334BMS.elf",
+			"name": "Debug using st-util",
+			"request": "launch",
+			"type": "cortex-debug",
+			"servertype": "stutil"
+		}],
 	}
 }
