@@ -1,7 +1,10 @@
 Release/
 Debug/
+build/
 *.o
 *.elf
 *.bin
+*.hex
+*.map
 .settings/
 .vscode

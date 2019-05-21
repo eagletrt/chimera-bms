@@ -30,7 +30,7 @@ void pack_init(ADC_HandleTypeDef *adc, PACK_T *pack)
 	// Start current measuring
 	HAL_ADC_Start_DMA(adc, adcCurrent, 512);
 
-	pack->total_voltage = 0;
+	pack->total_voltage = 4000000;
 	pack->max_voltage = 0;
 	pack->min_voltage = 0;
 	pack->avg_temperature = 0;
