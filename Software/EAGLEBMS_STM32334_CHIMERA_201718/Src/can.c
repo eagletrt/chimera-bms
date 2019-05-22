@@ -65,13 +65,13 @@ void can_filter_normal(CAN_HandleTypeDef *canh)
 	HAL_CAN_ConfigFilter(canh, &runFilter);
 }
 
-uint8_t can_check_error(CAN_HandleTypeDef *canh)
+bool can_check_error(CAN_HandleTypeDef *canh)
 {
 	if (HAL_CAN_GetState(canh) == HAL_CAN_ERROR_BOF)
 	{
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 /**

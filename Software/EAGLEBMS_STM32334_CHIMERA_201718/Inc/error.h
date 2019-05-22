@@ -72,8 +72,8 @@ typedef struct
 typedef struct
 {
 	ERROR_T type;
-	bool active;
-	bool fatal;
+	bool active; /*!< True if the error is currently present */
+	bool fatal;  /*!< True if the error is fatal */
 	uint16_t count;
 	uint32_t time_stamp;
 } ERROR_STATUS_T;
@@ -111,7 +111,6 @@ bool _error_check_timeout(ERROR_STATUS_T *error, uint32_t time);
 void error_init(ERROR_STATUS_T *error);
 void error_set(ERROR_T type, ERROR_STATUS_T *error, uint32_t time_stamp);
 void error_unset(ERROR_T type, ERROR_STATUS_T *error);
-void error_check_fatal(ERROR_STATUS_T *error, uint32_t time_stamp,
-					   ERROR_T *halt);
+ERROR_T error_check_fatal(ERROR_STATUS_T *error, uint32_t now);
 
 #endif /* ERROR_H_ */

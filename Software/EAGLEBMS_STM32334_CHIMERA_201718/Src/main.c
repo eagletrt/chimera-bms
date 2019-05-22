@@ -159,6 +159,7 @@ int main(void)
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
+
 		if (can_check_error(&hcan))
 		{
 			error_set(ERROR_CAN, &can_error, HAL_GetTick());
@@ -167,12 +168,8 @@ int main(void)
 		{
 			error_unset(ERROR_CAN, &can_error);
 		}
-
-		error = ERROR_OK;
-		error_check_fatal(&can_error, HAL_GetTick(), &error);
+		error = error_check_fatal(&can_error, HAL_GetTick());
 		ER_CHK(&error);
-
-		/* CAN message handling */
 
 		can_receive(&hcan, &can_rx);
 
@@ -254,7 +251,6 @@ int main(void)
 		{
 			timer_volts = HAL_GetTick();
 
-			error = ERROR_OK;
 			read_volts(&error);
 			ER_CHK(&error);
 		}
@@ -263,7 +259,6 @@ int main(void)
 		{
 			timer_temps = HAL_GetTick();
 
-			error = ERROR_OK;
 			read_temps(&error);
 			ER_CHK(&error);
 		}
@@ -567,45 +562,34 @@ static void MX_GPIO_Init(void)
 void read_volts(ERROR_T *error)
 {
 	// Voltages
-	*error = ERROR_OK;
 	pack_update_voltages(&hspi1, pack.voltages, error);
-
-	if (*error != ERROR_OK)
-	{
-		return;
-	}
+	ER_CHK(error);
 
 	// Current
-	*error = ERROR_OK;
 	pack_update_current(&pack.current, error);
-
-	if (*error != ERROR_OK)
-	{
-		return;
-	}
+	ER_CHK(error);
 
 	pack_update_status(&pack);
 
 	can_send_pack_voltage(&hcan, pack);
 	HAL_Delay(5);
 	can_send_current(&hcan, pack.current.value);
+
+End:;
 }
 
 void read_temps(ERROR_T *error)
 {
 	// Temperatures
-	*error = ERROR_OK;
 	pack_update_temperatures(&hspi1, pack.temperatures, error);
-
-	if (*error != ERROR_OK)
-	{
-		return;
-	}
+	ER_CHK(error);
 
 	// Update total values
 	pack_update_status(&pack);
 
 	can_send_pack_temperature(&hcan, pack);
+
+End:;
 }
 /* USER CODE END 4 */
 

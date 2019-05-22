@@ -11,10 +11,10 @@
 #include <inttypes.h>
 
 /**
- * @brief	Sets the given pin and updates the pin's state
+ * @brief		Sets the given pin and updates the pin's state
  *
- * @param	pin		The pin to set
- * @param	state	The state to set the pin to
+ * @param		pin		The pin to set
+ * @param		state	The state to set the pin to
  */
 void bms_write_pin(BMS_PIN_T *pin, GPIO_PinState state)
 {
@@ -23,9 +23,9 @@ void bms_write_pin(BMS_PIN_T *pin, GPIO_PinState state)
 }
 
 /**
- * @brief	Starts the precharge routine
+ * @brief		Starts the precharge routine
  *
- * @param	bms	The BMS config structure
+ * @param		bms		The BMS config structure
  */
 void bms_precharge_start(BMS_CONFIG_T *bms)
 {

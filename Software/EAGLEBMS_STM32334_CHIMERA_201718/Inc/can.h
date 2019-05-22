@@ -49,8 +49,7 @@ void can_init_msg(uint8_t data[8]);
 void can_send(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
 			  const uint8_t data[]);
 uint8_t can_receive(CAN_HandleTypeDef *canh, CanRxMsgTypeDef *rx);
-
-uint8_t can_check_error(CAN_HandleTypeDef *canh);
+bool can_check_error(CAN_HandleTypeDef *canh);
 
 void can_send_current(CAN_HandleTypeDef *canh, int32_t current);
 void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack);

@@ -79,7 +79,7 @@ void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 			error_set(ERROR_LTC6804_PEC_ERROR, &ltc->error, HAL_GetTick());
 		}
 
-		error_check_fatal(&ltc->error, HAL_GetTick(), error);
+		*error = error_check_fatal(&ltc->error, HAL_GetTick());
 		ER_CHK(error);
 
 	End:;
@@ -319,7 +319,7 @@ void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
 		}
 	}
 
-	error_check_fatal(&ltc->error, HAL_GetTick(), error);
+	*error = error_check_fatal(&ltc->error, HAL_GetTick());
 	ER_CHK(error); // In case of error, set the error and goto label End
 
 // Label in case of error
@@ -352,7 +352,7 @@ void ltc6804_check_voltage(ER_UINT16_T *volts, ERROR_T *error)
 		error_unset(ERROR_CELL_OVER_VOLTAGE, &volts->error);
 	}
 
-	error_check_fatal(&volts->error, HAL_GetTick(), error);
+	*error = error_check_fatal(&volts->error, HAL_GetTick());
 	ER_CHK(error);
 
 End:;
@@ -375,7 +375,7 @@ void ltc6804_check_temperature(ER_UINT16_T *temp, ERROR_T *error)
 		error_unset(ERROR_CELL_OVER_TEMPERATURE, &temp->error);
 	}
 
-	error_check_fatal(&temp->error, HAL_GetTick(), error);
+	*error = error_check_fatal(&temp->error, HAL_GetTick());
 	ER_CHK(error);
 
 End:;

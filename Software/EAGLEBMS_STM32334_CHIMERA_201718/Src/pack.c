@@ -141,7 +141,7 @@ void pack_update_current(ER_INT32_T *current, ERROR_T *error)
 		error_unset(ERROR_OVER_CURRENT, &current->error);
 	}
 
-	error_check_fatal(&current->error, HAL_GetTick(), error);
+	*error = error_check_fatal(&current->error, HAL_GetTick());
 	ER_CHK(error);
 
 End:;

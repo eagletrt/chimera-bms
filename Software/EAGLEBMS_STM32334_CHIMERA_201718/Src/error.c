@@ -95,24 +95,24 @@ void error_unset(ERROR_T type, ERROR_STATUS_T *er)
 }
 
 /**
- * @brief	Checks if an error has become fatal.
+ * @brief		Checks if an error has become fatal.
  *
- * @param	error	The error "instance" to check.
- * @param	now		The current time.
- * @param	halt	The error return value.
+ * @param		error	The error "instance" to check.
+ * @param		now		The current time.
+ *
+ * @retval	The error return value.
  */
-void error_check_fatal(ERROR_STATUS_T *error, uint32_t now, ERROR_T *halt)
+ERROR_T error_check_fatal(ERROR_STATUS_T *error, uint32_t now)
 {
 	if (error->active)
 	{
 		if (_error_check_count(error) || _error_check_timeout(error, now))
 		{
 			error->fatal = true;
-			ER_RAISE(halt, error->type);
+			return error->type;
 		}
 	}
-
-End:;
+	return ERROR_OK;
 }
 
 /**
