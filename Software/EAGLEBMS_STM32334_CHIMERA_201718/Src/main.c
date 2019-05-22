@@ -37,7 +37,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TEMP_READ_INTERVAL 300
+#define TEMPS_READ_INTERVAL 300
 #define VOLTS_READ_INTERVAL 10
 /* USER CODE END PD */
 
@@ -168,10 +168,7 @@ int main(void)
 
     error = ERROR_OK;
     error_check_fatal(&can_error, HAL_GetTick(), &error);
-    if (error != ERROR_OK)
-    {
-      break;
-    }
+		ER_CHK(&error);
 
     can_receive(&hcan, &can_rx);
 
@@ -252,35 +249,44 @@ int main(void)
     if (HAL_GetTick() - timer_volts >= VOLTS_READ_INTERVAL)
     {
       timer_volts = HAL_GetTick();
+
+			error = ERROR_OK;
       read_volts(&error);
+			ER_CHK(&error);
     }
 
-    if (HAL_GetTick() - timer_temps >= VOLTS_READ_INTERVAL)
+		if (HAL_GetTick() - timer_temps >= TEMPS_READ_INTERVAL)
     {
       timer_temps = HAL_GetTick();
+
+			error = ERROR_OK;
       read_temps(&error);
+			ER_CHK(&error);
     }
   }
 
-  // In case of fatal error
+End:; // In case of fatal error
 
   // Set the BMS to fault
   bms_set_fault(&bms);
   bms_set_ts_off(&bms);
+	bms_set_fault(&bms);
 
   can_send_error(&hcan, error, &pack);
 
   while (1)
   {
-    if (HAL_GetTick() - timer_volts >= VOLTS_READ_INTERVAL)
+		uint32_t tick = HAL_GetTick();
+
+		if (tick - timer_volts >= VOLTS_READ_INTERVAL)
     {
-      timer_volts = HAL_GetTick();
+			timer_volts = tick;
       read_volts(&error);
     }
 
-    if (HAL_GetTick() - timer_temps >= VOLTS_READ_INTERVAL)
+		if (tick - timer_temps >= TEMPS_READ_INTERVAL)
     {
-      timer_temps = HAL_GetTick();
+			timer_temps = tick;
       read_temps(&error);
     }
   }

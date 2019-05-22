@@ -52,6 +52,6 @@ void bms_set_ts_off(BMS_CONFIG_T *bms)
 
 void bms_set_fault(BMS_CONFIG_T *bms)
 {
-	bms_write_pin(&bms->pin_fault, GPIO_PIN_SET);
+	bms_write_pin(&bms->pin_fault, GPIO_PIN_RESET);
 	bms->status = BMS_HALT;
 }
