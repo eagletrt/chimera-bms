@@ -1,9 +1,9 @@
 /**
- * @file	can.h
- * @brief	This file contains some CAN functions to ease data transmission
+ * @file		can.h
+ * @brief		This file contains some CAN functions to ease data transmission
  *
  * @author	Gregor
- * @author  Matteo Bonora [matteo.bonora@studenti.unitn.it]
+ * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
  */
 
 #include "can.h"
@@ -13,7 +13,7 @@ const uint8_t CAN_MSG_TS_ON[8] = {CAN_OUT_TS_ON, 0, 0, 0, 0, 0, 0, 0};
 const uint8_t CAN_MSG_TS_OFF[8] = {CAN_OUT_TS_OFF, 0, 0, 0, 0, 0, 0, 0};
 
 CAN_FilterConfTypeDef runFilter; // CAN filter used during regular use
-CAN_FilterConfTypeDef pcFilter;	// CAN filter used during precharge cycle
+CAN_FilterConfTypeDef pcFilter;  // CAN filter used during precharge cycle
 
 void can_init_msg(uint8_t data[8])
 {
@@ -76,13 +76,14 @@ uint8_t can_check_error(CAN_HandleTypeDef *canh)
 
 /**
  * @brief		This function is used to transmit a CAN message
- * @param		STD ID
- * @param		Data lenght
- * @param		Data array
- * @retval		16 bit unsigned integer containing the two PEC bytes
+ *
+ * @param		canh	The CAN configuration structure
+ * @param		id		The message ID
+ * @param		DLC		TheMessage length
+ * @param		data	The data to send
  */
 void can_send(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
-							const uint8_t data[])
+			  const uint8_t data[])
 {
 
 	CanTxMsgTypeDef TxMsg;
@@ -117,10 +118,10 @@ void can_send_ts_on(CAN_HandleTypeDef *canh)
 }
 
 /**
- * @brief	Send current data via CAN
+ * @brief		Send current data via CAN
  *
- * @param	canh	CAN configuration structure
- * @param	current	The current variable
+ * @param		canh		CAN configuration structure
+ * @param		current	The current variable
  */
 void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
 {
@@ -140,10 +141,10 @@ void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
 }
 
 /**
- * @brief	Send pack data via CAN
+ * @brief		Send pack data via CAN
  *
- * @param	canh	CAN configuration structure
- * @param	pack	The pack structure with data to send
+ * @param		canh	CAN configuration structure
+ * @param		pack	The pack structure with data to send
  */
 void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack)
 {
@@ -161,10 +162,10 @@ void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack)
 }
 
 /**
- * @brief	Send pack data via CAN
+ * @brief		Send pack data via CAN
  *
- * @param	canh	CAN configuration structure
- * @param	pack	The pack structure with data to send
+ * @param		canh	CAN configuration structure
+ * @param		pack	The pack structure with data to send
  */
 void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
 {
@@ -182,11 +183,11 @@ void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
 }
 
 /**
- * @brief	Recognise and send errors over can
+ * @brief		Recognise and send errors over can
  *
- * @param	canh	CAN configuration structure
- * @param	error	The error type to send
- * @param	pack	The pack structure with data to send
+ * @param		canh	CAN configuration structure
+ * @param		error	The error type to send
+ * @param		pack	The pack structure with data to send
  */
 void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, PACK_T *pack)
 {
@@ -224,16 +225,6 @@ void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, PACK_T *pack)
 		data[6] = 0;
 		data[7] = 0;
 		break;
-		/*case ERROR_CELL_UNDER_TEMPERATURE:
-		 data[0] = 0x08;
-		 data[1] = 0x03;
-		 data[2] = 0x02;
-		 data[3] = 0;	// Should be cell index
-		 data[4] = (uint8_t) (pack->min_temperature >> 8);
-		 data[5] = (uint8_t) pack->min_temperature;
-		 data[6] = 0;
-		 data[7] = 0;
-		 break;*/
 	case ERROR_CELL_OVER_TEMPERATURE:
 		data[0] = 0x08;
 		data[1] = 0x03;

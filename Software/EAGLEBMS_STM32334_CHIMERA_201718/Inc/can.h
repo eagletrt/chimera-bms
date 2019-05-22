@@ -4,13 +4,13 @@
  *
  * @author	Gregor
  * @author  Matteo Bonora [matteo.bonora@studenti.unitn.it]
-*/
+ */
 
 #ifndef CAN_H_
 #define CAN_H_
 
-#include "pack.h"
 #include "error.h"
+#include "pack.h"
 
 /**
  * Defines CAN message codes
@@ -47,7 +47,7 @@ typedef enum
 void can_init(CAN_HandleTypeDef *canh);
 void can_init_msg(uint8_t data[8]);
 void can_send(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
-							const uint8_t data[]);
+			  const uint8_t data[]);
 uint8_t can_receive(CAN_HandleTypeDef *canh, CanRxMsgTypeDef *rx);
 
 uint8_t can_check_error(CAN_HandleTypeDef *canh);

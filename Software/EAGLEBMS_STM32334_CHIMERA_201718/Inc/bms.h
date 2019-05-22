@@ -1,6 +1,7 @@
 /**
  * @file	bms.h
- * @brief	This file contains the functions to manage the battery pack procedures
+ * @brief	This file contains the functions to manage the battery pack
+ * procedures
  *
  * @date	May 21, 2019
  * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]

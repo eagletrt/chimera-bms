@@ -1,11 +1,11 @@
 /**
- * @file	error.c
- * @brief	This file contains the functions to handle errors.
+ * @file		error.c
+ * @brief		This file contains the functions to handle errors.
  *
- * @date	May 1, 2019
+ * @date		May 1, 2019
  *
  * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
-*/
+ */
 
 #include <error.h>
 
@@ -20,24 +20,23 @@
 #define CELL_OVER_VOLTAGE_TIMEOUT_MS 400
 #define CELL_UNDER_TEMPERATURE_TIMEOUT_MS 900
 #define CELL_OVER_TEMPERATURE_TIMEOUT_MS 900
-#define	OVER_CURRENT_TIMEOUT_MS 500
+#define OVER_CURRENT_TIMEOUT_MS 500
 #define CAN_TIMEOUT_COUNT 10
 #define PRECHARGE_TIMEOUT_COUNT 1
 
 /** @brief	Defines the timeout in count or time for each error type */
-ERROR_LIMITS_T timeout[ERROR_NUM_ERRORS] =
-{
-{ LTC6804_PEC_TIMEOUT_COUNT, 0 },
-{ 0, CELL_UNDER_VOLTAGE_TIMEOUT_MS },
-{ 0, CELL_OVER_VOLTAGE_TIMEOUT_MS },
-//{ 0, CELL_UNDER_TEMPERATURE_TIMEOUT_MS },
-{ 0, CELL_OVER_TEMPERATURE_TIMEOUT_MS },
-{ 0, OVER_CURRENT_TIMEOUT_MS },
-{ CAN_TIMEOUT_COUNT, 0 },
-{ PRECHARGE_TIMEOUT_COUNT, 0 } };
+ERROR_LIMITS_T timeout[ERROR_NUM_ERRORS] = {
+	{LTC6804_PEC_TIMEOUT_COUNT, 0},
+	{0, CELL_UNDER_VOLTAGE_TIMEOUT_MS},
+	{0, CELL_OVER_VOLTAGE_TIMEOUT_MS},
+	//{ 0, CELL_UNDER_TEMPERATURE_TIMEOUT_MS },
+	{0, CELL_OVER_TEMPERATURE_TIMEOUT_MS},
+	{0, OVER_CURRENT_TIMEOUT_MS},
+	{CAN_TIMEOUT_COUNT, 0},
+	{PRECHARGE_TIMEOUT_COUNT, 0}};
 
 /**
- * @brief Initializes an error structure
+ * @brief	Initializes an error structure
  *
  * @param	error	The error structure to initialize
  */
@@ -85,7 +84,8 @@ void error_set(ERROR_T type, ERROR_STATUS_T *er, uint32_t now)
  */
 void error_unset(ERROR_T type, ERROR_STATUS_T *er)
 {
-	// Disable only if the types are the same. We don't want to disable a different errors
+	// Disable only if the types are the same. We don't want to disable a
+	// different errors
 	if (er->type == type)
 	{
 		er->type = ERROR_OK;
@@ -112,14 +112,16 @@ void error_check_fatal(ERROR_STATUS_T *error, uint32_t now, ERROR_T *halt)
 		}
 	}
 
-	End: ;
+End:;
 }
 
 /**
- * @brief	Checks whether to trigger an error based on number of occurrences.
- * @details	This will trigger the error if the number of occurrences exceeds the count parameter.
+ * @brief		Checks whether to trigger an error based on number of
+ * 					occurrences.
+ * @details	This will trigger the error if the number of occurrences exceeds the
+ * 					count parameter.
  *
- * @param	error	The error structure to check
+ * @param		error	The error structure to check
  *
  * @retval	true for error, false for OK
  */
@@ -138,12 +140,13 @@ bool _error_check_count(ERROR_STATUS_T *error)
 }
 
 /**
- * @brief	Checks whether to trigger an error based on time.
- * @details This will trigger the error if the time elapsed between the first
- * 			occurrence of the error and the current time is more than the timeout.
+ * @brief		Checks whether to trigger an error based on time.
+ * @details	This will trigger the error if the time elapsed between the first
+ * 					occurrence of the error and the current time is more than
+ * the timeout.
  *
- * @param	error	The error struct to check
- * @param	now		The current time
+ * @param		error	The error struct to check
+ * @param		now		The current time
  *
  * @retval	true for error, false for OK
  */
