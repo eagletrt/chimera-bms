@@ -1,34 +1,5 @@
 {
 	"folders": [{
 		"path": "./Software/EAGLEBMS_STM32334_CHIMERA_201718"
-	}],
-	"settings": {
-		"files.associations": {
-			"bms.h": "c",
-			"stm32f3xx_hal.h": "c",
-			"main.h": "c",
-			"stm32f3xx_hal_conf.h": "c",
-			"stm32f3xx_hal_rcc.h": "c",
-			"stm32f3xx_hal_def.h": "c",
-			"stm32f3xx.h": "c",
-			"stm32f334x8.h": "c",
-			"core_cm4.h": "c"
-		},
-		"C_Cpp.default.includePath": [
-			"${workspaceRoot}/Inc",
-			"${workspaceRoot}/Drivers/STM32F3xx_HAL_Driver/Inc",
-			"${workspaceRoot}/Drivers/CMSIS/Device/ST/STM32F3xx/Include",
-			"${workspaceRoot}/Drivers/CMSIS/Include"
-		]
-	},
-	"launch": {
-		"configurations": [{
-			"cwd": "${workspaceRoot}",
-			"executable": "${workspaceRoot}/build/EAGLESTM32334BMS.elf",
-			"name": "Debug using st-util",
-			"request": "launch",
-			"type": "cortex-debug",
-			"servertype": "stutil"
-		}],
-	}
+	}]
 }
