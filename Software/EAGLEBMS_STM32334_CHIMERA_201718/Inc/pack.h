@@ -33,9 +33,8 @@ typedef struct
 } PACK_T;
 
 void pack_init(ADC_HandleTypeDef *adc, PACK_T *pack);
-void pack_update_voltages(SPI_HandleTypeDef *spi, ER_UINT16_T *voltages,
-						  ERROR_T *error);
-void pack_update_temperatures(SPI_HandleTypeDef *spi, ER_UINT16_T *temperatures,
+void pack_update_voltages(SPI_HandleTypeDef *spi, PACK_T *pack, ERROR_T *error);
+void pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack,
 							  ERROR_T *error);
 void pack_update_current(ER_INT32_T *current, ERROR_T *error);
 void pack_update_status(PACK_T *pack);

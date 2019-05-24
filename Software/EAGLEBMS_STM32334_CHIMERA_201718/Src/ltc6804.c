@@ -7,6 +7,7 @@
  */
 
 #include "ltc6804.h"
+#include <math.h>
 
 /**
  * @brief		Polls all the registers of the LTC6804 and updates the cell
@@ -25,9 +26,10 @@
  * @param		error	The error return value
  */
 void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
-						   ER_UINT16_T *volts, ERROR_T *error)
+						   ER_UINT16_T *volts, uint32_t *total_voltage,
+						   uint16_t *max_voltage, uint16_t *min_voltage,
+						   ERROR_T *error)
 {
-	_ltc6804_adcv(spi, 0);
 
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
@@ -37,6 +39,7 @@ void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 
 	uint8_t count = 0; // cells[] index
 	uint8_t reg;	   // Counts the register
+
 	for (reg = 0; reg < LTC6804_REG_COUNT; reg++)
 	{
 		cmd[1] = (uint8_t)rdcv_cmd[reg];
@@ -47,7 +50,7 @@ void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 		_wakeup_idle(spi);
 
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-		HAL_SPI_Transmit(spi, cmd, 4, 10);
+		HAL_SPI_Transmit(spi, cmd, 4, 100);
 
 		HAL_SPI_Receive(spi, data, 8, 100);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
@@ -64,8 +67,13 @@ void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 				if (ltc->cell_distribution[reg * LTC6804_REG_CELL_COUNT + cell])
 				{
 					// If cell is present
+					uint16_t volt = _convert_voltage(&data[2 * cell]);
 
-					volts[count].value = _convert_voltage(&data[2 * cell]);
+					volts[count].value = volt;
+
+					*total_voltage += volt;
+					*max_voltage = fmax(*max_voltage, volt);
+					*min_voltage = fmin(*min_voltage, volt);
 
 					ltc6804_check_voltage(&volts[count], error);
 					ER_CHK(error);
@@ -81,9 +89,8 @@ void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 
 		*error = error_check_fatal(&ltc->error, HAL_GetTick());
 		ER_CHK(error);
-
-	End:;
 	}
+End:;
 }
 
 /**
@@ -112,7 +119,7 @@ void _ltc6804_adcv(SPI_HandleTypeDef *spi, bool dcp)
 
 	_wakeup_idle(spi);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-	HAL_SPI_Transmit(spi, cmd, 4, 10);
+	HAL_SPI_Transmit(spi, cmd, 4, 100);
 	HAL_Delay(1);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 }
@@ -192,12 +199,10 @@ void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start_bal, bool is_even)
 	_wakeup_idle(hspi);
 
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
-
-	HAL_SPI_Transmit(hspi, wrcfg, 4, 10);
+	HAL_SPI_Transmit(hspi, wrcfg, 4, 100);
 	HAL_Delay(1);
-	HAL_SPI_Transmit(hspi, cfgr, 8, 10);
+	HAL_SPI_Transmit(hspi, cfgr, 8, 100);
 	HAL_Delay(1);
-
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
 	_ltc6804_adcv(hspi, start_bal);
@@ -216,20 +221,25 @@ void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start_bal, bool is_even)
  * @param		error	The error return value
  */
 void ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
-							   ER_UINT16_T *temps, ERROR_T *error)
+							   ER_UINT16_T *temps, uint16_t *avg_temp,
+							   uint16_t *max_temp, uint16_t *min_temp,
+							   ERROR_T *error)
 {
 
-	uint8_t is_even;
-	for (is_even = 0; is_even < 2; is_even++)
+	uint8_t is_even = 0;
+	uint16_t temp_count = 0;
+	// for (is_even = 0; is_even < 2; is_even++)
 	{
 		_ltc6804_wrcfg(hspi, 1, is_even); // switch between even and odd
 		_ltc6804_adcv(hspi, 1);
 
-		_rdcv_temp(hspi, is_even, ltc, temps, error);
+		_rdcv_temp(hspi, is_even, ltc, temps, avg_temp, &temp_count, max_temp,
+				   min_temp, error);
 		ER_CHK(error);
 	}
 
 End:;
+	_ltc6804_adcv(hspi, 0);
 	_ltc6804_wrcfg(hspi, 0, 0); // turn off temp reading
 }
 
@@ -249,7 +259,8 @@ End:;
  * @param		error		The error return value
  */
 void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
-				ER_UINT16_T *temps, ERROR_T *error)
+				ER_UINT16_T *temps, uint16_t *avg_temp, uint16_t *temp_count,
+				uint16_t *max_temp, uint16_t *min_temp, ERROR_T *error)
 {
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
@@ -270,9 +281,9 @@ void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
 
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_RESET);
 		HAL_Delay(1);
-		HAL_SPI_Transmit(hspi, cmd, 4, 10);
+		HAL_SPI_Transmit(hspi, cmd, 4, 100);
 
-		HAL_SPI_Receive(hspi, data, 8, 10);
+		HAL_SPI_Receive(hspi, data, 8, 100);
 		HAL_Delay(1);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
@@ -293,12 +304,20 @@ void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
 					// If the cell is present
 					if (ltc->cell_distribution[reg_cell + cell])
 					{
-
-						temps[count].value =
+						uint16_t temp =
 							_convert_temp(_convert_voltage(&data[2 * cell]));
 
-						ltc6804_check_temperature(&temps[count], error);
-						ER_CHK(error);
+						if (temp > 0)
+						{
+							temps[count].value = temp;
+							*avg_temp = (((*avg_temp) * (*temp_count)) + temp) /
+										++(*temp_count);
+							*max_temp = fmax(*max_temp, temp);
+							*min_temp = fmin(*min_temp, temp);
+
+							ltc6804_check_temperature(&temps[count], error);
+							ER_CHK(error);
+						}
 
 						count++;
 					}
