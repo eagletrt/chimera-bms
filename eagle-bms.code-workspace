@@ -1,5 +1,9 @@
 {
 	"folders": [{
 		"path": "./Software/EAGLEBMS_STM32334_CHIMERA_201718"
-	}]
+	}],
+	"settings": {
+		"C_Cpp.default.cStandard": "c11",
+		"C_Cpp.clang_format_fallbackStyle": "{BasedOnStyle: LLVM, UseTab: true, IndentWidth: 4, TabWidth: 4, BreakBeforeBraces: Allman, ColumnLimit: 80}",
+	}
 }
