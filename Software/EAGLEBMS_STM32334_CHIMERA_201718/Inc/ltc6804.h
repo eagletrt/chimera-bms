@@ -71,13 +71,12 @@ static const uint8_t rdcv_cmd[LTC6804_REG_COUNT] = {
 uint16_t _pec15(uint8_t len, uint8_t data[]);
 uint16_t _convert_voltage(uint8_t v_data[]);
 uint16_t _convert_temp(uint16_t volt);
-void _wakeup_idle(SPI_HandleTypeDef *hspi);
+void _wakeup_idle(SPI_HandleTypeDef *hspi, bool apply_delay);
 
 void _ltc6804_adcv(SPI_HandleTypeDef *hspi, bool DCP);
 void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start, bool parity);
 void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
-				ER_UINT16_T *temps, uint16_t *avg_temp, uint16_t *temp_count,
-				uint16_t *max_temp, uint16_t *min_temp, ERROR_T *error);
+				ER_UINT16_T *temps, ERROR_T *error);
 
 void ltc6804_check_voltage(ER_UINT16_T *volts, ERROR_T *error);
 void ltc6804_check_temperature(ER_UINT16_T *temp, ERROR_T *error);
@@ -86,8 +85,6 @@ void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 						   uint16_t *max_voltage, uint16_t *min_voltage,
 						   ERROR_T *error);
 void ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
-							   ER_UINT16_T *temps, uint16_t *avg_temp,
-							   uint16_t *max_temp, uint16_t *min_temp,
-							   ERROR_T *error);
+							   ER_UINT16_T *temps, ERROR_T *error);
 
 #endif /* LTC6804_H_ */

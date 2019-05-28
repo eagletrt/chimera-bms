@@ -37,8 +37,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TEMPS_READ_INTERVAL 500
-#define VOLTS_READ_INTERVAL 200
+#define TEMPS_READ_INTERVAL 250
+#define VOLTS_READ_INTERVAL 250
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
