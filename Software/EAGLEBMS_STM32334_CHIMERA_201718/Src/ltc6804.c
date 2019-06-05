@@ -9,7 +9,7 @@
 #include "ltc6804.h"
 #include <math.h>
 
-// Uncomment if you want to emulate the LTC daisy chain
+// Set to 1 to emulate the LTC daisy chain
 #define LTC6804_EMU 0
 
 /**
@@ -28,8 +28,8 @@
  * @param		volts	The array of voltages
  * @param		error	The error return value
  */
-void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
-						   ER_UINT16_T *volts, ERROR_T *error)
+uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
+							  ER_UINT16_T *volts, ERROR_T *error)
 {
 
 	uint8_t cmd[4];
@@ -101,6 +101,7 @@ void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 		ER_CHK(error);
 	}
 End:;
+	return count;
 }
 
 /**
@@ -115,7 +116,7 @@ End:;
  * 					  (BRD)      Speed   DCP
  *
  * @param		spi		The spi configuration structure
- * @param		dcp		false to read voltages and true to read temperatures
+ * @param		dcp		false to read voltages; true to read temperatures
  */
 void _ltc6804_adcv(SPI_HandleTypeDef *spi, bool dcp)
 {
@@ -161,9 +162,10 @@ void _ltc6804_adcv(SPI_HandleTypeDef *spi, bool dcp)
  *
  * @param		hspi			The SPI configuration structure
  * @param		start_bal	whether to start temperature measurement
- * @param		is_even		Indicates whether we're reading odd or even cells
+ * @param		even			Indicates whether we're reading odd or even
+ *cells
  */
-void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start_bal, bool is_even)
+void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start_bal, bool even)
 {
 	uint8_t wrcfg[4];
 	uint8_t cfgr[8];
@@ -183,7 +185,7 @@ void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start_bal, bool is_even)
 
 	if (start_bal)
 	{
-		if (is_even)
+		if (even)
 		{
 			// Command to balance cells (in order) 8,5,3,1 and 10
 			cfgr[4] = 0b10010101;
@@ -230,42 +232,47 @@ void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start_bal, bool is_even)
  * @param		temps	The array of temperatures
  * @param		error	The error return value
  */
-void ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
-							   ER_UINT16_T *temps, ERROR_T *error)
+uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
+								  ER_UINT16_T *temps, ERROR_T *error)
 {
 
-	uint8_t is_even = 0;
-	for (is_even = 0; is_even < 2; is_even++)
+	uint8_t even = 0;
+	uint8_t index;
+
+	for (even = 0; even < 2; even++)
 	{
-		_ltc6804_wrcfg(hspi, 1, is_even); // switch between even and odd
+		_ltc6804_wrcfg(hspi, 1, even); // switch between even and odd
 		_ltc6804_adcv(hspi, 1);
 
-		_rdcv_temp(hspi, is_even, ltc, temps, error);
+		index = _rdcv_temp(hspi, even, ltc, temps, error);
 		ER_CHK(error);
 	}
 
 End:;
 	_ltc6804_adcv(hspi, 0);
 	_ltc6804_wrcfg(hspi, 0, 0); // turn off temp reading
+
+	return index;
 }
 
 /**
  * @brief		This function is used to fetch the temperatures.
  * @details	The workings of this function are very similar to read_voltages,
- * 					the main difference to it is the presence of the is_even
+ * 					the main difference to it is the presence of the even
+ *
  * 					parameter. Refer to the ltc6804_read_voltages comment for
  * 					the actual messages.
  *
  * @param		hspi		The SPI configuration structure
- * @param		is_even	indicates which set of cells is currently being
+ * @param		even		indicates which set of cells is currently being
  * 									balanced: false for odd and true for even
- * 									cells
+ * cells
  * @param		ltc			The array of LTC6804 configurations
  * @param		temps		The array of temperatures
  * @param		error		The error return value
  */
-void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
-				ER_UINT16_T *temps, ERROR_T *error)
+uint8_t _rdcv_temp(SPI_HandleTypeDef *hspi, bool even, LTC6804_T *ltc,
+				   ER_UINT16_T *temps, ERROR_T *error)
 {
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
@@ -293,7 +300,7 @@ void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
 #if LTC6804_EMU > 0
-		// Writes 9.292v (18°C) to each cell
+		// Writes 9.292v (18°C) to each sensor
 
 		uint8_t emu_i;
 		for (emu_i = 0; emu_i < LTC6804_REG_CELL_COUNT * 2; emu_i++)
@@ -318,7 +325,7 @@ void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
 			{
 				uint8_t reg_cell = reg * LTC6804_REG_CELL_COUNT;
 
-				bool even = count % 2 == 0;
+				bool is_even = count % 2 == 0;
 				if (is_even == even)
 				{
 					// If the cell is present
@@ -357,8 +364,9 @@ void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
 	*error = error_check_fatal(&ltc->error, HAL_GetTick());
 	ER_CHK(error); // In case of error, set the error and goto label End
 
-// Label in case of error
 End:;
+
+	return count;
 }
 
 /**
@@ -419,7 +427,7 @@ End:;
 /**
  * @brief		Wakes up all the devices connected to the isoSPI bus
  *
- * @param		hspi	The spi configuration structure
+ * @param		hspi	The SPI configuration structure
  */
 void _wakeup_idle(SPI_HandleTypeDef *hspi, bool apply_delay)
 {

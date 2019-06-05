@@ -55,7 +55,8 @@ bool can_check_error(CAN_HandleTypeDef *canh);
 void can_send_current(CAN_HandleTypeDef *canh, int32_t current);
 void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack);
 void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack);
-void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, PACK_T *pack);
+void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
+					PACK_T *pack);
 
 void can_request_inverter_voltage(CAN_HandleTypeDef *canh);
 void can_send_ts_off(CAN_HandleTypeDef *canh);

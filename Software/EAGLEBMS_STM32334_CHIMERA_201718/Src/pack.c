@@ -17,11 +17,11 @@
  * 					1: cell present
  */
 static const bool
-		cell_distribution[LTC6804_REG_COUNT * LTC6804_REG_CELL_COUNT] = {
-				1, 1, 1, // GROUP A
-				1, 1, 0, // GROUP B
-				1, 1, 1, // GROUP C
-				1, 0, 0	// GROUP D
+	cell_distribution[LTC6804_REG_COUNT * LTC6804_REG_CELL_COUNT] = {
+		1, 1, 1, // GROUP A
+		1, 1, 0, // GROUP B
+		1, 1, 1, // GROUP C
+		1, 0, 0  // GROUP D
 };
 
 uint32_t adcCurrent[512];
@@ -81,22 +81,30 @@ void pack_init(ADC_HandleTypeDef *adc, PACK_T *pack)
  * @param	voltages	The array of voltages
  * @param	error			The error return value
  */
-void pack_update_voltages(SPI_HandleTypeDef *spi, PACK_T *pack, ERROR_T *error)
+uint8_t pack_update_voltages(SPI_HandleTypeDef *spi, PACK_T *pack,
+							 ERROR_T *error)
 {
-	uint8_t i;
+	uint8_t ltc_i, cell;
 
 	_ltc6804_adcv(spi, 0);
 
-	for (i = 0; i < LTC6804_COUNT || !error; i++)
+	for (ltc_i = 0; ltc_i < LTC6804_COUNT || !error; ltc_i++)
 	{
-		ltc6804_read_voltages(
-				spi, &ltc[i], &pack->voltages[i * LTC6804_CELL_COUNT], error);
+		cell = ltc6804_read_voltages(
+			spi, &ltc[ltc_i], &pack->voltages[ltc_i * LTC6804_CELL_COUNT],
+			error);
 		ER_CHK(error);
 	}
 
 	pack_update_voltage_stats(pack);
 
 End:;
+
+	if (error == ERROR_LTC6804_PEC_ERROR)
+	{
+		return ltc_i;
+	}
+	return cell;
 }
 
 /**
@@ -106,14 +114,15 @@ End:;
  * @param	temperatures	The array of temperatures
  * @param	error					The error return value
  */
-void pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack,
-															ERROR_T *error)
+uint8_t pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack,
+								 ERROR_T *error)
 {
 	static uint8_t ltc_index = 0;
+	uint8_t cell_index;
 
-	ltc6804_read_temperatures(
-			spi, &ltc[ltc_index],
-			&pack->temperatures[ltc_index * LTC6804_CELL_COUNT], error);
+	cell_index = ltc6804_read_temperatures(
+		spi, &ltc[ltc_index],
+		&pack->temperatures[ltc_index * LTC6804_CELL_COUNT], error);
 
 	ER_CHK(error);
 
@@ -125,6 +134,12 @@ void pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack,
 	pack_update_temperature_stats(pack);
 
 End:;
+
+	if (*error == ERROR_LTC6804_PEC_ERROR)
+	{
+		return ltc_index;
+	}
+	return cell_index;
 }
 
 /**
@@ -205,9 +220,9 @@ void pack_update_temperature_stats(PACK_T *pack)
 			avg_temperature += (uint32_t)pack->temperatures[i].value;
 
 			max_temperature =
-					fmax(max_temperature, pack->temperatures[i].value);
+				fmax(max_temperature, pack->temperatures[i].value);
 			min_temperature =
-					fmin(min_temperature, pack->temperatures[i].value);
+				fmin(min_temperature, pack->temperatures[i].value);
 			temp_count++;
 		}
 	}

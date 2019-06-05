@@ -57,9 +57,7 @@ uint8_t can_receive(CAN_HandleTypeDef *canh, CAN_RxHeaderTypeDef *rx,
 		HAL_CAN_GetRxMessage(canh, CAN_RX_FIFO0, rx, data);
 	}
 
-	int id = rx->StdId;
-
-	return id;
+	return rx->StdId;
 }
 
 void can_filter_precharge(CAN_HandleTypeDef *canh)
@@ -73,11 +71,7 @@ void can_filter_normal(CAN_HandleTypeDef *canh)
 
 bool can_check_error(CAN_HandleTypeDef *canh)
 {
-	if (HAL_CAN_GetState(canh) == HAL_CAN_ERROR_BOF)
-	{
-		return true;
-	}
-	return false;
+	return HAL_CAN_GetState(canh) == HAL_CAN_ERROR_BOF;
 }
 
 /**
@@ -195,51 +189,40 @@ void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
  * @param		error	The error type to send
  * @param		pack	The pack structure with data to send
  */
-void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, PACK_T *pack)
+void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
+					PACK_T *pack)
 {
 	uint8_t data[8];
+	can_init_msg(data);
+	data[0] = CAN_OUT_ERROR;
 
 	switch (error)
 	{
 	case ERROR_LTC6804_PEC_ERROR:
-		data[0] = 0x08;
 		data[1] = 0x02;
 		data[2] = 0;
-		data[3] = 0; // Should be ltc index
-		data[4] = 0;
-		data[5] = 0;
-		data[6] = 0;
-		data[7] = 0;
+		data[3] = index; // Should be ltc index
 		break;
 	case ERROR_CELL_UNDER_VOLTAGE:
-		data[0] = 0x08;
 		data[1] = 0x02;
 		data[2] = 0x01;
-		data[3] = 0; // Should be cell index
+		data[3] = index; // Should be cell index
 		data[4] = (uint8_t)(pack->min_voltage >> 8);
 		data[5] = (uint8_t)pack->min_voltage;
-		data[6] = 0;
-		data[7] = 0;
 		break;
 	case ERROR_CELL_OVER_VOLTAGE:
-		data[0] = 0x08;
 		data[1] = 0x02;
 		data[2] = 0x02;
-		data[3] = 0; // Should be cell index
+		data[3] = index; // Should be cell index
 		data[4] = (uint8_t)(pack->max_voltage >> 8);
 		data[5] = (uint8_t)pack->max_voltage;
-		data[6] = 0;
-		data[7] = 0;
 		break;
 	case ERROR_CELL_OVER_TEMPERATURE:
-		data[0] = 0x08;
 		data[1] = 0x03;
 		data[2] = 0x02;
-		data[3] = 0; // Should be cell index
+		data[3] = index; // Should be cell index
 		data[4] = (uint8_t)(pack->max_temperature >> 8);
 		data[5] = (uint8_t)pack->max_temperature;
-		data[6] = 0;
-		data[7] = 0;
 		break;
 	case ERROR_OVER_CURRENT:
 		break;

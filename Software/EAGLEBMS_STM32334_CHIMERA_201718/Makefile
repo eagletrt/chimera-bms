@@ -38,8 +38,8 @@ BUILD_DIR = build
 C_SOURCES =  \
 Src/bms.c \
 Src/can.c \
-Src/ltc6804.c \
 Src/error.c \
+Src/ltc6804.c \
 Src/main.c \
 Src/pack.c \
 Src/stm32f3xx_hal_msp.c \
