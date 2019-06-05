@@ -26,9 +26,7 @@
  * @param		error	The error return value
  */
 void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
-						   ER_UINT16_T *volts, uint32_t *total_voltage,
-						   uint16_t *max_voltage, uint16_t *min_voltage,
-						   ERROR_T *error)
+													 ER_UINT16_T *volts, ERROR_T *error)
 {
 
 	uint8_t cmd[4];
@@ -38,7 +36,7 @@ void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 	cmd[0] = (uint8_t)0x80 + ltc->address;
 
 	uint8_t count = 0; // cells[] index
-	uint8_t reg;	   // Counts the register
+	uint8_t reg;			 // Counts the register
 
 	for (reg = 0; reg < LTC6804_REG_COUNT; reg++)
 	{
@@ -67,13 +65,7 @@ void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 				if (ltc->cell_distribution[reg * LTC6804_REG_CELL_COUNT + cell])
 				{
 					// If cell is present
-					uint16_t volt = _convert_voltage(&data[2 * cell]);
-
-					volts[count].value = volt;
-
-					*total_voltage += volt;
-					*max_voltage = fmax(*max_voltage, volt);
-					*min_voltage = fmin(*min_voltage, volt);
+					volts[count].value = _convert_voltage(&data[2 * cell]);
 
 					ltc6804_check_voltage(&volts[count], error);
 					ER_CHK(error);
@@ -221,7 +213,7 @@ void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start_bal, bool is_even)
  * @param		error	The error return value
  */
 void ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
-							   ER_UINT16_T *temps, ERROR_T *error)
+															 ER_UINT16_T *temps, ERROR_T *error)
 {
 
 	uint8_t is_even = 0;
@@ -255,7 +247,7 @@ End:;
  * @param		error		The error return value
  */
 void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
-				ER_UINT16_T *temps, ERROR_T *error)
+								ER_UINT16_T *temps, ERROR_T *error)
 {
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
@@ -300,7 +292,7 @@ void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
 					if (ltc->cell_distribution[reg_cell + cell])
 					{
 						uint16_t temp =
-							_convert_temp(_convert_voltage(&data[2 * cell]));
+								_convert_temp(_convert_voltage(&data[2 * cell]));
 
 						if (temp > 0)
 						{
@@ -454,6 +446,6 @@ uint16_t _convert_temp(uint16_t volt)
 	float voltf = volt * 0.0001;
 	float temp;
 	temp = -225.7 * voltf * voltf * voltf + 1310.6 * voltf * voltf -
-		   2594.8 * voltf + 1767.8;
+				 2594.8 * voltf + 1767.8;
 	return (uint16_t)(temp * 100);
 }

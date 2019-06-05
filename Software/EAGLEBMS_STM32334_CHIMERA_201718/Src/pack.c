@@ -17,11 +17,11 @@
  * 					1: cell present
  */
 static const bool
-	cell_distribution[LTC6804_REG_COUNT * LTC6804_REG_CELL_COUNT] = {
-		1, 1, 1, // GROUP A
-		1, 1, 0, // GROUP B
-		1, 1, 1, // GROUP C
-		1, 0, 0  // GROUP D
+		cell_distribution[LTC6804_REG_COUNT * LTC6804_REG_CELL_COUNT] = {
+				1, 1, 1, // GROUP A
+				1, 1, 0, // GROUP B
+				1, 1, 1, // GROUP C
+				1, 0, 0	// GROUP D
 };
 
 uint32_t adcCurrent[512];
@@ -83,25 +83,18 @@ void pack_init(ADC_HandleTypeDef *adc, PACK_T *pack)
  */
 void pack_update_voltages(SPI_HandleTypeDef *spi, PACK_T *pack, ERROR_T *error)
 {
-	uint16_t i;
-
-	uint32_t total_voltage = 0;
-	uint16_t max_voltage = 0;
-	uint16_t min_voltage = 65535;
+	uint8_t i;
 
 	_ltc6804_adcv(spi, 0);
 
 	for (i = 0; i < LTC6804_COUNT || !error; i++)
 	{
 		ltc6804_read_voltages(
-			spi, &ltc[i], &pack->voltages[i * LTC6804_CELL_COUNT],
-			&total_voltage, &max_voltage, &min_voltage, error);
+				spi, &ltc[i], &pack->voltages[i * LTC6804_CELL_COUNT], error);
 		ER_CHK(error);
 	}
 
-	pack->total_voltage = total_voltage;
-	pack->max_voltage = max_voltage;
-	pack->min_voltage = min_voltage;
+	pack_update_voltage_stats(pack);
 
 End:;
 }
@@ -114,13 +107,13 @@ End:;
  * @param	error					The error return value
  */
 void pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack,
-							  ERROR_T *error)
+															ERROR_T *error)
 {
 	static uint8_t ltc_index = 0;
 
 	ltc6804_read_temperatures(
-		spi, &ltc[ltc_index],
-		&pack->temperatures[ltc_index * LTC6804_CELL_COUNT], error);
+			spi, &ltc[ltc_index],
+			&pack->temperatures[ltc_index * LTC6804_CELL_COUNT], error);
 
 	ER_CHK(error);
 
@@ -129,7 +122,7 @@ void pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack,
 		ltc_index = 0;
 	}
 
-	pack_update_status(pack);
+	pack_update_temperature_stats(pack);
 
 End:;
 }
@@ -166,12 +159,38 @@ End:;
 }
 
 /**
- * @brief		Updates the pack's stats
- * @details	It updates *_voltage and *_temperature with the data of the pack
+ * @brief		Updates the pack's voltage stats
+ * @details	It updates *_voltage variables with the data of the pack
  *
  * @param		pack	The struct to save the data to
  */
-void pack_update_status(PACK_T *pack)
+void pack_update_voltage_stats(PACK_T *pack)
+{
+	uint32_t tot_voltage = pack->voltages[0].value;
+	uint16_t max_voltage = pack->voltages[0].value;
+	uint16_t min_voltage = pack->voltages[0].value;
+
+	uint8_t i;
+	for (i = 1; i < PACK_MODULE_COUNT; i++)
+	{
+		tot_voltage += (uint32_t)pack->voltages[i].value;
+
+		max_voltage = fmax(max_voltage, pack->voltages[i].value);
+		min_voltage = fmin(min_voltage, pack->voltages[i].value);
+	}
+
+	pack->total_voltage = tot_voltage;
+	pack->max_voltage = max_voltage;
+	pack->min_voltage = min_voltage;
+}
+
+/**
+ * @brief		Updates the pack's temperature stats
+ * @details	It updates *_temperature variables with the data of the pack
+ *
+ * @param		pack	The struct to save the data to
+ */
+void pack_update_temperature_stats(PACK_T *pack)
 {
 	uint8_t temp_count = 0;
 	uint32_t avg_temperature = 0;
@@ -185,9 +204,9 @@ void pack_update_status(PACK_T *pack)
 			avg_temperature += (uint32_t)pack->temperatures[i].value;
 
 			max_temperature =
-				fmax(max_temperature, pack->temperatures[i].value);
+					fmax(max_temperature, pack->temperatures[i].value);
 			min_temperature =
-				fmin(min_temperature, pack->temperatures[i].value);
+					fmin(min_temperature, pack->temperatures[i].value);
 			temp_count++;
 		}
 	}
