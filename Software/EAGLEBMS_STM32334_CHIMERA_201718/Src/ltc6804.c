@@ -9,6 +9,9 @@
 #include "ltc6804.h"
 #include <math.h>
 
+// Uncomment if you want to emulate the LTC daisy chain
+#define LTC6804_EMU 0
+
 /**
  * @brief		Polls all the registers of the LTC6804 and updates the cell
  * array
@@ -26,7 +29,7 @@
  * @param		error	The error return value
  */
 void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
-													 ER_UINT16_T *volts, ERROR_T *error)
+						   ER_UINT16_T *volts, ERROR_T *error)
 {
 
 	uint8_t cmd[4];
@@ -36,7 +39,7 @@ void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 	cmd[0] = (uint8_t)0x80 + ltc->address;
 
 	uint8_t count = 0; // cells[] index
-	uint8_t reg;			 // Counts the register
+	uint8_t reg;	   // Counts the register
 
 	for (reg = 0; reg < LTC6804_REG_COUNT; reg++)
 	{
@@ -52,6 +55,21 @@ void ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 
 		HAL_SPI_Receive(spi, data, 8, 100);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
+
+#if LTC6804_EMU > 0
+		// Writes 3.6v to each cell
+
+		uint8_t emu_i;
+		for (emu_i = 0; emu_i < LTC6804_REG_CELL_COUNT * 2; emu_i++)
+		{
+			// 36000
+			data[emu_i] = 0b10100000;
+			data[++emu_i] = 0b10001100;
+		}
+		uint16_t emu_pec = _pec15(6, data);
+		data[6] = (uint8_t)(emu_pec >> 8);
+		data[7] = (uint8_t)emu_pec;
+#endif
 
 		uint8_t pec = _pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]);
 
@@ -213,7 +231,7 @@ void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start_bal, bool is_even)
  * @param		error	The error return value
  */
 void ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
-															 ER_UINT16_T *temps, ERROR_T *error)
+							   ER_UINT16_T *temps, ERROR_T *error)
 {
 
 	uint8_t is_even = 0;
@@ -247,7 +265,7 @@ End:;
  * @param		error		The error return value
  */
 void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
-								ER_UINT16_T *temps, ERROR_T *error)
+				ER_UINT16_T *temps, ERROR_T *error)
 {
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
@@ -274,6 +292,21 @@ void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
 		HAL_Delay(1);
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
+#if LTC6804_EMU > 0
+		// Writes 9.292v (18°C) to each cell
+
+		uint8_t emu_i;
+		for (emu_i = 0; emu_i < LTC6804_REG_CELL_COUNT * 2; emu_i++)
+		{
+			// 9292
+			data[emu_i] = 0b00100100;
+			data[++emu_i] = 0b01001100;
+		}
+		uint16_t emu_pec = _pec15(6, data);
+		data[6] = (uint8_t)(emu_pec >> 8);
+		data[7] = (uint8_t)emu_pec;
+#endif
+
 		uint8_t pec = _pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]);
 
 		if (pec)
@@ -292,7 +325,7 @@ void _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
 					if (ltc->cell_distribution[reg_cell + cell])
 					{
 						uint16_t temp =
-								_convert_temp(_convert_voltage(&data[2 * cell]));
+							_convert_temp(_convert_voltage(&data[2 * cell]));
 
 						if (temp > 0)
 						{
@@ -446,6 +479,6 @@ uint16_t _convert_temp(uint16_t volt)
 	float voltf = volt * 0.0001;
 	float temp;
 	temp = -225.7 * voltf * voltf * voltf + 1310.6 * voltf * voltf -
-				 2594.8 * voltf + 1767.8;
+		   2594.8 * voltf + 1767.8;
 	return (uint16_t)(temp * 100);
 }

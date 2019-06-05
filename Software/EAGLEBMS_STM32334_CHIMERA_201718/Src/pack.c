@@ -193,6 +193,7 @@ void pack_update_voltage_stats(PACK_T *pack)
 void pack_update_temperature_stats(PACK_T *pack)
 {
 	uint8_t temp_count = 0;
+
 	uint32_t avg_temperature = 0;
 	uint16_t max_temperature = 0;
 	uint16_t min_temperature = pack->temperatures[0].value;

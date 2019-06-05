@@ -37,8 +37,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TEMPS_READ_INTERVAL 250
-#define VOLTS_READ_INTERVAL 250
+#define TEMPS_READ_INTERVAL 300
+#define VOLTS_READ_INTERVAL 100
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -227,7 +227,7 @@ int main(void)
 			for (uint8_t i = 0; i < PACK_MODULE_COUNT; i += 3)
 			{
 				data[0] = i;
-				data[1] = (uint8_t)(pack.voltages[i].value / 400);	//*0.04
+				data[1] = (uint8_t)(pack.voltages[i].value / 400);		//*0.04
 				data[2] = (uint8_t)(pack.temperatures[i].value / 40); //*.4
 				data[3] = (uint8_t)(pack.voltages[i + 1].value / 400);
 				data[4] = (uint8_t)(pack.temperatures[i + 1].value / 40);
@@ -319,7 +319,7 @@ void SystemClock_Config(void)
 	/** Initializes the CPU, AHB and APB busses clocks
 	 */
 	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK |
-								  RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+																RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
 	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
 	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -534,7 +534,7 @@ static void MX_GPIO_Init(void)
 
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(GPIOA, PreChargeEnd_Pin | TS_ON_Pin | BMS_FAULT_Pin,
-					  GPIO_PIN_RESET);
+										GPIO_PIN_RESET);
 
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(CS_6820_GPIO_Port, CS_6820_Pin, GPIO_PIN_SET);
@@ -542,7 +542,7 @@ static void MX_GPIO_Init(void)
 	/*Configure GPIO pins : PreChargeEnd_Pin CS_6820_Pin TS_ON_Pin BMS_FAULT_Pin
 	 */
 	GPIO_InitStruct.Pin =
-		PreChargeEnd_Pin | CS_6820_Pin | TS_ON_Pin | BMS_FAULT_Pin;
+			PreChargeEnd_Pin | CS_6820_Pin | TS_ON_Pin | BMS_FAULT_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
