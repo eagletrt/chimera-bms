@@ -58,7 +58,7 @@ TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN PV */
 
-CAN_RxHeaderTypeDef can_rx;
+CanRxMsgTypeDef can_rx;
 
 BMS_CONFIG_T bms;
 
@@ -173,7 +173,7 @@ int main(void)
 		error = error_check_fatal(&can_error, HAL_GetTick());
 		ER_CHK(&error);
 
-		can_receive(&hcan, &can_rx, data);
+		can_receive(&hcan, &can_rx);
 
 		switch (can_rx.StdId)
 		{
@@ -412,15 +412,15 @@ static void MX_CAN_Init(void)
 	hcan.Instance = CAN;
 	hcan.Init.Prescaler = 4;
 	hcan.Init.Mode = CAN_MODE_NORMAL;
-	hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-	hcan.Init.TimeSeg1 = CAN_BS1_6TQ;
-	hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
-	hcan.Init.TimeTriggeredMode = DISABLE;
-	hcan.Init.AutoBusOff = DISABLE;
-	hcan.Init.AutoWakeUp = DISABLE;
-	hcan.Init.AutoRetransmission = DISABLE;
-	hcan.Init.ReceiveFifoLocked = DISABLE;
-	hcan.Init.TransmitFifoPriority = DISABLE;
+	hcan.Init.SJW = CAN_SJW_1TQ;
+	hcan.Init.BS1 = CAN_BS1_6TQ;
+	hcan.Init.BS2 = CAN_BS2_1TQ;
+	hcan.Init.TTCM = DISABLE;
+	hcan.Init.ABOM = DISABLE;
+	hcan.Init.AWUM = DISABLE;
+	hcan.Init.NART = DISABLE;
+	hcan.Init.RFLM = DISABLE;
+	hcan.Init.TXFP = DISABLE;
 	if (HAL_CAN_Init(&hcan) != HAL_OK)
 	{
 		Error_Handler();

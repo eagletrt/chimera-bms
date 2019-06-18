@@ -12,8 +12,8 @@ uint8_t CAN_MSG_INVERTER_VOLTAGE[8] = {0x3D, 0xEB, 0, 0, 0, 0, 0, 0};
 uint8_t CAN_MSG_TS_ON[8] = {CAN_OUT_TS_ON, 0, 0, 0, 0, 0, 0, 0};
 uint8_t CAN_MSG_TS_OFF[8] = {CAN_OUT_TS_OFF, 0, 0, 0, 0, 0, 0, 0};
 
-CAN_FilterTypeDef runFilter; // CAN filter used during regular use
-CAN_FilterTypeDef pcFilter;  // CAN filter used during precharge cycle
+CAN_FilterConfTypeDef runFilter; // CAN filter used during regular use
+CAN_FilterConfTypeDef pcFilter;  // CAN filter used during precharge cycle
 
 void can_init_msg(uint8_t data[8])
 {
@@ -27,6 +27,7 @@ void can_init_msg(uint8_t data[8])
 void can_init(CAN_HandleTypeDef *canh)
 {
 	// CAN Filter Initialization
+	runFilter.FilterNumber = 0;
 	runFilter.FilterMode = CAN_FILTERMODE_IDLIST;
 	runFilter.FilterIdLow = 0x55 << 5;
 	runFilter.FilterIdHigh = 0xA8 << 5;
@@ -36,6 +37,7 @@ void can_init(CAN_HandleTypeDef *canh)
 	runFilter.FilterScale = CAN_FILTERSCALE_16BIT;
 	runFilter.FilterActivation = ENABLE;
 
+	pcFilter.FilterNumber = 0;
 	pcFilter.FilterMode = CAN_FILTERMODE_IDLIST;
 	pcFilter.FilterIdLow = 0x181 << 5;
 	pcFilter.FilterIdHigh = 0x181 << 5;
@@ -48,16 +50,10 @@ void can_init(CAN_HandleTypeDef *canh)
 	can_filter_normal(canh);
 }
 
-uint8_t can_receive(CAN_HandleTypeDef *canh, CAN_RxHeaderTypeDef *rx,
-					uint8_t *data)
+uint8_t can_receive(CAN_HandleTypeDef *canh, CanRxMsgTypeDef *rx)
 {
-
-	if (HAL_CAN_GetRxFifoFillLevel(canh, CAN_RX_FIFO0) != 0)
-	{
-		HAL_CAN_GetRxMessage(canh, CAN_RX_FIFO0, rx, data);
-	}
-
-	return rx->StdId;
+	(*canh).pRxMsg = rx;
+	return HAL_CAN_Receive(canh, CAN_FIFO0, 1) == HAL_OK;
 }
 
 void can_filter_precharge(CAN_HandleTypeDef *canh)
@@ -83,23 +79,23 @@ bool can_check_error(CAN_HandleTypeDef *canh)
  * @param		data	The data to send
  */
 void can_send(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
-			  uint8_t data[])
+			  const uint8_t data[])
 {
 
-	CAN_TxHeaderTypeDef TxMsg;
+	CanTxMsgTypeDef TxMsg;
 	TxMsg.IDE = CAN_ID_STD;
 	TxMsg.StdId = id;
 	TxMsg.DLC = DLC;
 	TxMsg.RTR = CAN_RTR_DATA;
 
-	uint32_t mailbox;
-
-	if (HAL_CAN_GetTxMailboxesFreeLevel(canh) != 0 &&
-		HAL_CAN_IsTxMessagePending(canh, CAN_TX_MAILBOX0 + CAN_TX_MAILBOX1 +
-											 CAN_TX_MAILBOX2) == 0)
+	uint8_t i;
+	for (i = 0; i < DLC; i++)
 	{
-		HAL_CAN_AddTxMessage(canh, &TxMsg, data, &mailbox);
+		TxMsg.Data[i] = data[i];
 	}
+
+	canh->pTxMsg = &TxMsg;
+	HAL_CAN_Transmit(canh, 2);
 }
 
 void can_request_inverter_voltage(CAN_HandleTypeDef *canh)

@@ -7,7 +7,7 @@
   *          This file contains:
   *           - Data structures and the address mapping for all peripherals
   *           - Peripheral's registers declarations and bits definition
-  *           - Macros to access peripheralÂ’s registers hardware
+  *           - Macros to access peripheral’s registers hardware
   *
   ******************************************************************************
   * @attention
@@ -14610,6 +14610,11 @@ typedef struct
    ((INSTANCE) == TIM20))
 
 /****************** TIM Instances : supporting Hall interface *****************/
+#define IS_TIM_HALL_INTERFACE_INSTANCE(INSTANCE)\
+  (((INSTANCE) == TIM1)    || \
+   ((INSTANCE) == TIM8)    || \
+   ((INSTANCE) == TIM20))
+   
 #define IS_TIM_HALL_SENSOR_INTERFACE_INSTANCE(INSTANCE)\
   (((INSTANCE) == TIM1)    || \
    ((INSTANCE) == TIM8)    || \
@@ -14656,7 +14661,16 @@ typedef struct
    ((INSTANCE) == TIM20))
 
 /****************** TIM Instances : supporting synchronization ****************/
-#define IS_TIM_SYNCHRO_INSTANCE(INSTANCE)  IS_TIM_MASTER_INSTANCE(INSTANCE)
+#define IS_TIM_SYNCHRO_INSTANCE(INSTANCE)\
+    (((INSTANCE) == TIM1)    || \
+     ((INSTANCE) == TIM2)    || \
+     ((INSTANCE) == TIM3)    || \
+     ((INSTANCE) == TIM4)    || \
+     ((INSTANCE) == TIM6)    || \
+     ((INSTANCE) == TIM7)    || \
+     ((INSTANCE) == TIM8)    || \
+     ((INSTANCE) == TIM15)   || \
+     ((INSTANCE) == TIM20))
 
 /****************** TIM Instances : supporting 32 bits counter ****************/
 #define IS_TIM_32B_COUNTER_INSTANCE(INSTANCE)\

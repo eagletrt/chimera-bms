@@ -47,9 +47,9 @@ typedef enum
 void can_init(CAN_HandleTypeDef *canh);
 void can_init_msg(uint8_t data[8]);
 void can_send(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
-			  uint8_t data[]);
-uint8_t can_receive(CAN_HandleTypeDef *canh, CAN_RxHeaderTypeDef *rx,
-					uint8_t *data);
+			  const uint8_t data[]);
+uint8_t can_receive(CAN_HandleTypeDef *canh, CanRxMsgTypeDef *rx);
+
 bool can_check_error(CAN_HandleTypeDef *canh);
 
 void can_send_current(CAN_HandleTypeDef *canh, int32_t current);

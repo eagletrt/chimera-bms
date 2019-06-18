@@ -214,8 +214,8 @@ extern "C"
 
 	typedef enum
 	{
-		SUCCESS = 0,
-		ERROR = !SUCCESS
+		ERROR = 0,
+		SUCCESS = !ERROR
 	} ErrorStatus;
 
 /**

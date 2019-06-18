@@ -60,8 +60,6 @@ TIM_HandleTypeDef htim6;
 
 CAN_RxHeaderTypeDef can_rx;
 
-can_stc can;
-
 BMS_CONFIG_T bms;
 
 PACK_T pack;
@@ -149,15 +147,7 @@ int main(void)
 	bms_write_pin(&bms.pin_chip_select, GPIO_PIN_SET);
 	bms_write_pin(&bms.pin_precharge_end, GPIO_PIN_RESET);
 
-		can_init(can.hcan);
-
-	HAL_CAN_Start(&hcan);
-
-	HAL_CAN_ActivateNotification(&hcan, CAN_RX0_IRQn);
-	HAL_CAN_ActivateNotification(&hcan, CAN_RX1_IRQn);
-
-	can.hcan = &hcan;
-
+	can_init(&hcan);
 	error_init(&can_error);
 
 	pack_init(&hadc1, &pack);
@@ -183,7 +173,73 @@ int main(void)
 		error = error_check_fatal(&can_error, HAL_GetTick());
 		ER_CHK(&error);
 
-		// can_receive(&hcan, &can_rx, data);
+		can_receive(&hcan, &can_rx, data);
+
+		switch (can_rx.StdId)
+		{
+		case CAN_ID_ECU:
+			if (data[0] == CAN_IN_TS_OFF)
+			{ // TS Off
+				bms_set_ts_off(&bms);
+				can_send_ts_off(&hcan);
+			}
+			else if (data[0] == CAN_IN_TS_ON)
+			{
+				// TS On
+				// Precharge
+				bms_precharge_start(&bms);
+
+				if (data[1] == 0x00)
+				{
+					can_filter_precharge(&hcan);
+					can_request_inverter_voltage(&hcan);
+
+					bus_voltage = 0;
+				}
+				else if (data[1] == 0x01)
+				{ // Direct TS ON. Used when charging
+					HAL_Delay(8000);
+					bms_precharge_end(&bms);
+				}
+			}
+			break;
+		case CAN_ID_IN_INVERTER_L:
+			if (data[0] == CAN_IN_BUS_VOLTAGE)
+			{ // Bus voltage (for precharge)
+
+				bus_voltage = data[2] << 8;
+				bus_voltage += data[1];
+
+				if (bus_voltage >= pack.total_voltage * 0.9)
+				{
+					bms_precharge_end(&bms);
+					can_filter_normal(&hcan);
+
+					can_send_ts_on(&hcan);
+				}
+				else
+				{
+					can_request_inverter_voltage(&hcan);
+				}
+			}
+			break;
+		case CAN_ID_GUI:
+
+			for (uint8_t i = 0; i < PACK_MODULE_COUNT; i += 3)
+			{
+				data[0] = i;
+				data[1] = (uint8_t)(pack.voltages[i].value / 400);	//*0.04
+				data[2] = (uint8_t)(pack.temperatures[i].value / 40); //*.4
+				data[3] = (uint8_t)(pack.voltages[i + 1].value / 400);
+				data[4] = (uint8_t)(pack.temperatures[i + 1].value / 40);
+				data[5] = (uint8_t)(pack.voltages[i + 2].value / 400);
+				data[6] = (uint8_t)(pack.temperatures[i + 2].value / 40);
+				data[7] = 0;
+				can_send(&hcan, 0xAB, 8, data);
+				HAL_Delay(10);
+			}
+			break;
+		}
 
 		// Check precharge timeout
 		if (bms_precharge_check_timeout(&bms))
@@ -354,14 +410,14 @@ static void MX_CAN_Init(void)
 
 	/* USER CODE END CAN_Init 1 */
 	hcan.Instance = CAN;
-	hcan.Init.Prescaler = 2;
+	hcan.Init.Prescaler = 4;
 	hcan.Init.Mode = CAN_MODE_NORMAL;
 	hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-	hcan.Init.TimeSeg1 = CAN_BS1_16TQ;
-	hcan.Init.TimeSeg2 = CAN_BS2_5TQ;
+	hcan.Init.TimeSeg1 = CAN_BS1_6TQ;
+	hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
 	hcan.Init.TimeTriggeredMode = DISABLE;
 	hcan.Init.AutoBusOff = DISABLE;
-	hcan.Init.AutoWakeUp = ENABLE;
+	hcan.Init.AutoWakeUp = DISABLE;
 	hcan.Init.AutoRetransmission = DISABLE;
 	hcan.Init.ReceiveFifoLocked = DISABLE;
 	hcan.Init.TransmitFifoPriority = DISABLE;
@@ -532,83 +588,6 @@ void read_temps(ERROR_T *error)
 
 End:;
 }
-
-void HAL_CAN_RxFifo0FullCallback(CAN_HandleTypeDef *hcan)
-{
-	/// CALIBRATION CODE///
-	int idsave = can_receive(&can);
-	// 201/202
-
-	switch (idsave)
-	{
-	case CAN_ID_ECU:
-		if (can.dataRx[0] == CAN_IN_TS_OFF)
-		{ // TS Off
-			bms_set_ts_off(&bms);
-			can_send_ts_off(hcan);
-		}
-		else if (can.dataRx[0] == CAN_IN_TS_ON)
-		{
-			// TS On
-			// Precharge
-			bms_precharge_start(&bms);
-
-			if (can.dataRx[1] == 0x00)
-			{
-				can_filter_precharge(hcan);
-				can_request_inverter_voltage(hcan);
-
-				bus_voltage = 0;
-			}
-			else if (can.dataRx[1] == 0x01)
-			{ // Direct TS ON. Used when charging
-				HAL_Delay(8000);
-				bms_precharge_end(&bms);
-			}
-		}
-		break;
-	case CAN_ID_IN_INVERTER_L:
-		if (can.dataRx[0] == CAN_IN_BUS_VOLTAGE)
-		{ // Bus voltage (for precharge)
-
-			bus_voltage = can.dataRx[2] << 8;
-			bus_voltage += can.dataRx[1];
-
-			if (bus_voltage >= pack.total_voltage * 0.9)
-			{
-				bms_precharge_end(&bms);
-				can_filter_normal(hcan);
-
-				can_send_ts_on(hcan);
-			}
-			else
-			{
-				can_request_inverter_voltage(hcan);
-			}
-		}
-		break;
-	case CAN_ID_GUI:
-
-		for (uint8_t i = 0; i < PACK_MODULE_COUNT; i += 3)
-		{
-			data[0] = i;
-			data[1] = (uint8_t)(pack.voltages[i].value / 400);	// *0.04
-			data[2] = (uint8_t)(pack.temperatures[i].value / 40); // *.4
-			data[3] = (uint8_t)(pack.voltages[i + 1].value / 400);
-			data[4] = (uint8_t)(pack.temperatures[i + 1].value / 40);
-			data[5] = (uint8_t)(pack.voltages[i + 2].value / 400);
-			data[6] = (uint8_t)(pack.temperatures[i + 2].value / 40);
-			data[7] = 0;
-			can.id = 0xAA;
-			can.size = 8;
-
-			can_send(&can, data);
-			HAL_Delay(10);
-		}
-		break;
-	}
-}
-
 /* USER CODE END 4 */
 
 /**
@@ -618,8 +597,7 @@ void HAL_CAN_RxFifo0FullCallback(CAN_HandleTypeDef *hcan)
 void Error_Handler(void)
 {
 	/* USER CODE BEGIN Error_Handler_Debug */
-	/* User can add his own implementation to report the HAL error return
-	 * state
+	/* User can add his own implementation to report the HAL error return state
 	 */
 	while (1)
 	{
