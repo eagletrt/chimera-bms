@@ -48,7 +48,7 @@ void can_init(CAN_HandleTypeDef *canh)
 	can_filter_normal(canh);
 }
 
-uint8_t can_receive(CAN_HandleTypeDef *canh, CAN_RxHeaderTypeDef *rx,
+/*/uint8_t can_receive(CAN_HandleTypeDef *canh, CAN_RxHeaderTypeDef *rx,
 					uint8_t *data)
 {
 
@@ -57,10 +57,8 @@ uint8_t can_receive(CAN_HandleTypeDef *canh, CAN_RxHeaderTypeDef *rx,
 		HAL_CAN_GetRxMessage(canh, CAN_RX_FIFO0, rx, data);
 	}
 
-	int id = rx->StdId;
-
-	return id;
-}
+	return rx->StdId;
+}*/
 
 void can_filter_precharge(CAN_HandleTypeDef *canh)
 {
@@ -73,11 +71,50 @@ void can_filter_normal(CAN_HandleTypeDef *canh)
 
 bool can_check_error(CAN_HandleTypeDef *canh)
 {
-	if (HAL_CAN_GetState(canh) == HAL_CAN_ERROR_BOF)
+	return HAL_CAN_GetState(canh) == HAL_CAN_ERROR_BOF;
+}
+
+int can_send(can_stc *can, uint8_t data[8])
+{
+
+	uint32_t mailbox;
+	uint8_t flag = 0;
+
+	CAN_TxHeaderTypeDef TxHeader;
+	TxHeader.StdId = can->id;
+	TxHeader.IDE = CAN_ID_STD;
+	TxHeader.RTR = CAN_RTR_DATA;
+	TxHeader.DLC = can->size;
+	TxHeader.TransmitGlobalTime = DISABLE;
+
+	if (HAL_CAN_GetTxMailboxesFreeLevel(can->hcan) != 0 &&
+		HAL_CAN_IsTxMessagePending(can->hcan, CAN_TX_MAILBOX0) == 0)
 	{
-		return true;
+		HAL_CAN_AddTxMessage(can->hcan, &TxHeader, data, &mailbox);
+		flag = 1;
 	}
-	return false;
+
+	return flag;
+}
+
+// receive a buffer from the CAN communication
+// you can call this function in the callback of the CAN interrupt
+// hcan = pointer to can port
+// DataRx = pointer to the buffer you are receiveng
+// size = size of the buffer you are using
+int can_receive(can_stc *can)
+{
+
+	CAN_RxHeaderTypeDef RxHeader;
+
+	if (HAL_CAN_GetRxFifoFillLevel(can->hcan, CAN_RX_FIFO0) != 0)
+	{
+		HAL_CAN_GetRxMessage(can->hcan, CAN_RX_FIFO0, &RxHeader, can->dataRx);
+	}
+
+	int id = RxHeader.StdId;
+
+	return id;
 }
 
 /**
@@ -88,10 +125,8 @@ bool can_check_error(CAN_HandleTypeDef *canh)
  * @param		DLC		TheMessage length
  * @param		data	The data to send
  */
-void can_send(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
-			  uint8_t data[])
+/*int can_send(can_stc *can, uint8_t data[8])
 {
-
 	CAN_TxHeaderTypeDef TxMsg;
 	TxMsg.IDE = CAN_ID_STD;
 	TxMsg.StdId = id;
@@ -106,21 +141,36 @@ void can_send(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
 	{
 		HAL_CAN_AddTxMessage(canh, &TxMsg, data, &mailbox);
 	}
-}
+}*/
 
 void can_request_inverter_voltage(CAN_HandleTypeDef *canh)
 {
-	can_send(canh, CAN_ID_OUT_INVERTER_L, 3, CAN_MSG_INVERTER_VOLTAGE);
+	can_stc can;
+	can.hcan = canh;
+	can.id = CAN_ID_BMS;
+	can.size = 8;
+
+	can_send(&can, CAN_MSG_INVERTER_VOLTAGE);
 }
 
 void can_send_ts_off(CAN_HandleTypeDef *canh)
 {
-	can_send(canh, CAN_ID_BMS, 8, CAN_MSG_TS_OFF);
+	can_stc can;
+	can.hcan = canh;
+	can.id = CAN_ID_BMS;
+	can.size = 8;
+
+	can_send(&can, CAN_MSG_TS_OFF);
 }
 
 void can_send_ts_on(CAN_HandleTypeDef *canh)
 {
-	can_send(canh, CAN_ID_BMS, 8, CAN_MSG_TS_ON);
+	can_stc can;
+	can.hcan = canh;
+	can.id = CAN_ID_BMS;
+	can.size = 8;
+
+	can_send(&can, CAN_MSG_TS_ON);
 }
 
 /**
@@ -133,6 +183,11 @@ void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
 {
 	// Send current data via CAN
 
+	can_stc can;
+	can.hcan = canh;
+	can.id = CAN_ID_BMS;
+	can.size = 8;
+
 	uint8_t data[8];
 
 	data[0] = CAN_OUT_CURRENT;
@@ -143,7 +198,7 @@ void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
 	data[5] = 0;
 	data[6] = 0;
 	data[7] = 0;
-	can_send(canh, 0xAA, 8, data);
+	can_send(&can, data);
 }
 
 /**
@@ -154,6 +209,12 @@ void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
  */
 void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack)
 {
+
+	can_stc can;
+	can.hcan = canh;
+	can.id = CAN_ID_BMS;
+	can.size = 8;
+
 	uint8_t data[8];
 
 	data[0] = CAN_OUT_PACK_VOLTS;
@@ -164,7 +225,7 @@ void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack)
 	data[5] = (uint8_t)(pack.max_voltage);
 	data[6] = (uint8_t)(pack.min_voltage >> 8);
 	data[7] = (uint8_t)(pack.min_voltage);
-	can_send(canh, 0xAA, 8, data);
+	can_send(&can, data);
 }
 
 /**
@@ -175,6 +236,12 @@ void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack)
  */
 void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
 {
+
+	can_stc can;
+	can.hcan = canh;
+	can.id = CAN_ID_BMS;
+	can.size = 8;
+
 	uint8_t data[8];
 
 	data[0] = CAN_OUT_PACK_TEMPS;
@@ -185,7 +252,7 @@ void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
 	data[5] = (uint8_t)(pack.min_temperature >> 8);
 	data[6] = (uint8_t)(pack.min_temperature);
 	data[7] = 0;
-	can_send(canh, 0xAA, 8, data);
+	can_send(&can, data);
 }
 
 /**
@@ -195,51 +262,46 @@ void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
  * @param		error	The error type to send
  * @param		pack	The pack structure with data to send
  */
-void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, PACK_T *pack)
+void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
+					PACK_T *pack)
 {
+
+	can_stc can;
+	can.hcan = canh;
+	can.id = CAN_ID_BMS;
+	can.size = 8;
+
 	uint8_t data[8];
+	can_init_msg(data);
+	data[0] = CAN_OUT_ERROR;
 
 	switch (error)
 	{
 	case ERROR_LTC6804_PEC_ERROR:
-		data[0] = 0x08;
 		data[1] = 0x02;
 		data[2] = 0;
-		data[3] = 0; // Should be ltc index
-		data[4] = 0;
-		data[5] = 0;
-		data[6] = 0;
-		data[7] = 0;
+		data[3] = index; // Should be ltc index
 		break;
 	case ERROR_CELL_UNDER_VOLTAGE:
-		data[0] = 0x08;
 		data[1] = 0x02;
 		data[2] = 0x01;
-		data[3] = 0; // Should be cell index
+		data[3] = index; // Should be cell index
 		data[4] = (uint8_t)(pack->min_voltage >> 8);
 		data[5] = (uint8_t)pack->min_voltage;
-		data[6] = 0;
-		data[7] = 0;
 		break;
 	case ERROR_CELL_OVER_VOLTAGE:
-		data[0] = 0x08;
 		data[1] = 0x02;
 		data[2] = 0x02;
-		data[3] = 0; // Should be cell index
+		data[3] = index; // Should be cell index
 		data[4] = (uint8_t)(pack->max_voltage >> 8);
 		data[5] = (uint8_t)pack->max_voltage;
-		data[6] = 0;
-		data[7] = 0;
 		break;
 	case ERROR_CELL_OVER_TEMPERATURE:
-		data[0] = 0x08;
 		data[1] = 0x03;
 		data[2] = 0x02;
-		data[3] = 0; // Should be cell index
+		data[3] = index; // Should be cell index
 		data[4] = (uint8_t)(pack->max_temperature >> 8);
 		data[5] = (uint8_t)pack->max_temperature;
-		data[6] = 0;
-		data[7] = 0;
 		break;
 	case ERROR_OVER_CURRENT:
 		break;
@@ -249,5 +311,5 @@ void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, PACK_T *pack)
 		break;
 	}
 
-	can_send(canh, 0xAA, 8, data);
+	can_send(&can, data);
 }

@@ -5,5 +5,14 @@
 	"settings": {
 		"C_Cpp.default.cStandard": "c11",
 		"C_Cpp.clang_format_fallbackStyle": "{BasedOnStyle: LLVM, UseTab: true, IndentWidth: 4, TabWidth: 4, BreakBeforeBraces: Allman, ColumnLimit: 80}",
+		"C_Cpp.default.includePath": [
+			"${workspaceRoot}/Inc",
+			"${workspaceRoot}/Drivers/STM32F3xx_HAL_Driver/Inc",
+			"${workspaceRoot}/Drivers/CMSIS/Device/ST/STM32F3xx/Include",
+			"${workspaceRoot}/Drivers/CMSIS/Include"
+		]
 	}
+}
+
+
 }

@@ -36,8 +36,8 @@ BUILD_DIR = build
 ######################################
 # C sources
 C_SOURCES =  \
-Src/bms.c \
 Src/can.c \
+Src/bms.c \
 Src/error.c \
 Src/ltc6804.c \
 Src/main.c \

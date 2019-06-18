@@ -94,8 +94,9 @@ extern "C"
 	/* #define STM32F302xE */ /*!< STM32F302RE, STM32F302VE, STM32F302ZE,
 								 STM32F302RD, STM32F302VD and STM32F302ZD
 								 Devices */
-#define STM32F303x8 /*!< STM32F303K6, STM32F303K8, STM32F303C6, STM32F303C8, \                                                                             \
-							   STM32F303R6 and STM32F303R8 Devices */
+	/* #define STM32F303x8 */ /*!< STM32F303K6, STM32F303K8, STM32F303C6,
+								 STM32F303C8, STM32F303R6 and STM32F303R8
+								 Devices */
 	/* #define STM32F303xC */ /*!< STM32F303CB, STM32F303CC, STM32F303RB,
 								 STM32F303RC, STM32F303VB and STM32F303VC
 								 Devices */
@@ -106,10 +107,10 @@ extern "C"
 								   STM32F373R8, STM32F373RB, STM32F373RC,
 								   STM32F373V8, STM32F373VB and STM32F373VC
 								 Devices */
-	/* #define STM32F334x8 */ /*!< STM32F334K4, STM32F334K6, STM32F334K8,
-								   STM32F334C4, STM32F334C6, STM32F334C8,
-								   STM32F334R4, STM32F334R6 and STM32F334R8
-								 Devices */
+#define STM32F334x8			  /*!< STM32F334K4, STM32F334K6, STM32F334K8,               \
+									   STM32F334C4, STM32F334C6, STM32F334C8,           \
+									   STM32F334R4, STM32F334R6 and STM32F334R8 Devices \
+							   */
 	/* #define STM32F318xx */ /*!< STM32F318K8, STM32F318C8: STM32F301x8 with
 								 regulator off: STM32F318xx Devices */
 	/* #define STM32F328xx */ /*!< STM32F328C8, STM32F328R8: STM32F334x8 with
