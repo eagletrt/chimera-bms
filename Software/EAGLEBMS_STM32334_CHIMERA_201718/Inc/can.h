@@ -44,10 +44,19 @@ typedef enum
 
 } CAN_ID_T;
 
+extern uint8_t CAN_MSG_INVERTER_VOLTAGE[8];
+extern uint8_t CAN_MSG_TS_ON[8];
+extern uint8_t CAN_MSG_TS_OFF[8];
+
+// CAN filter used during regular use
+extern CAN_FilterConfTypeDef CAN_FILTER_NORMAL;
+
+// CAN filter used during precharge cycle
+extern CAN_FilterConfTypeDef CAN_FILTER_PRECHARGE;
+
 void can_init(CAN_HandleTypeDef *canh);
 void can_init_msg(uint8_t data[8]);
-void can_send(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
-			  const uint8_t data[]);
+void can_send(CAN_HandleTypeDef *canh, uint8_t data[]);
 uint8_t can_receive(CAN_HandleTypeDef *canh, CanRxMsgTypeDef *rx);
 
 bool can_check_error(CAN_HandleTypeDef *canh);
@@ -57,12 +66,5 @@ void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack);
 void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack);
 void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
 					PACK_T *pack);
-
-void can_request_inverter_voltage(CAN_HandleTypeDef *canh);
-void can_send_ts_off(CAN_HandleTypeDef *canh);
-void can_send_ts_on(CAN_HandleTypeDef *canh);
-
-void can_filter_precharge(CAN_HandleTypeDef *canh);
-void can_filter_normal(CAN_HandleTypeDef *canh);
 
 #endif /* CAN_H_ */

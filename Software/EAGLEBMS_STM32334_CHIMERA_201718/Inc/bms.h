@@ -42,12 +42,13 @@ typedef struct
 	BMS_PIN_T pin_precharge_end;
 
 	uint32_t precharge_timestamp;
+	bool precharge_bypass;
 
 } BMS_CONFIG_T;
 
 void bms_write_pin(BMS_PIN_T *pin, GPIO_PinState state);
 void bms_precharge_start(BMS_CONFIG_T *bms);
-bool bms_precharge_check_timeout(BMS_CONFIG_T *bms);
+BMS_STATUS_T bms_precharge_check(BMS_CONFIG_T *bms);
 void bms_precharge_end(BMS_CONFIG_T *bms);
 void bms_set_ts_off(BMS_CONFIG_T *bms);
 void bms_set_fault(BMS_CONFIG_T *bms);

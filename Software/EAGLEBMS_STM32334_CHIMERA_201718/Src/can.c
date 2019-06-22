@@ -12,12 +12,15 @@ uint8_t CAN_MSG_INVERTER_VOLTAGE[8] = {0x3D, 0xEB, 0, 0, 0, 0, 0, 0};
 uint8_t CAN_MSG_TS_ON[8] = {CAN_OUT_TS_ON, 0, 0, 0, 0, 0, 0, 0};
 uint8_t CAN_MSG_TS_OFF[8] = {CAN_OUT_TS_OFF, 0, 0, 0, 0, 0, 0, 0};
 
-CAN_FilterConfTypeDef runFilter; // CAN filter used during regular use
-CAN_FilterConfTypeDef pcFilter;  // CAN filter used during precharge cycle
+// CAN filter used during regular use
+CAN_FilterConfTypeDef CAN_FILTER_NORMAL;
+
+// CAN filter used during precharge cycle
+CAN_FilterConfTypeDef CAN_FILTER_PRECHARGE;
 
 void can_init_msg(uint8_t data[8])
 {
-	uint8_t i = 0;
+	uint8_t i;
 	for (i = 0; i < 8; i++)
 	{
 		data[i] = 0;
@@ -27,42 +30,34 @@ void can_init_msg(uint8_t data[8])
 void can_init(CAN_HandleTypeDef *canh)
 {
 	// CAN Filter Initialization
-	runFilter.FilterNumber = 0;
-	runFilter.FilterMode = CAN_FILTERMODE_IDLIST;
-	runFilter.FilterIdLow = 0x55 << 5;
-	runFilter.FilterIdHigh = 0xA8 << 5;
-	runFilter.FilterMaskIdHigh = 0x55 << 5;
-	runFilter.FilterMaskIdLow = 0x55 << 5;
-	runFilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-	runFilter.FilterScale = CAN_FILTERSCALE_16BIT;
-	runFilter.FilterActivation = ENABLE;
+	CAN_FILTER_NORMAL.FilterNumber = 0;
+	CAN_FILTER_NORMAL.FilterMode = CAN_FILTERMODE_IDLIST;
+	CAN_FILTER_NORMAL.FilterIdLow = 0x55 << 5;
+	CAN_FILTER_NORMAL.FilterIdHigh = 0xA8 << 5;
+	CAN_FILTER_NORMAL.FilterMaskIdHigh = 0x55 << 5;
+	CAN_FILTER_NORMAL.FilterMaskIdLow = 0x55 << 5;
+	CAN_FILTER_NORMAL.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	CAN_FILTER_NORMAL.FilterScale = CAN_FILTERSCALE_16BIT;
+	CAN_FILTER_NORMAL.FilterActivation = ENABLE;
 
-	pcFilter.FilterNumber = 0;
-	pcFilter.FilterMode = CAN_FILTERMODE_IDLIST;
-	pcFilter.FilterIdLow = 0x181 << 5;
-	pcFilter.FilterIdHigh = 0x181 << 5;
-	pcFilter.FilterMaskIdHigh = 0x181 << 5;
-	pcFilter.FilterMaskIdLow = 0x181 << 5;
-	pcFilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-	pcFilter.FilterScale = CAN_FILTERSCALE_16BIT;
-	pcFilter.FilterActivation = ENABLE;
+	CAN_FILTER_PRECHARGE.FilterNumber = 0;
+	CAN_FILTER_PRECHARGE.FilterMode = CAN_FILTERMODE_IDLIST;
+	CAN_FILTER_PRECHARGE.FilterIdLow = 0x181 << 5;
+	CAN_FILTER_PRECHARGE.FilterIdHigh = 0x181 << 5;
+	CAN_FILTER_PRECHARGE.FilterMaskIdHigh = 0x181 << 5;
+	CAN_FILTER_PRECHARGE.FilterMaskIdLow = 0x181 << 5;
+	CAN_FILTER_PRECHARGE.FilterFIFOAssignment = CAN_FILTER_FIFO0;
+	CAN_FILTER_PRECHARGE.FilterScale = CAN_FILTERSCALE_16BIT;
+	CAN_FILTER_PRECHARGE.FilterActivation = ENABLE;
 
-	can_filter_normal(canh);
+	HAL_CAN_ConfigFilter(canh, &CAN_FILTER_NORMAL);
 }
 
 uint8_t can_receive(CAN_HandleTypeDef *canh, CanRxMsgTypeDef *rx)
 {
 	(*canh).pRxMsg = rx;
-	return HAL_CAN_Receive(canh, CAN_FIFO0, 1) == HAL_OK;
-}
-
-void can_filter_precharge(CAN_HandleTypeDef *canh)
-{
-	HAL_CAN_ConfigFilter(canh, &pcFilter);
-}
-void can_filter_normal(CAN_HandleTypeDef *canh)
-{
-	HAL_CAN_ConfigFilter(canh, &runFilter);
+	// return HAL_CAN_Receive(canh, CAN_FIFO0, 1) == HAL_OK;
+	return HAL_CAN_Receive_IT(canh, CAN_FIFO0) == HAL_OK;
 }
 
 bool can_check_error(CAN_HandleTypeDef *canh)
@@ -74,43 +69,26 @@ bool can_check_error(CAN_HandleTypeDef *canh)
  * @brief		This function is used to transmit a CAN message
  *
  * @param		canh	The CAN configuration structure
- * @param		id		The message ID
- * @param		DLC		TheMessage length
  * @param		data	The data to send
  */
-void can_send(CAN_HandleTypeDef *canh, uint32_t id, uint32_t DLC,
-			  const uint8_t data[])
+void can_send(CAN_HandleTypeDef *canh, uint8_t data[])
 {
+	CanTxMsgTypeDef tx;
 
-	CanTxMsgTypeDef TxMsg;
-	TxMsg.IDE = CAN_ID_STD;
-	TxMsg.StdId = id;
-	TxMsg.DLC = DLC;
-	TxMsg.RTR = CAN_RTR_DATA;
+	tx.IDE = CAN_ID_STD;
+	tx.StdId = CAN_ID_BMS;
+	tx.DLC = 8;
+	tx.RTR = CAN_RTR_DATA;
 
 	uint8_t i;
-	for (i = 0; i < DLC; i++)
+	for (i = 0; i < tx.DLC; i++)
 	{
-		TxMsg.Data[i] = data[i];
+		tx.Data[i] = data[i];
 	}
 
-	canh->pTxMsg = &TxMsg;
-	HAL_CAN_Transmit(canh, 2);
-}
-
-void can_request_inverter_voltage(CAN_HandleTypeDef *canh)
-{
-	can_send(canh, CAN_ID_OUT_INVERTER_L, 3, CAN_MSG_INVERTER_VOLTAGE);
-}
-
-void can_send_ts_off(CAN_HandleTypeDef *canh)
-{
-	can_send(canh, CAN_ID_BMS, 8, CAN_MSG_TS_OFF);
-}
-
-void can_send_ts_on(CAN_HandleTypeDef *canh)
-{
-	can_send(canh, CAN_ID_BMS, 8, CAN_MSG_TS_ON);
+	canh->pTxMsg = &tx;
+	HAL_CAN_Transmit_IT(canh);
+	// HAL_CAN_Transmit(canh, 2);
 }
 
 /**
@@ -133,7 +111,7 @@ void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
 	data[5] = 0;
 	data[6] = 0;
 	data[7] = 0;
-	can_send(canh, 0xAA, 8, data);
+	can_send(canh, data);
 }
 
 /**
@@ -150,11 +128,18 @@ void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack)
 	data[1] = (uint8_t)(pack.total_voltage >> 16);
 	data[2] = (uint8_t)(pack.total_voltage >> 8);
 	data[3] = (uint8_t)(pack.total_voltage);
-	data[4] = (uint8_t)(pack.max_voltage >> 8);
-	data[5] = (uint8_t)(pack.max_voltage);
+	data[4] = (uint8_t)(pack.avg_temperature >> 8);
+	data[5] = (uint8_t)(pack.avg_temperature);
 	data[6] = (uint8_t)(pack.min_voltage >> 8);
 	data[7] = (uint8_t)(pack.min_voltage);
-	can_send(canh, 0xAA, 8, data);
+	/*data[1] = (uint8_t)(pack.total_voltage >> 16);
+	data[2] = (uint8_t)(pack.total_voltage >> 8);
+	data[3] = (uint8_t)(pack.total_voltage);
+	data[4] = (uint8_t)(pack.max_voltagcan_send_ts_on(&hcan);e >> 8);
+	data[5] = (uint8_t)(pack.max_voltage);
+	data[6] = (uint8_t)(pack.min_voltage >> 8);
+	data[7] = (uint8_t)(pack.min_voltage);*/
+	can_send(canh, data);
 }
 
 /**
@@ -175,7 +160,7 @@ void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
 	data[5] = (uint8_t)(pack.min_temperature >> 8);
 	data[6] = (uint8_t)(pack.min_temperature);
 	data[7] = 0;
-	can_send(canh, 0xAA, 8, data);
+	can_send(canh, data);
 }
 
 /**
@@ -228,5 +213,5 @@ void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
 		break;
 	}
 
-	can_send(canh, 0xAA, 8, data);
+	can_send(canh, data);
 }

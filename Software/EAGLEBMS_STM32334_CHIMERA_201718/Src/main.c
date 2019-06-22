@@ -38,7 +38,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define TEMPS_READ_INTERVAL 300
-#define VOLTS_READ_INTERVAL 100
+#define VOLTS_READ_INTERVAL 40
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -178,48 +178,50 @@ int main(void)
 		switch (can_rx.StdId)
 		{
 		case CAN_ID_ECU:
-			if (data[0] == CAN_IN_TS_OFF)
+			if (can_rx.Data[0] == CAN_IN_TS_OFF)
 			{ // TS Off
 				bms_set_ts_off(&bms);
-				can_send_ts_off(&hcan);
+				can_send(&hcan, CAN_MSG_TS_OFF);
 			}
-			else if (data[0] == CAN_IN_TS_ON)
+			else if (can_rx.Data[0] == CAN_IN_TS_ON)
 			{
 				// TS On
 				// Precharge
 				bms_precharge_start(&bms);
 
-				if (data[1] == 0x00)
+				if (can_rx.Data[1] == 0x00)
 				{
-					can_filter_precharge(&hcan);
-					can_request_inverter_voltage(&hcan);
+					HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_PRECHARGE);
+
+					can_send(&hcan, CAN_MSG_INVERTER_VOLTAGE);
 
 					bus_voltage = 0;
 				}
-				else if (data[1] == 0x01)
+				else if (can_rx.Data[1] == 0x01)
 				{ // Direct TS ON. Used when charging
 					HAL_Delay(8000);
 					bms_precharge_end(&bms);
+					can_send(&hcan, CAN_MSG_TS_ON);
 				}
 			}
 			break;
 		case CAN_ID_IN_INVERTER_L:
-			if (data[0] == CAN_IN_BUS_VOLTAGE)
+			if (can_rx.Data[0] == CAN_IN_BUS_VOLTAGE)
 			{ // Bus voltage (for precharge)
 
-				bus_voltage = data[2] << 8;
-				bus_voltage += data[1];
+				bus_voltage = can_rx.Data[2] << 8;
+				bus_voltage += can_rx.Data[1];
 
-				if (bus_voltage >= pack.total_voltage * 0.9)
+				if (bus_voltage >= pack.total_voltage / 1000 * 0.9)
 				{
 					bms_precharge_end(&bms);
-					can_filter_normal(&hcan);
+					HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
 
-					can_send_ts_on(&hcan);
+					can_send(&hcan, CAN_MSG_TS_ON);
 				}
 				else
 				{
-					can_request_inverter_voltage(&hcan);
+					can_send(&hcan, CAN_MSG_INVERTER_VOLTAGE);
 				}
 			}
 			break;
@@ -235,18 +237,26 @@ int main(void)
 				data[5] = (uint8_t)(pack.voltages[i + 2].value / 400);
 				data[6] = (uint8_t)(pack.temperatures[i + 2].value / 40);
 				data[7] = 0;
-				can_send(&hcan, 0xAB, 8, data);
+				can_send(&hcan, data);
 				HAL_Delay(10);
 			}
 			break;
 		}
 
 		// Check precharge timeout
-		if (bms_precharge_check_timeout(&bms))
+		if (bms.status == BMS_PRECHARGE)
 		{
-			can_filter_normal(&hcan);
-
-			can_send_ts_off(&hcan);
+			switch (bms_precharge_check(&bms))
+			{
+			case BMS_ON:
+				can_send(&hcan, CAN_MSG_TS_ON);
+				// No break to execute BMS_OFF also.
+			case BMS_OFF:
+				HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
+				break;
+			default:
+				break;
+			}
 		}
 
 		if (HAL_GetTick() - timer_volts >= VOLTS_READ_INTERVAL)

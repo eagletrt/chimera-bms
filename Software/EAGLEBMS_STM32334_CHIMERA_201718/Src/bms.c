@@ -10,6 +10,9 @@
 #include "bms.h"
 #include <inttypes.h>
 
+#define BMS_PRECHARGE_TIMEOUT 1000
+#define BMS_PRECHARGE_BYPASS_TIMEOUT 8000
+
 /**
  * @brief		Sets the given pin and updates the pin's state
  *
@@ -34,21 +37,35 @@ void bms_precharge_start(BMS_CONFIG_T *bms)
 	bms->status = BMS_PRECHARGE;
 }
 
+void bms_precharge_bypass(BMS_CONFIG_T *bms)
+{
+	bms_precharge_start(bms);
+	bms->precharge_bypass = true;
+}
+
 /**
- * @brief		Checks if precharge should end
+ * @brief		Ends precharge if timeouts have expired
  *
  * @param		bms	The BMS config structure
- * @retval	Whether precharge is done or not
+ * @retval	The updated BMS status
  */
-bool bms_precharge_check_timeout(BMS_CONFIG_T *bms)
+BMS_STATUS_T bms_precharge_check(BMS_CONFIG_T *bms)
 {
-	if (bms->status == BMS_PRECHARGE &&
-		HAL_GetTick() - bms->precharge_timestamp >= 450)
+	if (bms->status == BMS_PRECHARGE)
 	{
-		bms_set_ts_off(bms);
-		return true;
+
+		if (bms->precharge_bypass && HAL_GetTick() - bms->precharge_timestamp >=
+										 BMS_PRECHARGE_BYPASS_TIMEOUT)
+		{
+			bms_precharge_end(bms);
+		}
+		else if (HAL_GetTick() - bms->precharge_timestamp >=
+				 BMS_PRECHARGE_TIMEOUT)
+		{
+			bms_set_ts_off(bms);
+		}
 	}
-	return false;
+	return bms->status;
 }
 
 /**
