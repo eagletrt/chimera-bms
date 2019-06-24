@@ -21,7 +21,6 @@
 #define CELL_OVER_TEMPERATURE_TIMEOUT_MS 900
 #define OVER_CURRENT_TIMEOUT_MS 500
 #define CAN_TIMEOUT_COUNT 10
-#define PRECHARGE_TIMEOUT_COUNT 1
 
 /** @brief	Defines the timeout in count or time for each error type */
 ERROR_LIMITS_T timeout[ERROR_NUM_ERRORS] = {
@@ -31,8 +30,7 @@ ERROR_LIMITS_T timeout[ERROR_NUM_ERRORS] = {
 	//{ 0, CELL_UNDER_TEMPERATURE_TIMEOUT_MS },
 	{0, CELL_OVER_TEMPERATURE_TIMEOUT_MS},
 	{0, OVER_CURRENT_TIMEOUT_MS},
-	{CAN_TIMEOUT_COUNT, 0},
-	{PRECHARGE_TIMEOUT_COUNT, 0}};
+	{CAN_TIMEOUT_COUNT, 0}};
 
 /**
  * @brief	Initializes an error structure

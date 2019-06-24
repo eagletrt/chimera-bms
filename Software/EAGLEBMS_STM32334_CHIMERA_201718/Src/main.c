@@ -54,6 +54,7 @@ uint8_t error_index;
 
 int32_t bus_voltage;
 
+uint32_t timer_precharge = 0;
 uint32_t timer_volts = 0;
 uint32_t timer_temps = 0;
 /* USER CODE END PV */
@@ -161,27 +162,26 @@ int main(void)
 			if (can_rx.Data[0] == CAN_IN_TS_OFF)
 			{ // TS Off
 				bms_set_ts_off(&bms);
-				can_send(&hcan, CAN_MSG_TS_OFF);
+				can_send(&hcan, CAN_MSG_TS_OFF, 8);
 			}
 			else if (can_rx.Data[0] == CAN_IN_TS_ON)
 			{
 				// TS On
-				// Precharge
-				bms_precharge_start(&bms);
-
 				if (can_rx.Data[1] == 0x00)
 				{
+					// Precharge
+					bms_precharge_start(&bms);
+
 					HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_PRECHARGE);
 
-					can_send(&hcan, CAN_MSG_INVERTER_VOLTAGE);
-
 					bus_voltage = 0;
+					timer_precharge = HAL_GetTick();
+
+					can_send(&hcan, CAN_MSG_INVERTER_VOLTAGE, 8);
 				}
 				else if (can_rx.Data[1] == 0x01)
 				{ // Direct TS ON. Used when charging
-					HAL_Delay(8000);
-					bms_precharge_end(&bms);
-					can_send(&hcan, CAN_MSG_TS_ON);
+					bms_precharge_bypass(&bms);
 				}
 			}
 			break;
@@ -197,13 +197,8 @@ int main(void)
 					bms_precharge_end(&bms);
 					HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
 
-					can_send(&hcan, CAN_MSG_TS_ON);
+					can_send(&hcan, CAN_MSG_TS_ON, 8);
 				}
-				else
-				{
-					can_send(&hcan, CAN_MSG_INVERTER_VOLTAGE);
-				}
-			}
 			}
 			break;
 		}
@@ -215,9 +210,18 @@ int main(void)
 			{
 			case BMS_ON:
 				// confirm ts on
+				can_send(&hcan, CAN_MSG_TS_ON, 8);
 				// No break to execute BMS_OFF also.
 			case BMS_OFF:
 				HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
+				break;
+			case BMS_PRECHARGE:
+				// If precharge is still running, send the bus voltage request
+				if (HAL_GetTick() - timer_precharge >= 20)
+				{
+					timer_precharge = HAL_GetTick();
+					can_send(&hcan, CAN_MSG_INVERTER_VOLTAGE, 8);
+				}
 				break;
 			default:
 				break;
@@ -544,6 +548,12 @@ void read_volts(ERROR_T *error)
 	error_index = pack_update_voltages(&hspi1, &pack, error);
 	ER_CHK(error);
 
+	// Current
+	pack_update_current(&pack.current, error);
+	ER_CHK(error);
+
+	// Update total values
+	can_send_current(&hcan, pack.current.value);
 	can_send_pack_voltage(&hcan, pack);
 
 End:;
@@ -555,12 +565,6 @@ void read_temps(ERROR_T *error)
 	error_index = pack_update_temperatures(&hspi1, &pack, error);
 	ER_CHK(error);
 
-	// Current
-	pack_update_current(&pack.current, error);
-	ER_CHK(error);
-
-	// Update total values
-	can_send_current(&hcan, pack.current.value);
 	can_send_pack_temperature(&hcan, pack);
 
 End:;
