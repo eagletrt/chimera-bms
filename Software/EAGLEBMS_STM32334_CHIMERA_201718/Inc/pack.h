@@ -1,8 +1,8 @@
 /**
- * @file	pack.h
- * @brief	This file contains the functions to manage the battery pack
+ * @file		pack.h
+ * @brief		This file contains the functions to manage the battery pack
  *
- * @date	Apr 11, 2019
+ * @date		Apr 11, 2019
  * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
  */
 

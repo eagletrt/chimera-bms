@@ -1,8 +1,8 @@
 /**
- * @file	ltc6804.h
- * @brief	This file contains the functions to communicate with the LTCs
+ * @file		ltc6804.h
+ * @brief		This file contains the functions to communicate with the LTCs
  *
- * @date	Apr 11, 2019
+ * @date		Apr 11, 2019
  * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
  */
 

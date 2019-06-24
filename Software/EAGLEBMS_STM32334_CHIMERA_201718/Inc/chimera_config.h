@@ -1,8 +1,9 @@
-/*
- * chimera_config.h
+/**
+ * @file		chimera_config.h
+ * @brief		This file contains configuration settings for Chimera Evoluzione
  *
- *  Created on: Dec 12, 2018
- *      Author: bonnee
+ * @date		Dec 12, 2018
+ * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
  */
 
 #ifndef CHIMERA_CONFIG_H_

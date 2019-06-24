@@ -1,9 +1,9 @@
 /**
- * @file	bms.h
- * @brief	This file contains the functions to manage the battery pack
- * procedures
+ * @file		bms.h
+ * @brief		This file contains the functions to manage the battery pack
+ * 					procedures
  *
- * @date	May 21, 2019
+ * @date		May 21, 2019
  * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
  */
 
@@ -48,6 +48,7 @@ typedef struct
 
 void bms_write_pin(BMS_PIN_T *pin, GPIO_PinState state);
 void bms_precharge_start(BMS_CONFIG_T *bms);
+void bms_precharge_bypass(BMS_CONFIG_T *bms);
 BMS_STATUS_T bms_precharge_check(BMS_CONFIG_T *bms);
 void bms_precharge_end(BMS_CONFIG_T *bms);
 void bms_set_ts_off(BMS_CONFIG_T *bms);

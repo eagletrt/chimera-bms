@@ -1,20 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
- ******************************************************************************
- * @file           : main.c
- * @brief          : Main program body
- ******************************************************************************
- * @attention
+ * @file		main.c
  *
- * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
- * All rights reserved.</center></h2>
- *
- * This software component is licensed by ST under BSD 3-Clause license,
- * the "License"; You may not use this file except in compliance with the
- * License. You may obtain a copy of the License at:
- *                        opensource.org/licenses/BSD-3-Clause
- *
- ******************************************************************************
+ * @author	Gregor
+ * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
  */
 /* USER CODE END Header */
 
@@ -49,26 +38,19 @@
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
-
 CAN_HandleTypeDef hcan;
-
 SPI_HandleTypeDef hspi1;
-
 TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN PV */
-
 CanRxMsgTypeDef can_rx;
+ERROR_STATUS_T can_error;
 
 BMS_CONFIG_T bms;
-
 PACK_T pack;
 
-ERROR_STATUS_T can_error;
 ERROR_T error = ERROR_OK;
 uint8_t error_index;
-
-uint8_t data[8];
 
 int32_t bus_voltage;
 
@@ -148,10 +130,8 @@ int main(void)
 	bms_write_pin(&bms.pin_precharge_end, GPIO_PIN_RESET);
 
 	can_init(&hcan);
-	error_init(&can_error);
-
 	pack_init(&hadc1, &pack);
-
+	error_init(&can_error);
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -224,21 +204,6 @@ int main(void)
 					can_send(&hcan, CAN_MSG_INVERTER_VOLTAGE);
 				}
 			}
-			break;
-		case CAN_ID_GUI:
-
-			for (uint8_t i = 0; i < PACK_MODULE_COUNT; i += 3)
-			{
-				data[0] = i;
-				data[1] = (uint8_t)(pack.voltages[i].value / 400);	//*0.04
-				data[2] = (uint8_t)(pack.temperatures[i].value / 40); //*.4
-				data[3] = (uint8_t)(pack.voltages[i + 1].value / 400);
-				data[4] = (uint8_t)(pack.temperatures[i + 1].value / 40);
-				data[5] = (uint8_t)(pack.voltages[i + 2].value / 400);
-				data[6] = (uint8_t)(pack.temperatures[i + 2].value / 40);
-				data[7] = 0;
-				can_send(&hcan, data);
-				HAL_Delay(10);
 			}
 			break;
 		}
@@ -249,7 +214,7 @@ int main(void)
 			switch (bms_precharge_check(&bms))
 			{
 			case BMS_ON:
-				can_send(&hcan, CAN_MSG_TS_ON);
+				// confirm ts on
 				// No break to execute BMS_OFF also.
 			case BMS_OFF:
 				HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
@@ -259,6 +224,7 @@ int main(void)
 			}
 		}
 
+		// Read and send voltages and current
 		if (HAL_GetTick() - timer_volts >= VOLTS_READ_INTERVAL)
 		{
 			timer_volts = HAL_GetTick();
@@ -267,6 +233,7 @@ int main(void)
 			ER_CHK(&error);
 		}
 
+		// Read and send temperatures
 		if (HAL_GetTick() - timer_temps >= TEMPS_READ_INTERVAL)
 		{
 			timer_temps = HAL_GetTick();

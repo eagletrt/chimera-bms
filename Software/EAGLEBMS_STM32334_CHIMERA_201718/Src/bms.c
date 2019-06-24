@@ -93,7 +93,7 @@ void bms_set_ts_off(BMS_CONFIG_T *bms)
 }
 
 /**
- * @brief	Sets the TS_ON pin to high
+ * @brief	Sets the FAULT pin to high
  *
  * @param	bms	The BMS config structure
  */

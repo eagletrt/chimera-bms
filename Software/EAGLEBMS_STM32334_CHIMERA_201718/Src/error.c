@@ -3,7 +3,6 @@
  * @brief		This file contains the functions to handle errors.
  *
  * @date		May 1, 2019
- *
  * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
  */
 
@@ -53,7 +52,7 @@ void error_init(ERROR_STATUS_T *error)
  * @brief	Activates an error.
  *
  * @param	type	The error type
- * @param	er		The error "instance" to activate
+ * @param	er		The error structure to activate
  * @param	now		The current time
  */
 void error_set(ERROR_T type, ERROR_STATUS_T *er, uint32_t now)
@@ -80,7 +79,7 @@ void error_set(ERROR_T type, ERROR_STATUS_T *er, uint32_t now)
  * @brief	Deactivates an error.
  *
  * @param	type	The type of error to deactivate
- * @param	er		The error "instance" to deactivate
+ * @param	er		The error structure to deactivate
  */
 void error_unset(ERROR_T type, ERROR_STATUS_T *er)
 {
@@ -97,7 +96,7 @@ void error_unset(ERROR_T type, ERROR_STATUS_T *er)
 /**
  * @brief		Checks if an error has become fatal.
  *
- * @param		error	The error "instance" to check.
+ * @param		error	The error structure to check.
  * @param		now		The current time.
  *
  * @retval	The error return value.
@@ -143,7 +142,7 @@ bool _error_check_count(ERROR_STATUS_T *error)
  * @brief		Checks whether to trigger an error based on time.
  * @details	This will trigger the error if the time elapsed between the first
  * 					occurrence of the error and the current time is more than
- * the timeout.
+ * 					the timeout.
  *
  * @param		error	The error struct to check
  * @param		now		The current time

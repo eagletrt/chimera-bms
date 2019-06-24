@@ -7,7 +7,6 @@
  */
 
 #include "ltc6804.h"
-#include <math.h>
 
 // Set to 1 to emulate the LTC daisy chain
 #define LTC6804_EMU 0
@@ -300,7 +299,7 @@ uint8_t _rdcv_temp(SPI_HandleTypeDef *hspi, bool even, LTC6804_T *ltc,
 		HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
 #if LTC6804_EMU > 0
-		// Writes 9.292v (18°C) to each sensor
+		// Writes 0.9292v (18°C) to each sensor
 
 		uint8_t emu_i;
 		for (emu_i = 0; emu_i < LTC6804_REG_CELL_COUNT * 2; emu_i++)

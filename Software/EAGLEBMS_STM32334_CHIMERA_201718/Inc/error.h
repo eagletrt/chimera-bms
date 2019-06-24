@@ -3,7 +3,6 @@
  * @brief		This file contains the functions to handle errors.
  *
  * @date		May 1, 2019
- *
  * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
  */
 

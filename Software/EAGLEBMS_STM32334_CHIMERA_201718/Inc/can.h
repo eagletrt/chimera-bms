@@ -1,9 +1,9 @@
 /**
- * @file	can.h
- * @brief	This file contains some CAN functions to ease data transmission
+ * @file		can.h
+ * @brief		This file contains some CAN functions to ease data transmission
  *
  * @author	Gregor
- * @author  Matteo Bonora [matteo.bonora@studenti.unitn.it]
+ * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
  */
 
 #ifndef CAN_H_
