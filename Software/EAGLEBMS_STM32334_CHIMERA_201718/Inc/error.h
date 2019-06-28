@@ -15,8 +15,9 @@
 /**
  * @brief		Checks if an error has been triggered, if true it jumps to the
  * 					"End" label
- * @details	This macro should be called after every function that takes of the
- * 					error enum, in order to check whether it has errored or not
+ * @details	This macro checks if a function raised an error. You should call
+ * 					this right after a function that can raise some type of
+ * 					error.
  */
 #define ER_CHK(ST_P)                                                           \
 	/*1*/ {                                                                    \
@@ -27,7 +28,9 @@
 	}
 
 /** @brief		Sets the error type and jumps to the "End" label
- *	@details	Call this every time an error occurs
+ *	@details	This macro should be called inside a function that can generate
+ *						an error. It's used to set the error variable and to
+ *						break execution of the function
  */
 #define ER_RAISE(ST_P, ST)                                                     \
 	/*1*/ {                                                                    \
@@ -35,12 +38,6 @@
 		/*3*/ goto End;                                                        \
 	}
 
-/**
- * @brief		Checks if an error has been triggered, if true it jumps to the
- * 					"End" label
- * @details	This macro should be called after every function that takes of the
- * 					error enum, in order to check whether it has errored or not
- */
 typedef enum
 {
 	ERROR_LTC6804_PEC_ERROR,
@@ -59,7 +56,8 @@ typedef enum
 } ERROR_T;
 
 /** @brief	Defines the acceptable thresholds over which an error becomes
- * 					critical. 0 values are ignored
+ * 					critical. Can be a count based limit, a time based one or
+ * 					both. 0 values are ignored
  */
 typedef struct
 {
@@ -67,18 +65,18 @@ typedef struct
 	uint32_t timeout;
 } ERROR_LIMITS_T;
 
-/** @brief	Defines an error instance that can occur */
+/** @brief	Defines an error instance */
 typedef struct
 {
-	ERROR_T type;
-	bool active; /*!< True if the error is currently present */
-	bool fatal;  /*!< True if the error is fatal */
-	uint16_t count;
-	uint32_t time_stamp;
+	ERROR_T type;		 /*!< Defines the type of error */
+	bool active;		 /*!< True if the error is currently happening */
+	bool fatal;			 /*!< True if the error is fatal */
+	uint16_t count;		 /*!< How many times the error has occurred */
+	uint32_t time_stamp; /*!< Last time the error occurred */
 } ERROR_STATUS_T;
 
-/** @brief	tuple of value-error_status. Used to store values that are to be
- *					checked for error
+/** @brief	tuple of value-error_status. Used to store values that can trigger
+ * 					an error
  */
 typedef struct
 {
@@ -86,8 +84,8 @@ typedef struct
 	ERROR_STATUS_T error;
 } ER_UINT16_T;
 
-/** @brief	tuple of value-error_status. Used to store values that are to be
- * 					checked for error
+/** @brief	tuple of value-error_status. Used to store values that can trigger
+ * 					an error
  */
 typedef struct
 {
@@ -95,8 +93,8 @@ typedef struct
 	ERROR_STATUS_T error;
 } ER_INT16_T;
 
-/** @brief	tuple of value-error_status. Used to store values that are to be
- * 					checked for error
+/** @brief	tuple of value-error_status. Used to store values that can trigger
+ * 					an error
  */
 typedef struct
 {

@@ -74,10 +74,10 @@ void error_set(ERROR_T type, ERROR_STATUS_T *er, uint32_t now)
 }
 
 /**
- * @brief	Deactivates an error.
+ * @brief		Deactivates an error.
  *
- * @param	type	The type of error to deactivate
- * @param	er		The error structure to deactivate
+ * @param		type	The type of error to deactivate
+ * @param		er		The error structure to deactivate
  */
 void error_unset(ERROR_T type, ERROR_STATUS_T *er)
 {
@@ -93,6 +93,8 @@ void error_unset(ERROR_T type, ERROR_STATUS_T *er)
 
 /**
  * @brief		Checks if an error has become fatal.
+ * @details	This function checks if the provided error structure has exceeded
+ * 					one or more of its critical limits.
  *
  * @param		error	The error structure to check.
  * @param		now		The current time.
@@ -113,10 +115,9 @@ ERROR_T error_check_fatal(ERROR_STATUS_T *error, uint32_t now)
 }
 
 /**
- * @brief		Checks whether to trigger an error based on number of
- * 					occurrences.
+ * @brief		Checks whether to trigger a count-based error.
  * @details	This will trigger the error if the number of occurrences exceeds the
- * 					count parameter.
+ * 					count parameter of that error type.
  *
  * @param		error	The error structure to check
  *
@@ -137,10 +138,10 @@ bool _error_check_count(ERROR_STATUS_T *error)
 }
 
 /**
- * @brief		Checks whether to trigger an error based on time.
+ * @brief		Checks whether to trigger a time-based error.
  * @details	This will trigger the error if the time elapsed between the first
  * 					occurrence of the error and the current time is more than
- * 					the timeout.
+ * 					the timeout for that type of error.
  *
  * @param		error	The error struct to check
  * @param		now		The current time
