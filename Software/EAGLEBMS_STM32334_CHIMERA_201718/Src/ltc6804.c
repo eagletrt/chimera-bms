@@ -17,10 +17,10 @@
  * @details	It executes multiple rdcv requests to the LTCs and saves the values
  * 					in the voltage variable of the CELL_Ts.
  *
- * 			1     CMD0    8     CMD1      16      32
- * 			|- - - - - - -|- - - - - - - -|- ... -|
- * 			1 X X X X 0 0 0 0 0 0 0 X X X X  PEC
- * 			 Address |             |  Reg  |
+ * 					1     CMD0    8     CMD1      16      32
+ * 					|- - - - - - -|- - - - - - - -|- ... -|
+ * 					1 X X X X 0 0 0 0 0 0 0 X X X X  PEC
+ * 					 Address |             |  Reg  |
  *
  * @param		spi		The SPI configuration structure
  * @param		ltc		The array of LTC6804 configurations
@@ -70,7 +70,7 @@ uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 		data[7] = (uint8_t)emu_pec;
 #endif
 
-		uint8_t pec = _pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]);
+		bool pec = _pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]);
 
 		if (pec)
 		{
@@ -79,9 +79,9 @@ uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 			uint8_t cell = 0; // Counts the cell inside the register
 			for (cell = 0; cell < LTC6804_REG_CELL_COUNT; cell++)
 			{
+				// If cell is present
 				if (ltc->cell_distribution[reg * LTC6804_REG_CELL_COUNT + cell])
 				{
-					// If cell is present
 					volts[count].value = _convert_voltage(&data[2 * cell]);
 
 					ltc6804_check_voltage(&volts[count], error);
@@ -141,23 +141,23 @@ void _ltc6804_adcv(SPI_HandleTypeDef *spi, bool dcp)
  *					times, read odd cells, and then even ones. To write
  *					configuration you have to send 2 consecutive commands:
  *
- *			WRCFG:
- * 			1     CMD0    8     CMD1      16      32
- * 			|- - - - - - -|- - - - - - - -|- ... -|
- * 			0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1  PEC
+ *					WRCFG:
+ * 					1     CMD0    8     CMD1      16      32
+ * 					|- - - - - - -|- - - - - - - -|- ... -|
+ * 					0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1  PEC
  *
- *			CFGR:
- * 			1             8               16
- * 			|- - - - - - -|- - - - - - - -|
- * 			0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
- * 			17            24              32
- * 			|- - - - - - -|- - - - - - - -|
- * 			0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
- *			33            40              48      64
- *			|- - - - - - -|- - - - - - - -|- ... -|
- *			1 0 0 1 0 1 0 1 0 0 0 0 0 0 1 0  PEC	<- For odd cells
- *			              or
- *			0 1 0 0 1 0 1 0 0 0 0 0 0 0 0 1  PEC	<- For even cells
+ *					CFGR:
+ * 					1             8               16
+ * 					|- - - - - - -|- - - - - - - -|
+ * 					0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ * 					17            24              32
+ * 					|- - - - - - -|- - - - - - - -|
+ * 					0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+ *					33            40              48      64
+ *					|- - - - - - -|- - - - - - - -|- ... -|
+ *					1 0 0 1 0 1 0 1 0 0 0 0 0 0 1 0  PEC	<- For odd cells
+ *					              or
+ *					0 1 0 0 1 0 1 0 0 0 0 0 0 0 0 1  PEC	<- For even cells
  *
  * @param		hspi			The SPI configuration structure
  * @param		start_bal	whether to start temperature measurement
@@ -216,6 +216,7 @@ void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start_bal, bool even)
 	HAL_Delay(1);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, GPIO_PIN_SET);
 
+	// TODO: remove this
 	_ltc6804_adcv(hspi, start_bal);
 }
 
@@ -258,7 +259,6 @@ End:;
  * @brief		This function is used to fetch the temperatures.
  * @details	The workings of this function are very similar to read_voltages,
  * 					the main difference to it is the presence of the even
- *
  * 					parameter. Refer to the ltc6804_read_voltages comment for
  * 					the actual messages.
  *
@@ -313,7 +313,7 @@ uint8_t _rdcv_temp(SPI_HandleTypeDef *hspi, bool even, LTC6804_T *ltc,
 		data[7] = (uint8_t)emu_pec;
 #endif
 
-		uint8_t pec = _pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]);
+		bool pec = _pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]);
 
 		if (pec)
 		{

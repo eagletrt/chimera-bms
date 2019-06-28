@@ -75,11 +75,12 @@ void pack_init(ADC_HandleTypeDef *adc, PACK_T *pack)
 }
 
 /**
- * @brief	Polls all the LTCs for voltages
+ * @brief		Polls all the LTCs for voltages
+ * @details	This function should take 10~11ms to fully execute
  *
- * @param	spi				The SPI configuration structure
- * @param	voltages	The array of voltages
- * @param	error			The error return value
+ * @param		spi				The SPI configuration structure
+ * @param		voltages	The array of voltages
+ * @param		error			The error return value
  */
 uint8_t pack_update_voltages(SPI_HandleTypeDef *spi, PACK_T *pack,
 							 ERROR_T *error)
