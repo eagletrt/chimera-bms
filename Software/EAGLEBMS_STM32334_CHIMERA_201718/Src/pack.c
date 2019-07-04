@@ -108,7 +108,17 @@ End:;
 }
 
 /**
- * @brief	Polls all the LTCs for temperatures
+ * @brief		Polls the LTCs for temperatures
+ * @details	Temperature measurements with the current hardware architecture
+ * 					lasts 600ms: too slow for the BMS. To avoid stopping for
+ * 					that long, everytime this function is called only two LTCs
+ * 					are polled, and only even or odd cells are measured from
+ * 					them. When all LTCs have been polled, we start from the
+ * 					beginning and we flip the odd/even bit to read the remaining
+ * 					cells. This decreases the update frequency on a single cell,
+ * 					but greatly improves (~10x) the blocking time of temperature
+ * 					measurements. The time to update a single cell can be
+ * 					calculated as following: 2*CELL_COUNT*(52ms+CALL_INTERVAL)
  *
  * @param	spi						The SPI configuration structure
  * @param	temperatures	The array of temperatures
@@ -118,18 +128,28 @@ uint8_t pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack,
 								 ERROR_T *error)
 {
 	static uint8_t ltc_index = 0;
-	uint8_t cell_index;
+	static bool even = 0;
+	uint8_t cell_index = 0;
 
-	cell_index = ltc6804_read_temperatures(
-		spi, &ltc[ltc_index],
-		&pack->temperatures[ltc_index * LTC6804_CELL_COUNT], error);
+	ltc6804_configure_temperature(spi, true, even);
 
-	ER_CHK(error);
-
-	if (++ltc_index >= LTC6804_COUNT)
+	// Read 2 LTCs at a time. Roll back to 0 if limit exceeded
+	uint8_t tmp = (ltc_index + 2) % LTC6804_COUNT;
+	while (ltc_index != tmp)
 	{
-		ltc_index = 0;
+		cell_index = ltc6804_read_temperatures(
+			spi, &ltc[ltc_index], even,
+			&pack->temperatures[ltc_index * LTC6804_CELL_COUNT], error);
+		ER_CHK(error);
+
+		ltc_index = (ltc_index + 1) % LTC6804_COUNT;
+		if (ltc_index == 0)
+		{
+			even = !even;
+		}
 	}
+
+	ltc6804_configure_temperature(spi, false, even);
 
 	pack_update_temperature_stats(pack);
 
@@ -211,7 +231,7 @@ void pack_update_temperature_stats(PACK_T *pack)
 
 	uint32_t avg_temperature = 0;
 	uint16_t max_temperature = 0;
-	uint16_t min_temperature = pack->temperatures[0].value;
+	uint16_t min_temperature = 0xFFFF;
 
 	for (int i = 0; i < PACK_MODULE_COUNT; i++)
 	{

@@ -26,7 +26,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TEMPS_READ_INTERVAL 300
+#define TEMPS_READ_INTERVAL 200
 #define VOLTS_READ_INTERVAL 40
 /* USER CODE END PD */
 
@@ -94,25 +94,7 @@ int main(void)
 	HAL_Init();
 
 	/* USER CODE BEGIN Init */
-
-	/* USER CODE END Init */
-
-	/* Configure the system clock */
-	SystemClock_Config();
-
-	/* USER CODE BEGIN SysInit */
-
-	/* USER CODE END SysInit */
-
-	/* Initialize all configured peripherals */
-	MX_GPIO_Init();
-	MX_DMA_Init();
-	MX_SPI1_Init();
-	MX_ADC1_Init();
-	MX_CAN_Init();
-	MX_TIM6_Init();
-	/* USER CODE BEGIN 2 */
-
+	error_init(&can_error);
 	bms.status = BMS_OFF;
 
 	bms.pin_fault.gpio = BMS_FAULT_GPIO_Port;
@@ -124,15 +106,28 @@ int main(void)
 	bms.pin_ts_on.id = TS_ON_Pin;
 	bms.pin_chip_select.id = CS_6820_Pin;
 	bms.pin_precharge_end.id = PreChargeEnd_Pin;
+	/* USER CODE END Init */
 
+	/* Configure the system clock */
+	SystemClock_Config();
+
+	/* USER CODE BEGIN SysInit */
 	bms_write_pin(&bms.pin_fault, GPIO_PIN_SET);
 	bms_write_pin(&bms.pin_ts_on, GPIO_PIN_RESET);
 	bms_write_pin(&bms.pin_chip_select, GPIO_PIN_SET);
 	bms_write_pin(&bms.pin_precharge_end, GPIO_PIN_RESET);
+	/* USER CODE END SysInit */
 
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_DMA_Init();
+	MX_SPI1_Init();
+	MX_ADC1_Init();
+	MX_CAN_Init();
+	MX_TIM6_Init();
+	/* USER CODE BEGIN 2 */
 	can_init(&hcan);
 	pack_init(&hadc1, &pack);
-	error_init(&can_error);
 	/* USER CODE END 2 */
 
 	/* Infinite loop */

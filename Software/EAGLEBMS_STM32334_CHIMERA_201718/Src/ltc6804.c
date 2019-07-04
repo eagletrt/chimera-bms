@@ -219,39 +219,11 @@ void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start_bal, bool even)
 	_ltc6804_adcv(hspi, start_bal);
 }
 
-/**
- * @brief		Convenience function to iterate over _rdc_temp
- * @details	Since it's not possible to read the temperatures from adjacent
- * 					cells at the same time due to an interference problem
- * 					between the sensors, we alternate the measurements by
- * 					reading odd cells first, and then even ones.
- *
- * @param		hspi	The SPI configuration structure
- * @param		ltc		The array of LTC6804 configurations
- * @param		temps	The array of temperatures
- * @param		error	The error return value
- */
-uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
-								  ER_UINT16_T *temps, ERROR_T *error)
+void ltc6804_configure_temperature(SPI_HandleTypeDef *hspi, bool enable,
+								   bool even)
 {
-
-	uint8_t even = 0;
-	uint8_t index;
-
-	for (even = 0; even < 2; even++)
-	{
-		_ltc6804_wrcfg(hspi, 1, even); // switch between even and odd
-		_ltc6804_adcv(hspi, 1);
-
-		index = _rdcv_temp(hspi, even, ltc, temps, error);
-		ER_CHK(error);
-	}
-
-End:;
-	_ltc6804_adcv(hspi, 0);
-	_ltc6804_wrcfg(hspi, 0, 0); // turn off temp reading
-
-	return index;
+	_ltc6804_wrcfg(hspi, enable, even); // switch between even and odd
+	_ltc6804_adcv(hspi, enable);
 }
 
 /**
@@ -269,8 +241,8 @@ End:;
  * @param		temps		The array of temperatures
  * @param		error		The error return value
  */
-uint8_t _rdcv_temp(SPI_HandleTypeDef *hspi, bool even, LTC6804_T *ltc,
-				   ER_UINT16_T *temps, ERROR_T *error)
+uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
+								  bool even, ER_UINT16_T *temps, ERROR_T *error)
 {
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
@@ -323,11 +295,12 @@ uint8_t _rdcv_temp(SPI_HandleTypeDef *hspi, bool even, LTC6804_T *ltc,
 			{
 				uint8_t reg_cell = reg * LTC6804_REG_CELL_COUNT;
 
-				bool is_even = count % 2 == 0;
-				if (is_even == even)
+				// If the cell is present
+				if (ltc->cell_distribution[reg_cell + cell])
 				{
-					// If the cell is present
-					if (ltc->cell_distribution[reg_cell + cell])
+					bool is_even = count % 2 == 0;
+					// If the cell we're reading respects the even condition
+					if (is_even == even)
 					{
 						uint16_t temp =
 							_convert_temp(_convert_voltage(&data[2 * cell]));
@@ -339,17 +312,8 @@ uint8_t _rdcv_temp(SPI_HandleTypeDef *hspi, bool even, LTC6804_T *ltc,
 							ltc6804_check_temperature(&temps[count], error);
 							ER_CHK(error);
 						}
-
-						count++;
 					}
-				}
-				else
-				{
-					// Leave an empty slot
-					if (ltc->cell_distribution[reg_cell + cell])
-					{
-						count++;
-					}
+					count++;
 				}
 			}
 		}
@@ -377,7 +341,7 @@ void ltc6804_check_voltage(ER_UINT16_T *volts, WARNING_T *warning,
 						   ERROR_T *error)
 {
 	if (volts->value < CELL_WARN_VOLTAGE)
-{
+	{
 		*warning = WARN_CELL_LOW_VOLTAGE;
 	}
 

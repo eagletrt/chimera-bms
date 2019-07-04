@@ -82,7 +82,10 @@ void ltc6804_check_temperature(ER_UINT16_T *temp, ERROR_T *error);
 uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 							  ER_UINT16_T *volts, WARNING_T *warning,
 							  ERROR_T *error);
+void ltc6804_configure_temperature(SPI_HandleTypeDef *hspi, bool enable,
+								   bool even);
 uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
-								  ER_UINT16_T *temps, ERROR_T *error);
+								  bool even, ER_UINT16_T *temps,
+								  ERROR_T *error);
 
 #endif /* LTC6804_H_ */
