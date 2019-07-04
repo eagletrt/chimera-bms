@@ -85,7 +85,6 @@ void can_send(CAN_HandleTypeDef *canh, uint8_t data[], size_t size)
 	{
 		tx.Data[i] = data[i];
 	}
-
 	canh->pTxMsg = &tx;
 	HAL_CAN_Transmit_IT(canh);
 	// HAL_CAN_Transmit(canh, 2);
@@ -158,6 +157,24 @@ void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
 	can_send(canh, data, 7);
 }
 
+void can_send_warning(CAN_HandleTypeDef *canh, ERROR_T warning)
+{
+	static uint32_t timer = 0;
+
+	if (HAL_GetTick() - timer >= 1000)
+	{
+		timer = HAL_GetTick();
+		size_t size = 2;
+		uint8_t data[size];
+
+		can_init_msg(data);
+		data[0] = CAN_OUT_WARNING;
+		data[1] = warning;
+
+		can_send(canh, data, size);
+	}
+}
+
 /**
  * @brief		Recognise and send errors over can
  *
@@ -168,8 +185,8 @@ void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
 void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
 					PACK_T *pack)
 {
-	uint8_t data[5];
 	size_t size = 5;
+	uint8_t data[size];
 
 	can_init_msg(data);
 	data[0] = CAN_OUT_ERROR;

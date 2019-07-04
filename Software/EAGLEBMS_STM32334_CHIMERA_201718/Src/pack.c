@@ -83,7 +83,7 @@ void pack_init(ADC_HandleTypeDef *adc, PACK_T *pack)
  * @param		error			The error return value
  */
 uint8_t pack_update_voltages(SPI_HandleTypeDef *spi, PACK_T *pack,
-							 ERROR_T *error)
+							 WARNING_T *warning, ERROR_T *error)
 {
 	uint8_t ltc_i, cell;
 
@@ -93,13 +93,12 @@ uint8_t pack_update_voltages(SPI_HandleTypeDef *spi, PACK_T *pack,
 	{
 		cell = ltc6804_read_voltages(
 			spi, &ltc[ltc_i], &pack->voltages[ltc_i * LTC6804_CELL_COUNT],
-			error);
+			warning, error);
 		ER_CHK(error);
 	}
 
-	pack_update_voltage_stats(pack);
-
 End:;
+	pack_update_voltage_stats(pack);
 
 	if (error == ERROR_LTC6804_PEC_ERROR)
 	{

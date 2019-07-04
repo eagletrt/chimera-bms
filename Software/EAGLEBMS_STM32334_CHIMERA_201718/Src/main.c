@@ -545,8 +545,15 @@ static void MX_GPIO_Init(void)
 void read_volts(ERROR_T *error)
 {
 	// Voltages
-	error_index = pack_update_voltages(&hspi1, &pack, error);
+	WARNING_T warning = WARN_OK;
+
+	error_index = pack_update_voltages(&hspi1, &pack, &warning, error);
 	ER_CHK(error);
+
+	if (warning != WARN_OK)
+	{
+		can_send_warning(&hcan, warning);
+	}
 
 	// Current
 	pack_update_current(&pack.current, error);

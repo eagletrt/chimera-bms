@@ -55,9 +55,16 @@ typedef enum
 	ERROR_OK
 } ERROR_T;
 
+typedef enum
+{
+	WARN_CELL_LOW_VOLTAGE,
+	WARN_NUM_WARNINGS,
+	WARN_OK
+} WARNING_T;
+
 /** @brief	Defines the acceptable thresholds over which an error becomes
- * 					critical. Can be a count based limit, a time based one or
- * 					both. 0 values are ignored
+ * 					critical. Can be a count based limit, a time based one
+ * or both. 0 values are ignored
  */
 typedef struct
 {

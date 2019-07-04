@@ -75,13 +75,13 @@ void _wakeup_idle(SPI_HandleTypeDef *hspi, bool apply_delay);
 
 void _ltc6804_adcv(SPI_HandleTypeDef *hspi, bool DCP);
 void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start, bool parity);
-uint8_t _rdcv_temp(SPI_HandleTypeDef *hspi, bool is_even, LTC6804_T *ltc,
-				   ER_UINT16_T *temps, ERROR_T *error);
 
-void ltc6804_check_voltage(ER_UINT16_T *volts, ERROR_T *error);
+void ltc6804_check_voltage(ER_UINT16_T *volts, WARNING_T *warning,
+						   ERROR_T *error);
 void ltc6804_check_temperature(ER_UINT16_T *temp, ERROR_T *error);
 uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
-							  ER_UINT16_T *volts, ERROR_T *error);
+							  ER_UINT16_T *volts, WARNING_T *warning,
+							  ERROR_T *error);
 uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
 								  ER_UINT16_T *temps, ERROR_T *error);
 

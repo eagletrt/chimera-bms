@@ -28,9 +28,9 @@
  * @param		error	The error return value
  */
 uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
-							  ER_UINT16_T *volts, ERROR_T *error)
+							  ER_UINT16_T *volts, WARNING_T *warning,
+							  ERROR_T *error)
 {
-
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
 	uint8_t data[8];
@@ -84,9 +84,8 @@ uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 				{
 					volts[count].value = _convert_voltage(&data[2 * cell]);
 
-					ltc6804_check_voltage(&volts[count], error);
+					ltc6804_check_voltage(&volts[count], warning, error);
 					ER_CHK(error);
-
 					count++;
 				}
 			}
@@ -374,8 +373,14 @@ End:;
  * @param		volts		The voltage
  * @param		error		The error return code
  */
-void ltc6804_check_voltage(ER_UINT16_T *volts, ERROR_T *error)
+void ltc6804_check_voltage(ER_UINT16_T *volts, WARNING_T *warning,
+						   ERROR_T *error)
 {
+	if (volts->value < CELL_WARN_VOLTAGE)
+{
+		*warning = WARN_CELL_LOW_VOLTAGE;
+	}
+
 	if (volts->value < CELL_MIN_VOLTAGE)
 	{
 		error_set(ERROR_CELL_UNDER_VOLTAGE, &volts->error, HAL_GetTick());
