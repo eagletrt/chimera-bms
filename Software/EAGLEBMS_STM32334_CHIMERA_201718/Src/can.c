@@ -103,9 +103,15 @@ void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
 	uint8_t data[4];
 
 	data[0] = CAN_OUT_CURRENT;
-	data[1] = current >> 16 & 0xFF;
-	data[2] = current >> 8 & 0xFF;
-	data[3] = current & 0xFF;
+
+	*(int32_t *)(data + 1) = current;
+	/* WARNING: THIS CODE IS ENDIAN-SPECIFIC.
+		To convert data back to int32:
+		current = *(int32_t*)(data + 1);
+		"+ 1" is the position in the array (data[0] is skipped)
+
+	  See: https://os.mbed.com/forum/helloworld/topic/2053/?page=1
+	*/
 	can_send(canh, data, 4);
 }
 
@@ -117,24 +123,25 @@ void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
  */
 void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack)
 {
-	uint8_t data[8];
+	size_t size = 8;
+	uint8_t data[size];
 
 	data[0] = CAN_OUT_PACK_VOLTS;
-	data[1] = (uint8_t)(pack.total_voltage >> 16);
+	/*data[1] = (uint8_t)(pack.total_voltage >> 16);
 	data[2] = (uint8_t)(pack.total_voltage >> 8);
 	data[3] = (uint8_t)(pack.total_voltage);
 	data[4] = (uint8_t)(pack.avg_temperature >> 8);
 	data[5] = (uint8_t)(pack.avg_temperature);
 	data[6] = (uint8_t)(pack.min_voltage >> 8);
-	data[7] = (uint8_t)(pack.min_voltage);
-	/*data[1] = (uint8_t)(pack.total_voltage >> 16);
+	data[7] = (uint8_t)(pack.min_voltage);*/
+	data[1] = (uint8_t)(pack.total_voltage >> 16);
 	data[2] = (uint8_t)(pack.total_voltage >> 8);
 	data[3] = (uint8_t)(pack.total_voltage);
-	data[4] = (uint8_t)(pack.max_voltagcan_send_ts_on(&hcan);e >> 8);
+	data[4] = (uint8_t)(pack.max_voltage >> 8);
 	data[5] = (uint8_t)(pack.max_voltage);
 	data[6] = (uint8_t)(pack.min_voltage >> 8);
-	data[7] = (uint8_t)(pack.min_voltage);*/
-	can_send(canh, data, 8);
+	data[7] = (uint8_t)(pack.min_voltage);
+	can_send(canh, data, size);
 }
 
 /**
@@ -145,7 +152,8 @@ void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack)
  */
 void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
 {
-	uint8_t data[7];
+	size_t size = 7;
+	uint8_t data[size];
 
 	data[0] = CAN_OUT_PACK_TEMPS;
 	data[1] = (uint8_t)(pack.avg_temperature >> 8);
@@ -154,14 +162,14 @@ void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
 	data[4] = (uint8_t)(pack.max_temperature);
 	data[5] = (uint8_t)(pack.min_temperature >> 8);
 	data[6] = (uint8_t)(pack.min_temperature);
-	can_send(canh, data, 7);
+	can_send(canh, data, size);
 }
 
-void can_send_warning(CAN_HandleTypeDef *canh, ERROR_T warning)
+void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning)
 {
 	static uint32_t timer = 0;
 
-	if (HAL_GetTick() - timer >= 1000)
+	if (warning == WARN_OK && HAL_GetTick() - timer >= 1000)
 	{
 		timer = HAL_GetTick();
 		size_t size = 2;
@@ -191,6 +199,7 @@ void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
 	can_init_msg(data);
 	data[0] = CAN_OUT_ERROR;
 	data[1] = error;
+	data[2] = index;
 
 	switch (error)
 	{
@@ -198,25 +207,24 @@ void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
 		data[2] = index;
 		size = 3;
 		break;
+
 	case ERROR_CELL_UNDER_VOLTAGE:
-		data[2] = index;
 		data[3] = (uint8_t)(pack->min_voltage >> 8);
 		data[4] = (uint8_t)pack->min_voltage;
 		break;
+
 	case ERROR_CELL_OVER_VOLTAGE:
-		data[2] = index;
 		data[3] = (uint8_t)(pack->max_voltage >> 8);
 		data[4] = (uint8_t)pack->max_voltage;
 		break;
+
 	case ERROR_CELL_OVER_TEMPERATURE:
-		data[2] = index;
 		data[3] = (uint8_t)(pack->max_temperature >> 8);
 		data[4] = (uint8_t)pack->max_temperature;
 		break;
+
 	case ERROR_OVER_CURRENT:
-		data[2] = pack->current.value >> 16 & 0xFF;
-		data[3] = pack->current.value >> 8 & 0xFF;
-		data[4] = pack->current.value & 0xFF;
+		*(int32_t *)(data + 2) = pack->current.value;
 		break;
 	default:
 		break;

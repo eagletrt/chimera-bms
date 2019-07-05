@@ -81,7 +81,7 @@ void error_set(ERROR_T type, ERROR_STATUS_T *er, uint32_t now)
  */
 void error_unset(ERROR_T type, ERROR_STATUS_T *er)
 {
-	// Disable only if the types are the same. We don't want to disable a
+	// Disable only if the types are the same. We don't want to disable
 	// different errors
 	if (er->type == type)
 	{
