@@ -7,6 +7,7 @@
  */
 
 #include "can.h"
+#include <string.h>
 
 uint8_t CAN_MSG_INVERTER_VOLTAGE[8] = {0x3D, 0xEB, 0, 0, 0, 0, 0, 0};
 uint8_t CAN_MSG_TS_ON[8] = {CAN_OUT_TS_ON, 0, 0, 0, 0, 0, 0, 0};
@@ -18,37 +19,30 @@ CAN_FilterConfTypeDef CAN_FILTER_NORMAL;
 // CAN filter used during precharge cycle
 CAN_FilterConfTypeDef CAN_FILTER_PRECHARGE;
 
-void can_init_msg(uint8_t data[8])
-{
-	uint8_t i;
-	for (i = 0; i < 8; i++)
-	{
-		data[i] = 0;
-	}
-}
-
 void can_init(CAN_HandleTypeDef *canh)
 {
 	// CAN Filter Initialization
-	CAN_FILTER_NORMAL.FilterNumber = 0;
-	CAN_FILTER_NORMAL.FilterMode = CAN_FILTERMODE_IDLIST;
-	CAN_FILTER_NORMAL.FilterIdLow = 0x55 << 5;
-	CAN_FILTER_NORMAL.FilterIdHigh = 0xA8 << 5;
-	CAN_FILTER_NORMAL.FilterMaskIdHigh = 0x55 << 5;
-	CAN_FILTER_NORMAL.FilterMaskIdLow = 0x55 << 5;
-	CAN_FILTER_NORMAL.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-	CAN_FILTER_NORMAL.FilterScale = CAN_FILTERSCALE_16BIT;
-	CAN_FILTER_NORMAL.FilterActivation = ENABLE;
+	CAN_FILTER_NORMAL =
+		(CAN_FilterConfTypeDef){.FilterNumber = 0,
+								.FilterMode = CAN_FILTERMODE_IDLIST,
+								.FilterIdLow = 0x55 << 5,
+								.FilterIdHigh = 0xA8 << 5,
+								.FilterMaskIdHigh = 0x55 << 5,
+								.FilterMaskIdLow = 0x55 << 5,
+								.FilterFIFOAssignment = CAN_FILTER_FIFO0,
+								.FilterScale = CAN_FILTERSCALE_16BIT,
+								.FilterActivation = ENABLE};
 
-	CAN_FILTER_PRECHARGE.FilterNumber = 0;
-	CAN_FILTER_PRECHARGE.FilterMode = CAN_FILTERMODE_IDLIST;
-	CAN_FILTER_PRECHARGE.FilterIdLow = 0x181 << 5;
-	CAN_FILTER_PRECHARGE.FilterIdHigh = 0x181 << 5;
-	CAN_FILTER_PRECHARGE.FilterMaskIdHigh = 0x181 << 5;
-	CAN_FILTER_PRECHARGE.FilterMaskIdLow = 0x181 << 5;
-	CAN_FILTER_PRECHARGE.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-	CAN_FILTER_PRECHARGE.FilterScale = CAN_FILTERSCALE_16BIT;
-	CAN_FILTER_PRECHARGE.FilterActivation = ENABLE;
+	CAN_FILTER_PRECHARGE =
+		(CAN_FilterConfTypeDef){.FilterNumber = 0,
+								.FilterMode = CAN_FILTERMODE_IDLIST,
+								.FilterIdLow = 0x181 << 5,
+								.FilterIdHigh = 0x181 << 5,
+								.FilterMaskIdHigh = 0x181 << 5,
+								.FilterMaskIdLow = 0x181 << 5,
+								.FilterFIFOAssignment = CAN_FILTER_FIFO0,
+								.FilterScale = CAN_FILTERSCALE_16BIT,
+								.FilterActivation = ENABLE};
 
 	HAL_CAN_ConfigFilter(canh, &CAN_FILTER_NORMAL);
 }
@@ -73,18 +67,17 @@ bool can_check_error(CAN_HandleTypeDef *canh)
  */
 void can_send(CAN_HandleTypeDef *canh, uint8_t data[], size_t size)
 {
-	CanTxMsgTypeDef tx;
-
-	tx.IDE = CAN_ID_STD;
-	tx.StdId = CAN_ID_BMS;
-	tx.DLC = size;
-	tx.RTR = CAN_RTR_DATA;
+	CanTxMsgTypeDef tx = {.IDE = CAN_ID_STD,
+						  .StdId = CAN_ID_BMS,
+						  .DLC = size,
+						  .RTR = CAN_RTR_DATA};
 
 	uint8_t i;
 	for (i = 0; i < tx.DLC; i++)
 	{
 		tx.Data[i] = data[i];
 	}
+
 	canh->pTxMsg = &tx;
 	HAL_CAN_Transmit_IT(canh);
 	// HAL_CAN_Transmit(canh, 2);
@@ -100,7 +93,8 @@ void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
 {
 	// Send current data via CAN
 
-	uint8_t data[4];
+	size_t size = 4;
+	uint8_t data[size];
 
 	data[0] = CAN_OUT_CURRENT;
 
@@ -112,7 +106,7 @@ void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
 
 	  See: https://os.mbed.com/forum/helloworld/topic/2053/?page=1
 	*/
-	can_send(canh, data, 4);
+	can_send(canh, data, size);
 }
 
 /**
@@ -175,7 +169,6 @@ void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning)
 		size_t size = 2;
 		uint8_t data[size];
 
-		can_init_msg(data);
 		data[0] = CAN_OUT_WARNING;
 		data[1] = warning;
 
@@ -195,8 +188,8 @@ void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
 {
 	size_t size = 5;
 	uint8_t data[size];
+	memset(data, 0, size);
 
-	can_init_msg(data);
 	data[0] = CAN_OUT_ERROR;
 	data[1] = error;
 	data[2] = index;
