@@ -8,8 +8,9 @@
 
 #include "pack.h"
 #include <math.h>
-#include <stdlib.h>
 #include <stm32f3xx_hal.h>
+
+#define CURRENT_ARRAY_LENGTH 512
 
 /**
  * @details	Defines the cell distribution inside the rdcv groups:
@@ -24,10 +25,7 @@ static const bool
 		1, 0, 0  // GROUP D
 };
 
-uint32_t adcCurrent[512];
-int32_t instCurrent;
-int32_t current;
-int32_t current_s;
+uint32_t adc_current[CURRENT_ARRAY_LENGTH];
 
 LTC6804_T ltc[LTC6804_COUNT];
 
@@ -40,7 +38,7 @@ LTC6804_T ltc[LTC6804_COUNT];
 void pack_init(ADC_HandleTypeDef *adc, PACK_T *pack)
 {
 	// Start current measuring
-	HAL_ADC_Start_DMA(adc, adcCurrent, 512);
+	HAL_ADC_Start_DMA(adc, adc_current, CURRENT_ARRAY_LENGTH);
 
 	pack->total_voltage = 0;
 	pack->max_voltage = 0;
@@ -163,20 +161,26 @@ End:;
 }
 
 /**
- * @brief	Updates the current draw
+ * @brief		Calculates the current exiting/entering the pack
  *
- * @param	current	The current value
- * @param	error		The error return value
+ * @param		current	The current value to update
+ * @param		error		The error return value
  */
 void pack_update_current(ER_INT32_T *current, ERROR_T *error)
 {
-	instCurrent = 0;
-	for (int i = 0; i < 512; i++)
-		instCurrent += adcCurrent[i];
-	instCurrent /= 512;
+	int32_t tmp = 0;
+	uint16_t i;
+	for (i = 0; i < CURRENT_ARRAY_LENGTH; i++)
+	{
+		tmp += adc_current[i];
+	}
+	tmp /= CURRENT_ARRAY_LENGTH;
 
-	float tmp_cur = (((float)instCurrent * 3.3) / 4096 - 2.048);
-	current->value = round((tmp_cur * 200 / 1.25) * 10);
+	// We calculate the input voltage
+	float in_volt = (((float)tmp * 3.3) / 4096);
+
+	// Check the current sensor datasheet for the correct formula
+	current->value = -round((((in_volt * 2 - 2.048) * 200 / 1.25)) * 10);
 
 	if (current->value > PACK_MAX_CURRENT)
 	{
@@ -227,12 +231,11 @@ void pack_update_voltage_stats(PACK_T *pack)
  */
 void pack_update_temperature_stats(PACK_T *pack)
 {
-	uint8_t temp_count = 0;
-
 	uint32_t avg_temperature = 0;
 	uint16_t max_temperature = 0;
 	uint16_t min_temperature = 0xFFFF;
 
+	uint8_t temp_count = 0;
 	for (int i = 0; i < PACK_MODULE_COUNT; i++)
 	{
 		if (pack->temperatures[i].value > 0)
