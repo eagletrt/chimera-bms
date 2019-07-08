@@ -7,6 +7,7 @@
  */
 
 #include "can.h"
+#include <math.h>
 #include <string.h>
 
 uint8_t CAN_MSG_INVERTER_VOLTAGE[8] = {0x3D, 0xEB, 0, 0, 0, 0, 0, 0};
@@ -87,25 +88,36 @@ void can_send(CAN_HandleTypeDef *canh, uint8_t data[], size_t size)
  * @brief		Send current data via CAN
  *
  * @param		canh		CAN configuration structure
- * @param		current	The current variable
+ * @param		current	The current value
+ * @param		voltage	The voltage value
  */
-void can_send_current(CAN_HandleTypeDef *canh, int32_t current)
+void can_send_current(CAN_HandleTypeDef *canh, int16_t current,
+					  uint32_t voltage)
 {
-	// Send current data via CAN
+	// Calculate output power (in kW * 10)
+	int16_t power =
+		round(((float)voltage / 1000) * ((float)current / 10) / 10000);
+	uint8_t i = 1;
 
-	size_t size = 4;
+	size_t size = 1 + sizeof(current) + sizeof(power);
 	uint8_t data[size];
 
 	data[0] = CAN_OUT_CURRENT;
 
-	*(int32_t *)(data + 1) = current;
-	/* WARNING: THIS CODE IS ENDIAN-SPECIFIC.
-		To convert data back to int32:
-		current = *(int32_t*)(data + 1);
-		"+ 1" is the position in the array (data[0] is skipped)
+	/* WARNING: THIS CODE IS ENDIAN-SPECIFIC. */
+	*(typeof(current) *)(data + i) = current;
+
+	i += sizeof(current);
+	/*
+		To convert data back to int16:
+		current = *(int16_t*)(data + 1);
+		"+ 1" is the position in the array
 
 	  See: https://os.mbed.com/forum/helloworld/topic/2053/?page=1
 	*/
+
+	*(typeof(power) *)(data + i) = power;
+	/* END OF WARNING */
 	can_send(canh, data, size);
 }
 
@@ -128,6 +140,7 @@ void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack)
 	data[5] = (uint8_t)(pack.avg_temperature);
 	data[6] = (uint8_t)(pack.min_voltage >> 8);
 	data[7] = (uint8_t)(pack.min_voltage);*/
+	// We skip the first byte from total_voltage since it's always 0
 	data[1] = (uint8_t)(pack.total_voltage >> 16);
 	data[2] = (uint8_t)(pack.total_voltage >> 8);
 	data[3] = (uint8_t)(pack.total_voltage);
@@ -186,7 +199,7 @@ void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning)
 void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
 					PACK_T *pack)
 {
-	size_t size = 5;
+	size_t size = 6;
 	uint8_t data[size];
 	memset(data, 0, size);
 
@@ -197,8 +210,6 @@ void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
 	switch (error)
 	{
 	case ERROR_LTC6804_PEC_ERROR:
-		data[2] = index;
-		size = 3;
 		break;
 
 	case ERROR_CELL_UNDER_VOLTAGE:
@@ -217,7 +228,7 @@ void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
 		break;
 
 	case ERROR_OVER_CURRENT:
-		*(int32_t *)(data + 2) = pack->current.value;
+		*(typeof(pack->current.value) *)(data + 2) = pack->current.value;
 		break;
 	default:
 		break;

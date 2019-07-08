@@ -61,7 +61,8 @@ uint8_t can_receive(CAN_HandleTypeDef *canh, CanRxMsgTypeDef *rx);
 
 bool can_check_error(CAN_HandleTypeDef *canh);
 
-void can_send_current(CAN_HandleTypeDef *canh, int32_t current);
+void can_send_current(CAN_HandleTypeDef *canh, int16_t current,
+					  uint32_t voltage);
 void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack);
 void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack);
 void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning);
