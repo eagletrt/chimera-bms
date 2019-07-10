@@ -11,7 +11,7 @@
 #include <inttypes.h>
 
 #define BMS_PRECHARGE_TIMEOUT 1000
-#define BMS_PRECHARGE_BYPASS_TIMEOUT 8000
+#define BMS_PRECHARGE_BYPASS_TIMEOUT 10000
 
 /**
  * @brief		Sets the given pin and updates the pin's state

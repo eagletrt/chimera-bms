@@ -26,6 +26,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+//#define CHARGE
 #define TEMPS_READ_INTERVAL 200
 #define VOLTS_READ_INTERVAL 40
 /* USER CODE END PD */
@@ -132,6 +133,10 @@ int main(void)
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
+#ifdef CHARGE
+	HAL_Delay(10000);
+	bms_precharge_bypass(&bms);
+#endif
 	while (1)
 	{
 		/* USER CODE END WHILE */
@@ -182,7 +187,7 @@ int main(void)
 			break;
 		case CAN_ID_IN_INVERTER_L:
 			if (can_rx.Data[0] == CAN_IN_BUS_VOLTAGE)
-			{ // Bus voltage (for precharge)
+			{ // Bus voltage for precharge
 
 				bus_voltage = can_rx.Data[2] << 8;
 				bus_voltage += can_rx.Data[1];
@@ -204,10 +209,11 @@ int main(void)
 			switch (bms_precharge_check(&bms))
 			{
 			case BMS_ON:
-				// confirm ts on
+				// Used when bypassing precharge
 				can_send(&hcan, CAN_MSG_TS_ON, 8);
 				// No break to execute BMS_OFF also.
 			case BMS_OFF:
+				// Precharge timed out
 				HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
 				break;
 			case BMS_PRECHARGE:
