@@ -166,7 +166,7 @@ End:;
  * @param		current	The current value to update
  * @param		error		The error return value
  */
-void pack_update_current(ER_INT32_T *current, ERROR_T *error)
+void pack_update_current(ER_INT16_T *current, ERROR_T *error)
 {
 	int32_t tmp = 0;
 	uint16_t i;
@@ -180,7 +180,8 @@ void pack_update_current(ER_INT32_T *current, ERROR_T *error)
 	float in_volt = (((float)tmp * 3.3) / 4096);
 
 	// Check the current sensor datasheet for the correct formula
-	current->value = -round((((in_volt * 2 - 2.048) * 200 / 1.25)) * 10);
+	current->value =
+		(int16_t)-round((((in_volt * 2 - 2.048) * 200 / 1.25)) * 10);
 
 	if (current->value > PACK_MAX_CURRENT)
 	{

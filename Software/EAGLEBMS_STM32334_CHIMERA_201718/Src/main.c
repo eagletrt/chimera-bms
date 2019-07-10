@@ -561,7 +561,7 @@ void read_volts(ERROR_T *error)
 	ER_CHK(error);
 
 	// Update total values
-	can_send_current(&hcan, pack.current.value);
+	can_send_current(&hcan, pack.current.value, pack.total_voltage);
 	can_send_pack_voltage(&hcan, pack);
 
 End:;
