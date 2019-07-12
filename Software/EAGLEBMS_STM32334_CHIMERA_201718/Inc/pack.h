@@ -18,18 +18,19 @@
 /** @brief Battery pack basic info */
 typedef struct
 {
-	ER_UINT16_T voltages[PACK_MODULE_COUNT]; /*!< Voltage of the single cells */
-	ER_UINT16_T temperatures[PACK_MODULE_COUNT];
+	ER_UINT16_T
+	voltages[PACK_MODULE_COUNT]; /*!< [mV * 10] Voltage of the single cells */
+	ER_UINT16_T temperatures[PACK_MODULE_COUNT]; /*!< [°C * 100] */
 
-	uint32_t total_voltage; /*!< Total pack voltage */
-	uint16_t max_voltage;   /*!< Maximum cell voltage */
-	uint16_t min_voltage;   /*!< Minimum cell voltage */
+	uint32_t total_voltage; /*!< [mV * 10] Total pack voltage */
+	uint16_t max_voltage;   /*!< [mV * 10] Maximum cell voltage */
+	uint16_t min_voltage;   /*!< [mV * 10] Minimum cell voltage */
 
-	uint16_t avg_temperature; /*!< Average temperature of all the cells */
-	uint16_t max_temperature; /*!< Highest registered cell temperature */
-	uint16_t min_temperature; /*!< Smallest cell temperature */
+	uint16_t avg_temperature; /*!< [°C * 100] Average temperature of the pack */
+	uint16_t max_temperature; /*!< [°C * 100] Highest registered temperature */
+	uint16_t min_temperature; /*!< [°C * 100] Smallest temperature */
 
-	ER_INT16_T current; /*!< Instant current draw. Expressed in Ampere * 10 */
+	ER_INT16_T current; /*!< [A * 10] Instant current draw. */
 } PACK_T;
 
 void pack_init(ADC_HandleTypeDef *adc, PACK_T *pack);
