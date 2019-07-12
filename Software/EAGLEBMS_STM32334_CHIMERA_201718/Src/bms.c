@@ -10,7 +10,7 @@
 #include "bms.h"
 #include <inttypes.h>
 
-#define BMS_PRECHARGE_TIMEOUT 1000
+#define BMS_PRECHARGE_TIMEOUT 5000
 #define BMS_PRECHARGE_BYPASS_TIMEOUT 10000
 
 /**
@@ -32,15 +32,21 @@ void bms_write_pin(BMS_PIN_T *pin, GPIO_PinState state)
  */
 void bms_precharge_start(BMS_CONFIG_T *bms)
 {
-	bms_write_pin(&bms->pin_ts_on, GPIO_PIN_SET);
-	bms->precharge_timestamp = HAL_GetTick();
-	bms->status = BMS_PRECHARGE;
+	if (bms->status != BMS_PRECHARGE)
+	{
+		bms_write_pin(&bms->pin_ts_on, GPIO_PIN_SET);
+		bms->precharge_timestamp = HAL_GetTick();
+		bms->status = BMS_PRECHARGE;
+	}
 }
 
 void bms_precharge_bypass(BMS_CONFIG_T *bms)
 {
-	bms_precharge_start(bms);
-	bms->precharge_bypass = true;
+	if (bms->status != BMS_PRECHARGE)
+	{
+		bms_precharge_start(bms);
+		bms->precharge_bypass = true;
+	}
 }
 
 /**
@@ -53,14 +59,14 @@ BMS_STATUS_T bms_precharge_check(BMS_CONFIG_T *bms)
 {
 	if (bms->status == BMS_PRECHARGE)
 	{
-
 		if (bms->precharge_bypass && HAL_GetTick() - bms->precharge_timestamp >=
 										 BMS_PRECHARGE_BYPASS_TIMEOUT)
 		{
 			bms_precharge_end(bms);
 		}
-		else if (HAL_GetTick() - bms->precharge_timestamp >=
-				 BMS_PRECHARGE_TIMEOUT)
+		else if (!bms->precharge_bypass &&
+				 HAL_GetTick() - bms->precharge_timestamp >=
+					 BMS_PRECHARGE_TIMEOUT)
 		{
 			bms_set_ts_off(bms);
 		}
@@ -75,10 +81,13 @@ BMS_STATUS_T bms_precharge_check(BMS_CONFIG_T *bms)
  */
 void bms_precharge_end(BMS_CONFIG_T *bms)
 {
-	bms_write_pin(&bms->pin_precharge_end, GPIO_PIN_SET);
-	HAL_Delay(1);
-	bms_write_pin(&bms->pin_precharge_end, GPIO_PIN_RESET);
-	bms->status = BMS_ON;
+	if (bms->status == BMS_PRECHARGE)
+	{
+		bms_write_pin(&bms->pin_precharge_end, GPIO_PIN_SET);
+		HAL_Delay(1);
+		bms_write_pin(&bms->pin_precharge_end, GPIO_PIN_RESET);
+		bms->status = BMS_ON;
+	}
 }
 
 /**

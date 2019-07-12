@@ -53,8 +53,6 @@ PACK_T pack;
 ERROR_T error = ERROR_OK;
 uint8_t error_index;
 
-int32_t bus_voltage;
-
 uint32_t timer_precharge = 0;
 uint32_t timer_volts = 0;
 uint32_t timer_temps = 0;
@@ -113,10 +111,7 @@ int main(void)
 	SystemClock_Config();
 
 	/* USER CODE BEGIN SysInit */
-	bms_write_pin(&bms.pin_fault, GPIO_PIN_SET);
-	bms_write_pin(&bms.pin_ts_on, GPIO_PIN_RESET);
-	bms_write_pin(&bms.pin_chip_select, GPIO_PIN_SET);
-	bms_write_pin(&bms.pin_precharge_end, GPIO_PIN_RESET);
+
 	/* USER CODE END SysInit */
 
 	/* Initialize all configured peripherals */
@@ -127,14 +122,22 @@ int main(void)
 	MX_CAN_Init();
 	MX_TIM6_Init();
 	/* USER CODE BEGIN 2 */
+	bms_write_pin(&bms.pin_fault, GPIO_PIN_SET);
+	bms_write_pin(&bms.pin_ts_on, GPIO_PIN_RESET);
+	bms_write_pin(&bms.pin_chip_select, GPIO_PIN_SET);
+	bms_write_pin(&bms.pin_precharge_end, GPIO_PIN_RESET);
+
 	can_init(&hcan);
 	pack_init(&hadc1, &pack);
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
+	// HAL_GPIO_WritePin(BMS_FAULT_GPIO_Port, BMS_FAULT_Pin, GPIO_PIN_SET);
 #ifdef CHARGE
 	HAL_Delay(10000);
+	// bms_precharge_start(&bms);
+	// HAL_GPIO_WritePin(TS_ON_GPIO_Port, TS_ON_Pin, GPIO_PIN_SET);
 	bms_precharge_bypass(&bms);
 #endif
 	while (1)
@@ -162,7 +165,7 @@ int main(void)
 			if (can_rx.Data[0] == CAN_IN_TS_OFF)
 			{ // TS Off
 				bms_set_ts_off(&bms);
-				can_send(&hcan, CAN_MSG_TS_OFF, 8);
+				can_send(&hcan, CAN_ID_BMS, CAN_MSG_TS_OFF, 8);
 			}
 			else if (can_rx.Data[0] == CAN_IN_TS_ON)
 			{
@@ -174,10 +177,10 @@ int main(void)
 
 					HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_PRECHARGE);
 
-					bus_voltage = 0;
 					timer_precharge = HAL_GetTick();
 
-					can_send(&hcan, CAN_MSG_INVERTER_VOLTAGE, 8);
+					can_send(&hcan, CAN_ID_OUT_INVERTER_L,
+							 CAN_MSG_INVERTER_VOLTAGE, 8);
 				}
 				else if (can_rx.Data[1] == 0x01)
 				{ // Direct TS ON. Used when charging
@@ -186,19 +189,28 @@ int main(void)
 			}
 			break;
 		case CAN_ID_IN_INVERTER_L:
-			if (can_rx.Data[0] == CAN_IN_BUS_VOLTAGE)
-			{ // Bus voltage for precharge
+			if (bms.status == BMS_PRECHARGE)
+			{
+				if (can_rx.Data[0] == CAN_IN_BUS_VOLTAGE)
+				{ // Bus voltage for precharge
+					uint16_t bus_voltage = 0;
 
-				bus_voltage = can_rx.Data[2] << 8;
-				bus_voltage += can_rx.Data[1];
+					bus_voltage = can_rx.Data[2] << 8;
+					bus_voltage += can_rx.Data[1];
+					bus_voltage /= 31.99;
 
-				if (bus_voltage >= pack.total_voltage / 1000 * 0.9)
-				{
-					bms_precharge_end(&bms);
-					HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
+					if (bus_voltage >= pack.total_voltage / 10000 * 0.9)
+					{
+						bms_precharge_end(&bms);
+						HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
 
-					can_send(&hcan, CAN_MSG_TS_ON, 8);
+						can_send(&hcan, CAN_ID_BMS, CAN_MSG_TS_ON, 8);
+					}
 				}
+			}
+			else
+			{
+				HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
 			}
 			break;
 		}
@@ -210,8 +222,10 @@ int main(void)
 			{
 			case BMS_ON:
 				// Used when bypassing precharge
-				can_send(&hcan, CAN_MSG_TS_ON, 8);
-				// No break to execute BMS_OFF also.
+				can_send(&hcan, CAN_ID_BMS, CAN_MSG_TS_ON, 8);
+				HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
+
+				break;
 			case BMS_OFF:
 				// Precharge timed out
 				HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
@@ -221,7 +235,8 @@ int main(void)
 				if (HAL_GetTick() - timer_precharge >= 20)
 				{
 					timer_precharge = HAL_GetTick();
-					can_send(&hcan, CAN_MSG_INVERTER_VOLTAGE, 8);
+					can_send(&hcan, CAN_ID_OUT_INVERTER_L,
+							 CAN_MSG_INVERTER_VOLTAGE, 8);
 				}
 				break;
 			default:
@@ -538,6 +553,9 @@ static void MX_GPIO_Init(void)
 	HAL_GPIO_Init(ShutDownStatus_GPIO_Port, &GPIO_InitStruct);
 }
 
+// uint32_t max_min_time = 0;
+// bool max_min_active = false;
+
 /* USER CODE BEGIN 4 */
 /**
  * @brief Runs all the checks mandated by the rules
@@ -550,6 +568,25 @@ void read_volts(ERROR_T *error)
 
 	error_index = pack_update_voltages(&hspi1, &pack, &warning, error);
 	ER_CHK(error);
+
+	// REMOVE THIS. FOR CHARGING
+	/*if (pack.min_voltage >= CELL_MIN_MAX_VOLTAGE)
+	{
+		if (max_min_active)
+		{
+			if (HAL_GetTick() - max_min_time >= 5000)
+			{
+				max_min_active = false;
+				bms_set_ts_off(&bms);
+			}
+			max_min_time = HAL_GetTick();
+		}
+		else
+		{
+			max_min_active = true;
+			max_min_time = HAL_GetTick();
+		}
+	}*/
 
 	if (warning != WARN_OK)
 	{

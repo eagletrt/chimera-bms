@@ -56,7 +56,8 @@ extern CAN_FilterConfTypeDef CAN_FILTER_NORMAL;
 extern CAN_FilterConfTypeDef CAN_FILTER_PRECHARGE;
 
 void can_init(CAN_HandleTypeDef *canh);
-void can_send(CAN_HandleTypeDef *canh, uint8_t data[], size_t size);
+void can_send(CAN_HandleTypeDef *canh, uint16_t id, uint8_t data[],
+			  size_t size);
 uint8_t can_receive(CAN_HandleTypeDef *canh, CanRxMsgTypeDef *rx);
 
 bool can_check_error(CAN_HandleTypeDef *canh);

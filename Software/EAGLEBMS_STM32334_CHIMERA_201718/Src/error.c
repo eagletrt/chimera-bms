@@ -14,13 +14,13 @@
  * 	- 1s for temperatures
  * We stay 100ms below to be safe
  */
-#define LTC6804_PEC_TIMEOUT_COUNT 1000
+#define LTC6804_PEC_TIMEOUT_COUNT 5000
 #define CELL_UNDER_VOLTAGE_TIMEOUT_MS 400
 #define CELL_OVER_VOLTAGE_TIMEOUT_MS 400
 #define CELL_UNDER_TEMPERATURE_TIMEOUT_MS 900
 #define CELL_OVER_TEMPERATURE_TIMEOUT_MS 900
 #define OVER_CURRENT_TIMEOUT_MS 500
-#define CAN_TIMEOUT_COUNT 10
+#define CAN_TIMEOUT_COUNT 0
 
 /** @brief	Defines the timeout in count or time for each error type */
 ERROR_LIMITS_T timeout[ERROR_NUM_ERRORS] = {

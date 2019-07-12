@@ -66,12 +66,10 @@ bool can_check_error(CAN_HandleTypeDef *canh)
  * @param		canh	The CAN configuration structure
  * @param		data	The data to send
  */
-void can_send(CAN_HandleTypeDef *canh, uint8_t data[], size_t size)
+void can_send(CAN_HandleTypeDef *canh, uint16_t id, uint8_t data[], size_t size)
 {
-	CanTxMsgTypeDef tx = {.IDE = CAN_ID_STD,
-						  .StdId = CAN_ID_BMS,
-						  .DLC = size,
-						  .RTR = CAN_RTR_DATA};
+	CanTxMsgTypeDef tx = {
+		.IDE = CAN_ID_STD, .StdId = id, .DLC = size, .RTR = CAN_RTR_DATA};
 
 	uint8_t i;
 	for (i = 0; i < tx.DLC; i++)
@@ -118,7 +116,7 @@ void can_send_current(CAN_HandleTypeDef *canh, int16_t current,
 
 	*(typeof(power) *)(data + i) = power;
 	/* END OF WARNING */
-	can_send(canh, data, size);
+	can_send(canh, CAN_ID_BMS, data, size);
 }
 
 /**
@@ -133,22 +131,22 @@ void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack)
 	uint8_t data[size];
 
 	data[0] = CAN_OUT_PACK_VOLTS;
-	/*data[1] = (uint8_t)(pack.total_voltage >> 16);
+	data[1] = (uint8_t)(pack.total_voltage >> 16);
 	data[2] = (uint8_t)(pack.total_voltage >> 8);
 	data[3] = (uint8_t)(pack.total_voltage);
 	data[4] = (uint8_t)(pack.avg_temperature >> 8);
 	data[5] = (uint8_t)(pack.avg_temperature);
 	data[6] = (uint8_t)(pack.min_voltage >> 8);
-	data[7] = (uint8_t)(pack.min_voltage);*/
+	data[7] = (uint8_t)(pack.min_voltage);
 	// We skip the first byte from total_voltage since it's always 0
-	data[1] = (uint8_t)(pack.total_voltage >> 16);
+	/*data[1] = (uint8_t)(pack.total_voltage >> 16);
 	data[2] = (uint8_t)(pack.total_voltage >> 8);
 	data[3] = (uint8_t)(pack.total_voltage);
 	data[4] = (uint8_t)(pack.max_voltage >> 8);
 	data[5] = (uint8_t)(pack.max_voltage);
 	data[6] = (uint8_t)(pack.min_voltage >> 8);
-	data[7] = (uint8_t)(pack.min_voltage);
-	can_send(canh, data, size);
+	data[7] = (uint8_t)(pack.min_voltage);*/
+	can_send(canh, CAN_ID_BMS, data, size);
 }
 
 /**
@@ -163,13 +161,13 @@ void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
 	uint8_t data[size];
 
 	data[0] = CAN_OUT_PACK_TEMPS;
-	data[1] = (uint8_t)(pack.avg_temperature >> 8);
-	data[2] = (uint8_t)(pack.avg_temperature);
+	data[1] = (uint8_t)(pack.max_voltage >> 8);
+	data[2] = (uint8_t)(pack.max_voltage);
 	data[3] = (uint8_t)(pack.max_temperature >> 8);
 	data[4] = (uint8_t)(pack.max_temperature);
 	data[5] = (uint8_t)(pack.min_temperature >> 8);
 	data[6] = (uint8_t)(pack.min_temperature);
-	can_send(canh, data, size);
+	can_send(canh, CAN_ID_BMS, data, size);
 }
 
 void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning)
@@ -185,7 +183,7 @@ void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning)
 		data[0] = CAN_OUT_WARNING;
 		data[1] = warning;
 
-		can_send(canh, data, size);
+		can_send(canh, CAN_ID_BMS, data, size);
 	}
 }
 
@@ -234,5 +232,5 @@ void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
 		break;
 	}
 
-	can_send(canh, data, size);
+	can_send(canh, CAN_ID_BMS, data, size);
 }
