@@ -35,7 +35,7 @@ LTC6804_T ltc[LTC6804_COUNT];
  * @brief	Initializes the pack
  *
  * @param	adc		The configuration structure for the ADC
- * @param	pack	The Pack struct to initialize
+ * @param	pack	The PACK_T struct to initialize
  */
 void pack_init(ADC_HandleTypeDef *adc, PACK_T *pack)
 {
@@ -79,8 +79,11 @@ void pack_init(ADC_HandleTypeDef *adc, PACK_T *pack)
  * @details	This function should take 10~11ms to fully execute
  *
  * @param		spi				The SPI configuration structure
- * @param		voltages	The array of voltages
+ * @param		pack			The PACK_T struct to update
+ * @param		warning		The warning return value
  * @param		error			The error return value
+ *
+ * @returns	The index of the last updated cell
  */
 uint8_t pack_update_voltages(SPI_HandleTypeDef *spi, PACK_T *pack,
 							 WARNING_T *warning, ERROR_T *error)
@@ -120,9 +123,11 @@ End:;
  * 					measurements. The time to update a single cell can be
  * 					calculated as following: 2*CELL_COUNT*(52ms+CALL_INTERVAL)
  *
- * @param	spi						The SPI configuration structure
- * @param	temperatures	The array of temperatures
- * @param	error					The error return value
+ * @param		spi			The SPI configuration structure
+ * @param		pack		The PACK_T struct to update
+ * @param		error		The error return value
+ *
+ * @returns	The index of the last updated cell
  */
 uint8_t pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack,
 								 ERROR_T *error)
@@ -176,7 +181,7 @@ End:;
  * @param		pack		The PACK_T to check
  * @param		cells		The array of indexes that are found to be dropping
  * 									too much
- * @returns	The size of cells
+ * @returns	The number of cells that triggered the warning
  */
 uint8_t pack_check_voltage_drops(PACK_T *pack, uint8_t cells[PACK_MODULE_COUNT])
 {

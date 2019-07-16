@@ -40,6 +40,14 @@ void bms_precharge_start(BMS_CONFIG_T *bms)
 	}
 }
 
+/**
+ * @brief		Starts the precharge and bypasses the timeout control
+ * @details	This function is used to close the AIRs no matter what. The
+ * 					precharge cycle duration is defined by
+ * 					BMS_PRECHARGE_BYPASS_TIMEOUT
+ *
+ * @param		bms		The BMS config structure
+ */
 void bms_precharge_bypass(BMS_CONFIG_T *bms)
 {
 	if (bms->status != BMS_PRECHARGE)

@@ -135,14 +135,7 @@ void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack)
 	uint8_t data[size];
 
 	data[0] = CAN_OUT_PACK_VOLTS;
-	// data[1] = (uint8_t)(pack.total_voltage >> 16);
-	// data[2] = (uint8_t)(pack.total_voltage >> 8);
-	// data[3] = (uint8_t)(pack.total_voltage);
-	// data[4] = (uint8_t)(pack.avg_temperature >> 8);
-	// data[5] = (uint8_t)(pack.avg_temperature);
-	// data[6] = (uint8_t)(pack.min_voltage >> 8);
-	// data[7] = (uint8_t)(pack.min_voltage);
-	// We skip the first byte from total_voltage since it's always 0
+	// We only send 24 of the 32 bits of total_voltage
 	data[1] = (uint8_t)(pack.total_voltage >> 16);
 	data[2] = (uint8_t)(pack.total_voltage >> 8);
 	data[3] = (uint8_t)(pack.total_voltage);
@@ -174,6 +167,14 @@ void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
 	can_send(canh, CAN_ID_BMS, data, size);
 }
 
+/**
+ * @brief		Send warnings over CAN
+ *
+ * @param		canh		CAN configuration structure
+ * @param		warning	The warning to send
+ * @param		index		The index of the component that generated the
+ * 									warning
+ */
 void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning, uint8_t index)
 {
 	static uint32_t timer = 0;
@@ -194,10 +195,11 @@ void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning, uint8_t index)
 }
 
 /**
- * @brief		Recognise and send errors over can
+ * @brief		Recognise and send errors over CAN
  *
  * @param		canh	CAN configuration structure
  * @param		error	The error type to send
+ * @param		index	The index of the component that generated the error
  * @param		pack	The pack structure with data to send
  */
 void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
