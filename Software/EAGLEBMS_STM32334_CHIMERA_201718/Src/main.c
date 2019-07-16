@@ -26,7 +26,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-//#define CHARGE
 #define TEMPS_READ_INTERVAL 200
 #define VOLTS_READ_INTERVAL 40
 /* USER CODE END PD */
@@ -134,7 +133,7 @@ int main(void)
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	// HAL_GPIO_WritePin(BMS_FAULT_GPIO_Port, BMS_FAULT_Pin, GPIO_PIN_SET);
-#ifdef CHARGE
+#if CHARGING > 0
 	HAL_Delay(10000);
 	bms_precharge_bypass(&bms);
 #endif

@@ -185,7 +185,7 @@ uint8_t pack_check_voltage_drops(PACK_T *pack, uint8_t cells[PACK_MODULE_COUNT])
 
 	size_t cell_index = 0;
 
-	if (pack->current.value < 100) // < 10A
+	if (pack->current.value >= -10 && pack->current.value < 100) // < 10A
 	{
 		idle_voltage = pack->total_voltage;
 		memcpy(&idle_volts, pack, PACK_MODULE_COUNT);

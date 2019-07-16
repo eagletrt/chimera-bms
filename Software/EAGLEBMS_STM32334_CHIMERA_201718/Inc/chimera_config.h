@@ -9,6 +9,8 @@
 #ifndef CHIMERA_CONFIG_H_
 #define CHIMERA_CONFIG_H_
 
+#define CHARGING 0
+
 enum
 {
 	LTC6804_COUNT = 12,		/*!< Number of daisy chained LTCs */
