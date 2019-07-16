@@ -9,8 +9,10 @@
 #include "pack.h"
 #include <math.h>
 #include <stm32f3xx_hal.h>
+#include <string.h>
 
 #define CURRENT_ARRAY_LENGTH 512
+#define PACK_DROP_DELTA 1000
 
 /**
  * @details	Defines the cell distribution inside the rdcv groups:
@@ -157,6 +159,55 @@ End:;
 	{
 		return ltc_index;
 	}
+	return cell_index;
+}
+
+/**
+ * @brief		Checks if there are cells that have a higher than average
+ * 					voltage drop under load
+ *
+ * @details	When called during an idle period (current draw under a certain
+ * 					amount), this function stores the total voltage as a
+ * 					reference "idle voltage". When under load, this function
+ * 					compares the total voltage to the idling voltage and if it
+ * 					sees a drop, checks for every cell whether the drop in
+ * 					voltage is higher than average.
+ *
+ * @param		pack		The PACK_T to check
+ * @param		cells		The array of indexes that are found to be dropping
+ * 									too much
+ * @returns	The size of cells
+ */
+uint8_t pack_check_voltage_drops(PACK_T *pack, uint8_t cells[PACK_MODULE_COUNT])
+{
+	static uint16_t idle_voltage = 0;
+	static ER_UINT16_T idle_volts[PACK_MODULE_COUNT];
+
+	size_t cell_index = 0;
+
+	if (pack->current.value < 100) // < 10A
+	{
+		idle_voltage = pack->total_voltage;
+		memcpy(&idle_volts, pack, PACK_MODULE_COUNT);
+	}
+
+	if (pack->current.value > 500) // > 50A
+	{
+		if (pack->total_voltage <
+			idle_voltage - PACK_MODULE_COUNT * PACK_DROP_DELTA)
+		{
+			uint8_t i;
+			for (i = 0; i < PACK_MODULE_COUNT; i++)
+			{
+				if (pack->voltages[i].value <
+					idle_volts[i].value - (PACK_DROP_DELTA + 1000U))
+				{
+					cells[cell_index++] = i;
+				}
+			}
+		}
+	}
+
 	return cell_index;
 }
 

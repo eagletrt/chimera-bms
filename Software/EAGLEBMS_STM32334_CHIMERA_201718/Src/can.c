@@ -174,19 +174,21 @@ void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
 	can_send(canh, CAN_ID_BMS, data, size);
 }
 
-void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning)
+void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning, uint8_t index)
 {
 	static uint32_t timer = 0;
 
-	if (warning == WARN_OK && HAL_GetTick() - timer >= 1000)
+	size_t size = 3;
+	uint8_t data[size];
+
+	data[0] = CAN_OUT_WARNING;
+	data[1] = warning;
+	data[2] = index;
+
+	if (warning != WARN_CELL_LOW_VOLTAGE ||
+		(warning == WARN_CELL_LOW_VOLTAGE && HAL_GetTick() - timer >= 1000))
 	{
 		timer = HAL_GetTick();
-		size_t size = 2;
-		uint8_t data[size];
-
-		data[0] = CAN_OUT_WARNING;
-		data[1] = warning;
-
 		can_send(canh, CAN_ID_BMS, data, size);
 	}
 }

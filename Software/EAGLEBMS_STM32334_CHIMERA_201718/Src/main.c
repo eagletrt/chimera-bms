@@ -588,7 +588,7 @@ void read_volts(ERROR_T *error)
 
 	if (warning != WARN_OK)
 	{
-		can_send_warning(&hcan, warning);
+		can_send_warning(&hcan, warning, 0);
 	}
 
 	// Current
@@ -609,6 +609,16 @@ void read_temps(ERROR_T *error)
 	ER_CHK(error);
 
 	can_send_pack_temperature(&hcan, pack);
+
+	// Check for not healthy cells
+	uint8_t volts[PACK_MODULE_COUNT];
+	uint8_t num_cells = pack_check_voltage_drops(&pack, volts);
+
+	uint8_t i;
+	for (i = 0; i < num_cells; i++)
+	{
+		can_send_warning(&hcan, WARN_CELL_DROPPING, volts[i]);
+	}
 
 End:;
 }

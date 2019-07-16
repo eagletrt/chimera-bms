@@ -66,7 +66,8 @@ void can_send_current(CAN_HandleTypeDef *canh, int16_t current,
 					  uint32_t voltage);
 void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack);
 void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack);
-void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning);
+void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning,
+					  uint8_t index);
 void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
 					PACK_T *pack);
 

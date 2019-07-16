@@ -58,6 +58,8 @@ typedef enum
 typedef enum
 {
 	WARN_CELL_LOW_VOLTAGE,
+	WARN_CELL_DROPPING,
+
 	WARN_NUM_WARNINGS,
 	WARN_OK
 } WARNING_T;
