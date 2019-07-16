@@ -8,6 +8,7 @@
 
 #include "can.h"
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 uint8_t CAN_MSG_INVERTER_VOLTAGE[8] = {0x3D, 0xEB, 0, 0, 0, 0, 0, 0};
@@ -93,8 +94,8 @@ void can_send_current(CAN_HandleTypeDef *canh, int16_t current,
 					  uint32_t voltage)
 {
 	// Calculate output power (in kW * 10)
-	int16_t power =
-		round(((float)voltage / 1000) * ((float)current / 10) / 10000);
+	uint16_t power =
+		abs(round(((float)voltage / 1000) * ((float)current / 10) / 10000));
 	uint8_t i = 1;
 
 	size_t size = 1 + sizeof(current) + sizeof(power);
@@ -114,7 +115,10 @@ void can_send_current(CAN_HandleTypeDef *canh, int16_t current,
 	  See: https://os.mbed.com/forum/helloworld/topic/2053/?page=1
 	*/
 
-	*(typeof(power) *)(data + i) = power;
+	data[i++] = (uint8_t)(power >> 8);
+	data[i++] = (uint8_t)(power);
+
+	//*(typeof(power) *)(data + i) = power;
 	/* END OF WARNING */
 	can_send(canh, CAN_ID_BMS, data, size);
 }
@@ -131,21 +135,21 @@ void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack)
 	uint8_t data[size];
 
 	data[0] = CAN_OUT_PACK_VOLTS;
-	data[1] = (uint8_t)(pack.total_voltage >> 16);
-	data[2] = (uint8_t)(pack.total_voltage >> 8);
-	data[3] = (uint8_t)(pack.total_voltage);
-	data[4] = (uint8_t)(pack.avg_temperature >> 8);
-	data[5] = (uint8_t)(pack.avg_temperature);
-	data[6] = (uint8_t)(pack.min_voltage >> 8);
-	data[7] = (uint8_t)(pack.min_voltage);
+	// data[1] = (uint8_t)(pack.total_voltage >> 16);
+	// data[2] = (uint8_t)(pack.total_voltage >> 8);
+	// data[3] = (uint8_t)(pack.total_voltage);
+	// data[4] = (uint8_t)(pack.avg_temperature >> 8);
+	// data[5] = (uint8_t)(pack.avg_temperature);
+	// data[6] = (uint8_t)(pack.min_voltage >> 8);
+	// data[7] = (uint8_t)(pack.min_voltage);
 	// We skip the first byte from total_voltage since it's always 0
-	/*data[1] = (uint8_t)(pack.total_voltage >> 16);
+	data[1] = (uint8_t)(pack.total_voltage >> 16);
 	data[2] = (uint8_t)(pack.total_voltage >> 8);
 	data[3] = (uint8_t)(pack.total_voltage);
 	data[4] = (uint8_t)(pack.max_voltage >> 8);
 	data[5] = (uint8_t)(pack.max_voltage);
 	data[6] = (uint8_t)(pack.min_voltage >> 8);
-	data[7] = (uint8_t)(pack.min_voltage);*/
+	data[7] = (uint8_t)(pack.min_voltage);
 	can_send(canh, CAN_ID_BMS, data, size);
 }
 
@@ -161,8 +165,8 @@ void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack)
 	uint8_t data[size];
 
 	data[0] = CAN_OUT_PACK_TEMPS;
-	data[1] = (uint8_t)(pack.max_voltage >> 8);
-	data[2] = (uint8_t)(pack.max_voltage);
+	data[1] = (uint8_t)(pack.avg_temperature >> 8);
+	data[2] = (uint8_t)(pack.avg_temperature);
 	data[3] = (uint8_t)(pack.max_temperature >> 8);
 	data[4] = (uint8_t)(pack.max_temperature);
 	data[5] = (uint8_t)(pack.min_temperature >> 8);

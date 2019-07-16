@@ -136,8 +136,6 @@ int main(void)
 	// HAL_GPIO_WritePin(BMS_FAULT_GPIO_Port, BMS_FAULT_Pin, GPIO_PIN_SET);
 #ifdef CHARGE
 	HAL_Delay(10000);
-	// bms_precharge_start(&bms);
-	// HAL_GPIO_WritePin(TS_ON_GPIO_Port, TS_ON_Pin, GPIO_PIN_SET);
 	bms_precharge_bypass(&bms);
 #endif
 	while (1)
