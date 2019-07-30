@@ -12,9 +12,9 @@
  * Reaction times by the rules:
  * 	- 500ms for voltage and current
  * 	- 1s for temperatures
- * We stay 100ms below to be safe
+ * We keep 100ms margin
  */
-#define LTC6804_PEC_TIMEOUT_COUNT 5000
+#define LTC6804_PEC_TIMEOUT_COUNT 0 // 5000
 #define CELL_UNDER_VOLTAGE_TIMEOUT_MS 400
 #define CELL_OVER_VOLTAGE_TIMEOUT_MS 400
 #define CELL_UNDER_TEMPERATURE_TIMEOUT_MS 900
@@ -24,13 +24,9 @@
 
 /** @brief	Defines the timeout in count or time for each error type */
 ERROR_LIMITS_T timeout[ERROR_NUM_ERRORS] = {
-	{LTC6804_PEC_TIMEOUT_COUNT, 0},
-	{0, CELL_UNDER_VOLTAGE_TIMEOUT_MS},
-	{0, CELL_OVER_VOLTAGE_TIMEOUT_MS},
-	//{ 0, CELL_UNDER_TEMPERATURE_TIMEOUT_MS },
-	{0, CELL_OVER_TEMPERATURE_TIMEOUT_MS},
-	{0, OVER_CURRENT_TIMEOUT_MS},
-	{CAN_TIMEOUT_COUNT, 0}};
+	{LTC6804_PEC_TIMEOUT_COUNT, 0},	{0, CELL_UNDER_VOLTAGE_TIMEOUT_MS},
+	{0, CELL_OVER_VOLTAGE_TIMEOUT_MS}, {0, CELL_OVER_TEMPERATURE_TIMEOUT_MS},
+	{0, OVER_CURRENT_TIMEOUT_MS},	  {CAN_TIMEOUT_COUNT, 0}};
 
 /**
  * @brief	Initializes an error structure

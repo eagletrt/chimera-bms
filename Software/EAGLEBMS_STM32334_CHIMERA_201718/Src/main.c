@@ -43,7 +43,6 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN PV */
-CanRxMsgTypeDef can_rx;
 ERROR_STATUS_T can_error;
 
 BMS_CONFIG_T bms;
@@ -72,6 +71,101 @@ static void MX_TIM6_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+void check_timers(ERROR_T *error)
+{
+	uint32_t tick = HAL_GetTick();
+
+	// Read and send temperatures
+	if (tick - timer_temps >= TEMPS_READ_INTERVAL)
+	{
+		timer_temps = tick;
+
+		read_temps(error);
+		ER_CHK(error);
+
+		// Delay voltage measurement to avoid interferences
+		timer_volts = tick - (VOLTS_READ_INTERVAL / 2);
+	}
+
+	// Read and send voltages and current
+	if (tick - timer_volts >= VOLTS_READ_INTERVAL)
+	{
+		timer_volts = tick;
+
+		read_volts(error);
+		ER_CHK(error);
+	}
+
+End:;
+}
+
+/**
+ * @brief Runs all the checks mandated by the rules
+ * @details It runs voltage, temperature and current measurements
+ */
+void read_volts(ERROR_T *error)
+{
+	// Voltages
+	WARNING_T warning = WARN_OK;
+
+	error_index = pack_update_voltages(&hspi1, &pack, &warning, error);
+	ER_CHK(error);
+
+	// REMOVE THIS. FOR CHARGING
+	/*if (pack.min_voltage >= CELL_MIN_MAX_VOLTAGE)
+	{
+		if (max_min_active)
+		{
+			if (HAL_GetTick() - max_min_time >= 5000)
+			{
+				max_min_active = false;
+				bms_set_ts_off(&bms);
+			}
+			max_min_time = HAL_GetTick();
+		}
+		else
+		{
+			max_min_active = true;
+			max_min_time = HAL_GetTick();
+		}
+	}*/
+
+	if (warning != WARN_OK)
+	{
+		can_send_warning(&hcan, warning, 0);
+	}
+
+	// Current
+	pack_update_current(&pack.current, error);
+	ER_CHK(error);
+
+	// Update total values
+	can_send_current(&hcan, pack.current.value, pack.total_voltage);
+	can_send_pack_voltage(&hcan, pack);
+
+End:;
+}
+
+void read_temps(ERROR_T *error)
+{
+	// Temperatures
+	error_index = pack_update_temperatures(&hspi1, &pack, error);
+	ER_CHK(error);
+
+	can_send_pack_temperature(&hcan, pack);
+
+	// Check for not healthy cells
+	uint8_t volts[PACK_MODULE_COUNT];
+	uint8_t num_cells = pack_check_voltage_drops(&pack, volts);
+
+	uint8_t i;
+	for (i = 0; i < num_cells; i++)
+	{
+		can_send_warning(&hcan, WARN_CELL_DROPPING, volts[i]);
+	}
+
+End:;
+}
 /* USER CODE END 0 */
 
 /**
@@ -154,6 +248,7 @@ int main(void)
 		error = error_check_fatal(&can_error, HAL_GetTick());
 		ER_CHK(&error);
 
+		CanRxMsgTypeDef can_rx;
 		can_receive(&hcan, &can_rx);
 
 		switch (can_rx.StdId)
@@ -241,23 +336,7 @@ int main(void)
 			}
 		}
 
-		// Read and send voltages and current
-		if (HAL_GetTick() - timer_volts >= VOLTS_READ_INTERVAL)
-		{
-			timer_volts = HAL_GetTick();
-
-			read_volts(&error);
-			ER_CHK(&error);
-		}
-
-		// Read and send temperatures
-		if (HAL_GetTick() - timer_temps >= TEMPS_READ_INTERVAL)
-		{
-			timer_temps = HAL_GetTick();
-
-			read_temps(&error);
-			ER_CHK(&error);
-		}
+		check_timers(&error);
 	}
 
 End:; // In case of fatal error
@@ -270,19 +349,7 @@ End:; // In case of fatal error
 
 	while (1)
 	{
-		uint32_t tick = HAL_GetTick();
-
-		if (tick - timer_volts >= VOLTS_READ_INTERVAL)
-		{
-			timer_volts = tick;
-			read_volts(&error);
-		}
-
-		if (tick - timer_temps >= TEMPS_READ_INTERVAL)
-		{
-			timer_temps = tick;
-			read_temps(&error);
-		}
+		check_timers(&error);
 	}
 
 	return 0;
@@ -550,77 +617,7 @@ static void MX_GPIO_Init(void)
 	HAL_GPIO_Init(ShutDownStatus_GPIO_Port, &GPIO_InitStruct);
 }
 
-// uint32_t max_min_time = 0;
-// bool max_min_active = false;
-
 /* USER CODE BEGIN 4 */
-/**
- * @brief Runs all the checks mandated by the rules
- * @details It runs voltage, temperature and current measurements
- */
-void read_volts(ERROR_T *error)
-{
-	// Voltages
-	WARNING_T warning = WARN_OK;
-
-	error_index = pack_update_voltages(&hspi1, &pack, &warning, error);
-	ER_CHK(error);
-
-	// REMOVE THIS. FOR CHARGING
-	/*if (pack.min_voltage >= CELL_MIN_MAX_VOLTAGE)
-	{
-		if (max_min_active)
-		{
-			if (HAL_GetTick() - max_min_time >= 5000)
-			{
-				max_min_active = false;
-				bms_set_ts_off(&bms);
-			}
-			max_min_time = HAL_GetTick();
-		}
-		else
-		{
-			max_min_active = true;
-			max_min_time = HAL_GetTick();
-		}
-	}*/
-
-	if (warning != WARN_OK)
-	{
-		can_send_warning(&hcan, warning, 0);
-	}
-
-	// Current
-	pack_update_current(&pack.current, error);
-	ER_CHK(error);
-
-	// Update total values
-	can_send_current(&hcan, pack.current.value, pack.total_voltage);
-	can_send_pack_voltage(&hcan, pack);
-
-End:;
-}
-
-void read_temps(ERROR_T *error)
-{
-	// Temperatures
-	error_index = pack_update_temperatures(&hspi1, &pack, error);
-	ER_CHK(error);
-
-	can_send_pack_temperature(&hcan, pack);
-
-	// Check for not healthy cells
-	uint8_t volts[PACK_MODULE_COUNT];
-	uint8_t num_cells = pack_check_voltage_drops(&pack, volts);
-
-	uint8_t i;
-	for (i = 0; i < num_cells; i++)
-	{
-		can_send_warning(&hcan, WARN_CELL_DROPPING, volts[i]);
-	}
-
-End:;
-}
 /* USER CODE END 4 */
 
 /**

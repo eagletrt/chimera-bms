@@ -186,17 +186,22 @@ End:;
 uint8_t pack_check_voltage_drops(PACK_T *pack, uint8_t cells[PACK_MODULE_COUNT])
 {
 	static uint16_t idle_voltage = 0;
-	static ER_UINT16_T idle_volts[PACK_MODULE_COUNT];
+	static uint16_t idle_volts[PACK_MODULE_COUNT] = {0};
 
 	size_t cell_index = 0;
 
 	if (pack->current.value >= -10 && pack->current.value < 100) // < 10A
 	{
 		idle_voltage = pack->total_voltage;
-		memcpy(&idle_volts, pack, PACK_MODULE_COUNT);
+
+		uint8_t i;
+		for (i = 0; i < PACK_MODULE_COUNT; i++)
+		{
+			idle_volts[i] = pack->voltages[i].value;
+		}
 	}
 
-	if (pack->current.value > 500) // > 50A
+	if (pack->current.value > 500 && idle_voltage > 0) // > 50A
 	{
 		if (pack->total_voltage <
 			idle_voltage - PACK_MODULE_COUNT * PACK_DROP_DELTA)
@@ -205,7 +210,7 @@ uint8_t pack_check_voltage_drops(PACK_T *pack, uint8_t cells[PACK_MODULE_COUNT])
 			for (i = 0; i < PACK_MODULE_COUNT; i++)
 			{
 				if (pack->voltages[i].value <
-					idle_volts[i].value - (PACK_DROP_DELTA + 1000U))
+					idle_volts[i] - (PACK_DROP_DELTA + 1000U))
 				{
 					cells[cell_index++] = i;
 				}

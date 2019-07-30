@@ -70,7 +70,7 @@ uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 		data[7] = (uint8_t)emu_pec;
 #endif
 
-		bool pec = _pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]);
+		bool pec = (_pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]));
 
 		if (pec)
 		{
@@ -284,7 +284,7 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
 		data[7] = (uint8_t)emu_pec;
 #endif
 
-		bool pec = _pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]);
+		bool pec = (_pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]));
 
 		if (pec)
 		{
