@@ -337,6 +337,7 @@ int main(void)
 		}
 
 		check_timers(&error);
+		ER_CHK(&error);
 	}
 
 End:; // In case of fatal error
