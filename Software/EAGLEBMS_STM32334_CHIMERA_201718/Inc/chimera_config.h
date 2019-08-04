@@ -9,7 +9,7 @@
 #ifndef CHIMERA_CONFIG_H_
 #define CHIMERA_CONFIG_H_
 
-#define CHARGING 1
+#define CHARGING 0
 
 enum
 {
