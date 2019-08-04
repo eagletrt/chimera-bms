@@ -9,7 +9,7 @@
 #ifndef CHIMERA_CONFIG_H_
 #define CHIMERA_CONFIG_H_
 
-#define CHARGING 0
+#define CHARGING 1
 
 enum
 {
@@ -23,7 +23,7 @@ enum
 	PACK_MODULE_COUNT =
 		LTC6804_COUNT * LTC6804_CELL_COUNT, // Total number of cells in series
 
-	PACK_MAX_CURRENT = 20000, // Workaround for broken sensor
+	PACK_MAX_CURRENT = 200,
 
 	CELL_WARN_VOLTAGE = 28000,
 	CELL_MIN_VOLTAGE = 25000,

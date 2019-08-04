@@ -94,10 +94,22 @@ uint8_t pack_update_voltages(SPI_HandleTypeDef *spi, PACK_T *pack,
 
 	for (ltc_i = 0; ltc_i < LTC6804_COUNT || !error; ltc_i++)
 	{
-		cell = ltc6804_read_voltages(
-			spi, &ltc[ltc_i], &pack->voltages[ltc_i * LTC6804_CELL_COUNT],
-			warning, error);
-		ER_CHK(error);
+		if (ltc_i != 5) // REMOVE THIS! BAD WORKAROUND
+		{
+			cell = ltc6804_read_voltages(
+				spi, &ltc[ltc_i], &pack->voltages[ltc_i * LTC6804_CELL_COUNT],
+				warning, error);
+			ER_CHK(error);
+		}
+		else
+		{
+			uint8_t i;
+			for (i = 5 * LTC6804_CELL_COUNT; i < 6 * LTC6804_CELL_COUNT; i++)
+			{
+				pack->voltages[i].value =
+					pack->voltages[i - LTC6804_CELL_COUNT].value;
+			}
+		}
 	}
 
 End:;
@@ -142,10 +154,13 @@ uint8_t pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack,
 	uint8_t tmp = (ltc_index + 2) % LTC6804_COUNT;
 	while (ltc_index != tmp)
 	{
-		cell_index = ltc6804_read_temperatures(
-			spi, &ltc[ltc_index], even,
-			&pack->temperatures[ltc_index * LTC6804_CELL_COUNT], error);
-		ER_CHK(error);
+		if (ltc_index != 5) // REMOVE THIS! BAD WORKAROUND
+		{
+			cell_index = ltc6804_read_temperatures(
+				spi, &ltc[ltc_index], even,
+				&pack->temperatures[ltc_index * LTC6804_CELL_COUNT], error);
+			ER_CHK(error);
+		}
 
 		ltc_index = (ltc_index + 1) % LTC6804_COUNT;
 		if (ltc_index == 0)
@@ -241,8 +256,8 @@ void pack_update_current(ER_INT16_T *current, ERROR_T *error)
 	float in_volt = (((float)tmp * 3.3) / 4096);
 
 	// Check the current sensor datasheet for the correct formula
-	current->value =
-		(int16_t)-round((((in_volt * 2 - 2.048) * 200 / 1.25)) * 10);
+	current->value = (int16_t)(-round((((in_volt - 2.048) * 200 / 1.25)) * 10));
+	current->value += 100;
 
 	if (current->value > PACK_MAX_CURRENT)
 	{
