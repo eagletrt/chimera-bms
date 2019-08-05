@@ -12,7 +12,7 @@
 #include <string.h>
 
 #define CURRENT_ARRAY_LENGTH 512
-#define PACK_DROP_DELTA 1000
+#define PACK_DROP_DELTA 2000 // 0.2V
 
 /**
  * @details	Defines the cell distribution inside the rdcv groups:
@@ -206,7 +206,7 @@ uint8_t pack_check_voltage_drops(PACK_T *pack, uint8_t cells[PACK_MODULE_COUNT])
 	size_t cell_index = 0;
 
 	if (pack->current.value >= -10 && pack->current.value < 100) // < 10A
-	{
+	{ // Pack idle state
 		idle_voltage = pack->total_voltage;
 
 		uint8_t i;
@@ -216,8 +216,8 @@ uint8_t pack_check_voltage_drops(PACK_T *pack, uint8_t cells[PACK_MODULE_COUNT])
 		}
 	}
 
-	if (pack->current.value > 500 && idle_voltage > 0) // > 50A
-	{
+	if (pack->current.value > 300 && idle_voltage > 0) // > 30A
+	{												   // Pack load state
 		if (pack->total_voltage <
 			idle_voltage - PACK_MODULE_COUNT * PACK_DROP_DELTA)
 		{
@@ -226,7 +226,8 @@ uint8_t pack_check_voltage_drops(PACK_T *pack, uint8_t cells[PACK_MODULE_COUNT])
 			{
 				if (pack->voltages[i].value <
 					idle_volts[i] - (PACK_DROP_DELTA + 1000U))
-				{
+				{ // If the cell dropped >0.1V more than the average
+
 					cells[cell_index++] = i;
 				}
 			}
