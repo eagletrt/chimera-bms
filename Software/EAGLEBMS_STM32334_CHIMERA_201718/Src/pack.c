@@ -94,22 +94,10 @@ uint8_t pack_update_voltages(SPI_HandleTypeDef *spi, PACK_T *pack,
 
 	for (ltc_i = 0; ltc_i < LTC6804_COUNT || !error; ltc_i++)
 	{
-		if (ltc_i != 5) // REMOVE THIS! BAD WORKAROUND
-		{
-			cell = ltc6804_read_voltages(
-				spi, &ltc[ltc_i], &pack->voltages[ltc_i * LTC6804_CELL_COUNT],
-				warning, error);
-			ER_CHK(error);
-		}
-		else
-		{
-			uint8_t i;
-			for (i = 5 * LTC6804_CELL_COUNT; i < 6 * LTC6804_CELL_COUNT; i++)
-			{
-				pack->voltages[i].value =
-					pack->voltages[i - LTC6804_CELL_COUNT].value;
-			}
-		}
+		cell = ltc6804_read_voltages(
+			spi, &ltc[ltc_i], &pack->voltages[ltc_i * LTC6804_CELL_COUNT],
+			warning, error);
+		ER_CHK(error);
 	}
 
 End:;
@@ -154,13 +142,11 @@ uint8_t pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack,
 	uint8_t tmp = (ltc_index + 2) % LTC6804_COUNT;
 	while (ltc_index != tmp)
 	{
-		if (ltc_index != 5) // REMOVE THIS! BAD WORKAROUND
-		{
-			cell_index = ltc6804_read_temperatures(
-				spi, &ltc[ltc_index], even,
-				&pack->temperatures[ltc_index * LTC6804_CELL_COUNT], error);
-			ER_CHK(error);
-		}
+		cell_index = ltc6804_read_temperatures(
+			spi, &ltc[ltc_index], even,
+			&pack->temperatures[ltc_index * LTC6804_CELL_COUNT], error);
+
+		ER_CHK(error);
 
 		ltc_index = (ltc_index + 1) % LTC6804_COUNT;
 		if (ltc_index == 0)
@@ -179,61 +165,6 @@ End:;
 	{
 		return ltc_index;
 	}
-	return cell_index;
-}
-
-/**
- * @brief		Checks if there are cells that have a higher than average
- * 					voltage drop under load
- *
- * @details	When called during an idle period (current draw under a certain
- * 					amount), this function stores the total voltage as a
- * 					reference "idle voltage". When under load, this function
- * 					compares the total voltage to the idling voltage and if it
- * 					sees a drop, checks for every cell whether the drop in
- * 					voltage is higher than average.
- *
- * @param		pack		The PACK_T to check
- * @param		cells		The array of indexes that are found to be dropping
- * 									too much
- * @returns	The number of cells that triggered the warning
- */
-uint8_t pack_check_voltage_drops(PACK_T *pack, uint8_t cells[PACK_MODULE_COUNT])
-{
-	static uint16_t idle_voltage = 0;
-	static uint16_t idle_volts[PACK_MODULE_COUNT] = {0};
-
-	size_t cell_index = 0;
-
-	if (pack->current.value >= -10 && pack->current.value < 100) // < 10A
-	{ // Pack idle state
-		idle_voltage = pack->total_voltage;
-
-		uint8_t i;
-		for (i = 0; i < PACK_MODULE_COUNT; i++)
-		{
-			idle_volts[i] = pack->voltages[i].value;
-		}
-	}
-
-	if (pack->current.value > 300 && idle_voltage > 0) // > 30A
-	{												   // Pack load state
-		if (pack->total_voltage <
-			idle_voltage - PACK_MODULE_COUNT * PACK_DROP_DELTA)
-		{
-			uint8_t i;
-			for (i = 0; i < PACK_MODULE_COUNT; i++)
-			{
-				if (pack->voltages[i].value <
-					idle_volts[i] - (PACK_DROP_DELTA + 1000U))
-				{ // If the cell dropped >0.1V more than the average
-
-					cells[cell_index++] = i;
-				}
-			}
-		}
-	}
-
 	return cell_index;
 }
 
@@ -331,4 +262,77 @@ void pack_update_temperature_stats(PACK_T *pack)
 	pack->avg_temperature = (uint16_t)(avg_temperature / temp_count);
 	pack->max_temperature = max_temperature;
 	pack->min_temperature = min_temperature;
+}
+
+uint8_t pack_check_errors(PACK_T *pack, ERROR_T *error)
+{
+	*error = ERROR_OK;
+	WARNING_T warning;
+
+	uint8_t i;
+	for (i = 0; i < PACK_MODULE_COUNT; i++)
+	{
+		ltc6804_check_voltage(&pack->voltages[i], &warning, error);
+		ER_CHK(error);
+		ltc6804_check_temperature(&pack->temperatures[i], error);
+		ER_CHK(error);
+	}
+
+End:
+	return i;
+}
+
+/**
+ * @brief		Checks if there are cells that have a higher than average
+ * 					voltage drop under load
+ *
+ * @details	When called during an idle period (current draw under a certain
+ * 					amount), this function stores the total voltage as a
+ * 					reference "idle voltage". When under load, this function
+ * 					compares the total voltage to the idling voltage and if
+ * 					it sees a drop, checks for every cell whether the drop in
+ * 					voltage is higher than average.
+ *
+ * @param		pack		The PACK_T to check
+ * @param		cells		The array of indexes that are found to be
+ * dropping too much
+ * @returns	The number of cells that triggered the warning
+ */
+uint8_t pack_check_voltage_drops(PACK_T *pack, uint8_t cells[PACK_MODULE_COUNT])
+{
+	static uint16_t idle_voltage = 0;
+	static uint16_t idle_volts[PACK_MODULE_COUNT] = {0};
+
+	size_t cell_index = 0;
+
+	if (pack->current.value >= -10 && pack->current.value < 100) // < 10A
+	{ // Pack idle state
+		idle_voltage = pack->total_voltage;
+
+		uint8_t i;
+		for (i = 0; i < PACK_MODULE_COUNT; i++)
+		{
+			idle_volts[i] = pack->voltages[i].value;
+		}
+	}
+
+	if (pack->current.value > 300 && idle_voltage > 0) // > 30A
+	{												   // Pack load state
+		if (pack->total_voltage <
+			idle_voltage - PACK_MODULE_COUNT * PACK_DROP_DELTA)
+		{
+			uint8_t i;
+			for (i = 0; i < PACK_MODULE_COUNT; i++)
+			{
+				if (pack->voltages[i].value <
+					idle_volts[i] - (PACK_DROP_DELTA + 1000U))
+				{ // If the cell dropped >0.1V more than the average
+
+					cells[cell_index++] = i;
+				}
+			}
+		}
+	}
+
+	return cell_index;
 }

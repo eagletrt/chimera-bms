@@ -84,11 +84,9 @@ uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 				{
 					volts[count].value = _convert_voltage(&data[2 * cell]);
 
-					if (count != 2) // REMOVE THIS! BAD WORKAROUND
-					{
-						ltc6804_check_voltage(&volts[count], warning, error);
-						ER_CHK(error);
-					}
+					ltc6804_check_voltage(&volts[count], warning, error);
+					ER_CHK(error);
+
 					count++;
 				}
 			}
