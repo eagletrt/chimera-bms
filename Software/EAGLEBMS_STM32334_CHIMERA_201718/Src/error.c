@@ -12,13 +12,12 @@
  * Reaction times by the rules:
  * 	- 500ms for voltage and current
  * 	- 1s for temperatures
- * We keep 100ms margin
  */
 #define LTC6804_PEC_TIMEOUT_COUNT 0 // 5000
 #define CELL_UNDER_VOLTAGE_TIMEOUT_MS 500
 #define CELL_OVER_VOLTAGE_TIMEOUT_MS 500
-#define CELL_UNDER_TEMPERATURE_TIMEOUT_MS 2000
-#define CELL_OVER_TEMPERATURE_TIMEOUT_MS 2000
+#define CELL_UNDER_TEMPERATURE_TIMEOUT_MS 1000
+#define CELL_OVER_TEMPERATURE_TIMEOUT_MS 1000
 #define OVER_CURRENT_TIMEOUT_MS 0 // 400
 #define CAN_TIMEOUT_COUNT 0
 

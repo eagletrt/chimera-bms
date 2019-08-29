@@ -84,7 +84,7 @@ void check_timers(ERROR_T *error)
 		ER_CHK(error);
 
 		// Delay voltage measurement to avoid interferences
-		timer_volts = tick - (VOLTS_READ_INTERVAL / 2);
+		timer_volts = HAL_GetTick() - (VOLTS_READ_INTERVAL / 2);
 	}
 
 	// Read and send voltages and current
@@ -337,6 +337,9 @@ int main(void)
 		}
 
 		check_timers(&error);
+		ER_CHK(&error);
+
+		error_index = pack_check_errors(&pack, &error);
 		ER_CHK(&error);
 	}
 
