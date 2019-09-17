@@ -8,6 +8,7 @@
 
 #ifndef CHIMERA_CONFIG_H_
 #define CHIMERA_CONFIG_H_
+#include <stdbool.h>
 
 #define CHARGING 0
 
@@ -29,6 +30,19 @@ enum
 	CELL_MIN_VOLTAGE = 25000,
 	CELL_MAX_VOLTAGE = 42250,
 	CELL_MAX_TEMPERATURE = 6000,
+};
+
+/**
+ * @details	Defines the cell distribution inside the rdcv groups:
+ * 					0: cell not present
+ * 					1: cell present
+ */
+static const bool
+	cell_distribution[LTC6804_REG_COUNT * LTC6804_REG_CELL_COUNT] = {
+		1, 1, 1, // GROUP A
+		1, 1, 0, // GROUP B
+		1, 1, 1, // GROUP C
+		1, 0, 0  // GROUP D
 };
 
 #endif /* CHIMERA_CONFIG_H_ */

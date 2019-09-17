@@ -8,24 +8,12 @@
 
 #include "pack.h"
 #include <math.h>
+#include <stdbool.h>
 #include <stm32f3xx_hal.h>
 #include <string.h>
 
 #define CURRENT_ARRAY_LENGTH 512
 #define PACK_DROP_DELTA 2000 // 0.2V
-
-/**
- * @details	Defines the cell distribution inside the rdcv groups:
- * 					0: cell not present
- * 					1: cell present
- */
-static const bool
-	cell_distribution[LTC6804_REG_COUNT * LTC6804_REG_CELL_COUNT] = {
-		1, 1, 1, // GROUP A
-		1, 1, 0, // GROUP B
-		1, 1, 1, // GROUP C
-		1, 0, 0  // GROUP D
-};
 
 uint32_t adc_current[CURRENT_ARRAY_LENGTH];
 
