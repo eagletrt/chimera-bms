@@ -44,12 +44,10 @@ typedef enum
 
 	ERROR_CELL_UNDER_VOLTAGE,
 	ERROR_CELL_OVER_VOLTAGE,
-	// ERROR_CELL_UNDER_TEMPERATURE,	// not fatal
 	ERROR_CELL_OVER_TEMPERATURE,
 
 	ERROR_OVER_CURRENT,
 	ERROR_CAN,
-	// ERROR_PRECHARGE_ERROR,	// not fatal
 
 	ERROR_NUM_ERRORS,
 	ERROR_OK
@@ -59,6 +57,7 @@ typedef enum
 {
 	WARN_CELL_LOW_VOLTAGE,
 	WARN_CELL_DROPPING,
+	WARN_PRECHARGE_FAIL,
 
 	WARN_NUM_WARNINGS,
 	WARN_OK
@@ -81,7 +80,7 @@ typedef struct
 	bool active;		 /*!< True if the error is currently happening */
 	bool fatal;			 /*!< True if the error is fatal */
 	uint16_t count;		 /*!< How many times the error has occurred */
-	uint32_t time_stamp; /*!< Last time the error occurred */
+	uint32_t time_stamp; /*!< Last time the error activated */
 } ERROR_STATUS_T;
 
 /** @brief	tuple of value-error_status. Used to store values that can trigger

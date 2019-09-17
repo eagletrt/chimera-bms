@@ -321,6 +321,7 @@ int main(void)
 			case BMS_OFF:
 				// Precharge timed out
 				HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
+				can_send_warning(&hcan, WARN_PRECHARGE_FAIL, 0);
 				break;
 			case BMS_PRECHARGE:
 				// If precharge is still running, send the bus voltage request
