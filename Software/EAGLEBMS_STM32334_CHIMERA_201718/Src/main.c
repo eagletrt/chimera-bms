@@ -146,7 +146,7 @@ BMS_STATE_T do_state_precharge(state_global_data_t *data) {
 			bus_voltage += data->can_rx.Data[1];
 			bus_voltage /= 31.99;
 
-			if (bus_voltage >= data->pack.total_voltage / 10000 * 0.9) {
+			if (bus_voltage >= data->pack.total_voltage / 10000 * 0.95) {
 				bms_precharge_end(&data->bms);
 				return BMS_ON;
 			}
