@@ -12,8 +12,7 @@
 
 #define CHARGING 0
 
-enum
-{
+enum {
 	LTC6804_COUNT = 12,		/*!< Number of daisy chained LTCs */
 	LTC6804_CELL_COUNT = 9, /*!< Number of cells a single IC controls. Refer to
 							   cell_distribution for configuration */

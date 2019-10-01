@@ -15,8 +15,7 @@
 /**
  * Defines CAN message codes
  */
-typedef enum
-{
+typedef enum {
 	CAN_INITIAL_CHECK = 0x02,
 
 	CAN_OUT_PACK_VOLTS = 0x01,
@@ -35,8 +34,7 @@ typedef enum
 
 } CAN_CODE_T;
 
-typedef enum
-{
+typedef enum {
 	CAN_ID_BMS = 0xAA,
 	CAN_ID_ECU = 0x55,
 	CAN_ID_GUI = 0xA8,
@@ -45,7 +43,7 @@ typedef enum
 
 } CAN_ID_T;
 
-extern uint8_t CAN_MSG_INVERTER_VOLTAGE[8];
+extern uint8_t CAN_MSG_BUS_VOLTAGE[8];
 extern uint8_t CAN_MSG_TS_ON[8];
 extern uint8_t CAN_MSG_TS_OFF[8];
 

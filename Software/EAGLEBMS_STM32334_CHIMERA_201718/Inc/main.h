@@ -12,8 +12,7 @@
 #define __MAIN_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -21,34 +20,73 @@ extern "C"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "bms.h"
 #include "error.h"
-	/* USER CODE END Includes */
+#include "pack.h"
+/* USER CODE END Includes */
 
-	/* Exported types
-	 * ------------------------------------------------------------*/
-	/* USER CODE BEGIN ET */
+/* Exported types
+ * ------------------------------------------------------------*/
+/* USER CODE BEGIN ET */
+typedef struct {
+	BMS_CONFIG_T bms;
+	PACK_T pack;
 
-	/* USER CODE END ET */
+	CanRxMsgTypeDef can_rx;
+	ERROR_STATUS_T can_error;
 
-	/* Exported constants
-	 * --------------------------------------------------------*/
-	/* USER CODE BEGIN EC */
+	ERROR_T error;
+	uint8_t error_index;
 
-	/* USER CODE END EC */
+} state_global_data_t;
 
-	/* Exported macro
-	 * ------------------------------------------------------------*/
-	/* USER CODE BEGIN EM */
+typedef enum {
+	BMS_INIT,
+	BMS_IDLE,
+	BMS_PRECHARGE,
+	BMS_ON,
+	BMS_CHARGE,
+	BMS_HALT,
+	BMS_NUM_STATES
+} BMS_STATE_T;
 
-	/* USER CODE END EM */
+typedef BMS_STATE_T state_func_t(state_global_data_t *data);
+typedef void transition_func_t(state_global_data_t *data);
+/* USER CODE END ET */
 
-	/* Exported functions prototypes
-	 * ---------------------------------------------*/
-	void Error_Handler(void);
+/* Exported constants
+ * --------------------------------------------------------*/
+/* USER CODE BEGIN EC */
 
-	/* USER CODE BEGIN EFP */
-	void read_volts(ERROR_T *error);
-	void read_temps(ERROR_T *error);
+/* USER CODE END EC */
+
+/* Exported macro
+ * ------------------------------------------------------------*/
+/* USER CODE BEGIN EM */
+
+/* USER CODE END EM */
+
+/* Exported functions prototypes
+ * ---------------------------------------------*/
+void Error_Handler(void);
+
+/* USER CODE BEGIN EFP */
+BMS_STATE_T do_state_init(state_global_data_t *data);
+BMS_STATE_T do_state_idle(state_global_data_t *data);
+BMS_STATE_T do_state_precharge(state_global_data_t *data);
+BMS_STATE_T do_state_on(state_global_data_t *data);
+BMS_STATE_T do_state_charge(state_global_data_t *data);
+BMS_STATE_T do_state_halt(state_global_data_t *data);
+
+void to_idle(state_global_data_t *data);
+void to_precharge(state_global_data_t *data);
+void to_on(state_global_data_t *data);
+void to_charge(state_global_data_t *data);
+void to_halt(state_global_data_t *data);
+
+void check_timers(state_global_data_t *data);
+void read_volts(state_global_data_t *data);
+void read_temps(state_global_data_t *data);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
@@ -64,9 +102,9 @@ extern "C"
 #define TS_ON_GPIO_Port GPIOA
 #define BMS_FAULT_Pin GPIO_PIN_10
 #define BMS_FAULT_GPIO_Port GPIOA
-	/* USER CODE BEGIN Private defines */
+/* USER CODE BEGIN Private defines */
 
-	/* USER CODE END Private defines */
+/* USER CODE END Private defines */
 
 #ifdef __cplusplus
 }

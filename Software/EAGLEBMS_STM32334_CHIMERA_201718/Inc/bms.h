@@ -10,32 +10,23 @@
 #ifndef BMS_H_
 #define BMS_H_
 
-#include "stm32f3xx_hal.h"
 #include <stdbool.h>
+#include "stm32f3xx_hal.h"
 
-typedef enum
-{
-	BMS_INIT,
-	BMS_OFF,
-	BMS_PRECHARGE,
-	BMS_ON,
-	BMS_CHARGE,
-	BMS_HALT
+typedef enum {
+	PRECHARGE_SUCCESS,
+	PRECHARGE_FAILURE,
+	PRECHARGE_WAITING
+} PRECHARGE_STATE;
 
-} BMS_STATUS_T;
-
-typedef struct
-{
+typedef struct {
 	GPIO_TypeDef *gpio;
 	uint16_t id;
 	GPIO_PinState state;
 
 } BMS_PIN_T;
 
-typedef struct
-{
-	BMS_STATUS_T status;
-
+typedef struct {
 	BMS_PIN_T pin_fault;
 	BMS_PIN_T pin_ts_on;
 	BMS_PIN_T pin_chip_select;
@@ -48,8 +39,7 @@ typedef struct
 
 void bms_write_pin(BMS_PIN_T *pin, GPIO_PinState state);
 void bms_precharge_start(BMS_CONFIG_T *bms);
-void bms_precharge_bypass(BMS_CONFIG_T *bms);
-BMS_STATUS_T bms_precharge_check(BMS_CONFIG_T *bms);
+PRECHARGE_STATE bms_precharge_check(BMS_CONFIG_T *bms);
 void bms_precharge_end(BMS_CONFIG_T *bms);
 void bms_set_ts_off(BMS_CONFIG_T *bms);
 void bms_set_fault(BMS_CONFIG_T *bms);

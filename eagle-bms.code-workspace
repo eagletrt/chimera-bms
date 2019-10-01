@@ -4,7 +4,7 @@
 	}],
 	"settings": {
 		"C_Cpp.default.cStandard": "c11",
-		"C_Cpp.clang_format_fallbackStyle": "{BasedOnStyle: LLVM, UseTab: true, IndentWidth: 4, TabWidth: 4, BreakBeforeBraces: Allman, ColumnLimit: 80}",
+		"C_Cpp.clang_format_fallbackStyle": "{BasedOnStyle: Google, UseTab: true, IndentWidth: 4, TabWidth: 4, ColumnLimit: 80, AllowShortIfStatementsOnASingleLine: false}",
 		"C_Cpp.default.includePath": [
 			"${workspaceRoot}/Inc",
 			"${workspaceRoot}/Drivers/STM32F3xx_HAL_Driver/Inc",
@@ -12,7 +12,4 @@
 			"${workspaceRoot}/Drivers/CMSIS/Include"
 		]
 	}
-}
-
-
 }

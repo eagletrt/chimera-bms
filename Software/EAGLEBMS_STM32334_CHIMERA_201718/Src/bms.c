@@ -19,8 +19,7 @@
  * @param		pin		The pin to set
  * @param		state	The state to set the pin to
  */
-void bms_write_pin(BMS_PIN_T *pin, GPIO_PinState state)
-{
+void bms_write_pin(BMS_PIN_T* pin, GPIO_PinState state) {
 	pin->state = state;
 	HAL_GPIO_WritePin(pin->gpio, pin->id, pin->state);
 }
@@ -30,31 +29,9 @@ void bms_write_pin(BMS_PIN_T *pin, GPIO_PinState state)
  *
  * @param		bms		The BMS config structure
  */
-void bms_precharge_start(BMS_CONFIG_T *bms)
-{
-	if (bms->status != BMS_PRECHARGE)
-	{
-		bms_write_pin(&bms->pin_ts_on, GPIO_PIN_SET);
-		bms->precharge_timestamp = HAL_GetTick();
-		bms->status = BMS_PRECHARGE;
-	}
-}
-
-/**
- * @brief		Starts the precharge and bypasses the timeout control
- * @details	This function is used to close the AIRs no matter what. The
- * 					precharge cycle duration is defined by
- * 					BMS_PRECHARGE_BYPASS_TIMEOUT
- *
- * @param		bms		The BMS config structure
- */
-void bms_precharge_bypass(BMS_CONFIG_T *bms)
-{
-	if (bms->status != BMS_PRECHARGE)
-	{
-		bms_precharge_start(bms);
-		bms->precharge_bypass = true;
-	}
+void bms_precharge_start(BMS_CONFIG_T* bms) {
+	bms_write_pin(&bms->pin_ts_on, GPIO_PIN_SET);
+	bms->precharge_timestamp = HAL_GetTick();
 }
 
 /**
@@ -63,23 +40,22 @@ void bms_precharge_bypass(BMS_CONFIG_T *bms)
  * @param		bms	The BMS config structure
  * @retval	The updated BMS status
  */
-BMS_STATUS_T bms_precharge_check(BMS_CONFIG_T *bms)
-{
-	if (bms->status == BMS_PRECHARGE)
-	{
-		if (bms->precharge_bypass && HAL_GetTick() - bms->precharge_timestamp >=
-										 BMS_PRECHARGE_BYPASS_TIMEOUT)
-		{
-			bms_precharge_end(bms);
+PRECHARGE_STATE bms_precharge_check(BMS_CONFIG_T* bms) {
+	if (bms->precharge_bypass) {
+		if (HAL_GetTick() - bms->precharge_timestamp >=
+			BMS_PRECHARGE_BYPASS_TIMEOUT) {
+			bms->precharge_bypass = false;
+
+			return PRECHARGE_SUCCESS;
 		}
-		else if (!bms->precharge_bypass &&
-				 HAL_GetTick() - bms->precharge_timestamp >=
-					 BMS_PRECHARGE_TIMEOUT)
-		{
-			bms_set_ts_off(bms);
-		}
+	} else if (HAL_GetTick() - bms->precharge_timestamp >=
+			   BMS_PRECHARGE_TIMEOUT) {
+		bms->precharge_bypass = false;
+
+		return PRECHARGE_FAILURE;
 	}
-	return bms->status;
+
+	return PRECHARGE_WAITING;
 }
 
 /**
@@ -87,15 +63,10 @@ BMS_STATUS_T bms_precharge_check(BMS_CONFIG_T *bms)
  *
  * @param	bms	The BMS config structure
  */
-void bms_precharge_end(BMS_CONFIG_T *bms)
-{
-	if (bms->status == BMS_PRECHARGE)
-	{
-		bms_write_pin(&bms->pin_precharge_end, GPIO_PIN_SET);
-		HAL_Delay(1);
-		bms_write_pin(&bms->pin_precharge_end, GPIO_PIN_RESET);
-		bms->status = BMS_ON;
-	}
+void bms_precharge_end(BMS_CONFIG_T* bms) {
+	bms_write_pin(&bms->pin_precharge_end, GPIO_PIN_SET);
+	HAL_Delay(1);
+	bms_write_pin(&bms->pin_precharge_end, GPIO_PIN_RESET);
 }
 
 /**
@@ -103,10 +74,8 @@ void bms_precharge_end(BMS_CONFIG_T *bms)
  *
  * @param	bms	The BMS config structure
  */
-void bms_set_ts_off(BMS_CONFIG_T *bms)
-{
+void bms_set_ts_off(BMS_CONFIG_T* bms) {
 	bms_write_pin(&bms->pin_ts_on, GPIO_PIN_RESET);
-	bms->status = BMS_OFF;
 }
 
 /**
@@ -114,8 +83,6 @@ void bms_set_ts_off(BMS_CONFIG_T *bms)
  *
  * @param	bms	The BMS config structure
  */
-void bms_set_fault(BMS_CONFIG_T *bms)
-{
+void bms_set_fault(BMS_CONFIG_T* bms) {
 	bms_write_pin(&bms->pin_fault, GPIO_PIN_RESET);
-	bms->status = BMS_HALT;
 }
