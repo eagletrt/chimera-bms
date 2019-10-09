@@ -35,6 +35,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+/* USER CODE BEGIN PV */
 state_func_t *const state_table[BMS_NUM_STATES] = {
 	do_state_init, do_state_idle,   do_state_precharge,
 	do_state_on,   do_state_charge, do_state_halt};
@@ -55,7 +56,6 @@ CAN_HandleTypeDef hcan;
 SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim6;
 
-/* USER CODE BEGIN PV */
 uint32_t timer_precharge = 0;
 uint32_t timer_volts = 0;
 uint32_t timer_temps = 0;
