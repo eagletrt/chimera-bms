@@ -9,7 +9,7 @@
 #include "ltc6804.h"
 
 // Set to 1 to emulate the LTC daisy chain
-#define LTC6804_EMU 1
+#define LTC6804_EMU 0
 
 /**
  * @brief		Polls all the registers of the LTC6804 and updates the cell
