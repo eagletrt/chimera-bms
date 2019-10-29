@@ -354,6 +354,7 @@ int main(void) {
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
+		state = run_state(state, &data);
 
 		if (can_check_error(&hcan)) {
 			error_set(ERROR_CAN, &data.can_error, HAL_GetTick());
@@ -374,8 +375,6 @@ int main(void) {
 		ER_CHK(&data.error);
 
 	End:
-
-		state = run_state(state, &data);
 
 		// switch (can_rx.StdId) {}
 
