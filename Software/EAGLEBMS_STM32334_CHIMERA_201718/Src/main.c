@@ -374,7 +374,7 @@ int main(void) {
 		data.error_index = pack_check_errors(&data.pack, &data.error);
 		ER_CHK(&data.error);
 
-	End:
+	End:;
 
 		// switch (can_rx.StdId) {}
 

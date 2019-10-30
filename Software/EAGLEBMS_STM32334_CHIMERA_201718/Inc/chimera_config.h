@@ -21,7 +21,7 @@ enum {
 								   Refer to cell distribution */
 
 	PACK_MODULE_COUNT =
-		LTC6804_COUNT * LTC6804_CELL_COUNT, // Total number of cells in series
+		LTC6804_COUNT * LTC6804_CELL_COUNT,  // Total number of cells in series
 
 	PACK_MAX_CURRENT = 200,
 
@@ -38,10 +38,10 @@ enum {
  */
 static const bool
 	cell_distribution[LTC6804_REG_COUNT * LTC6804_REG_CELL_COUNT] = {
-		1, 1, 1, // GROUP A
-		1, 1, 0, // GROUP B
-		1, 1, 1, // GROUP C
-		1, 0, 0  // GROUP D
+		1, 1, 1,  // GROUP A
+		1, 1, 0,  // GROUP B
+		1, 1, 1,  // GROUP C
+		1, 0, 0   // GROUP D
 };
 
 #endif /* CHIMERA_CONFIG_H_ */
