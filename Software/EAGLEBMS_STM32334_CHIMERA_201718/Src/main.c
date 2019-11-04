@@ -41,11 +41,11 @@ state_func_t *const state_table[BMS_NUM_STATES] = {
 	do_state_on,   do_state_charge, do_state_halt};
 
 transition_func_t *const transition_table[BMS_NUM_STATES][BMS_NUM_STATES] = {
-	{NULL, to_idle, NULL, NULL, NULL, to_halt},		   // from init
-	{NULL, NULL, to_precharge, NULL, NULL, to_halt},   // from idle
-	{NULL, to_idle, NULL, to_on, to_charge, to_halt},  // from precharge
-	{NULL, to_idle, NULL, NULL, NULL, to_halt},		   // from on
-	{NULL, NULL, NULL, NULL, NULL, to_halt}};		   // from halt
+	{NULL, to_idle, to_precharge, NULL, NULL, to_halt},  // from init
+	{NULL, NULL, to_precharge, NULL, NULL, to_halt},	 // from idle
+	{NULL, to_idle, NULL, to_on, to_charge, to_halt},	// from precharge
+	{NULL, to_idle, NULL, NULL, NULL, to_halt},			 // from on
+	{NULL, NULL, NULL, NULL, NULL, to_halt}};			 // from halt
 
 BMS_STATE_T state = BMS_INIT;
 state_global_data_t data;
@@ -157,6 +157,7 @@ BMS_STATE_T do_state_precharge(state_global_data_t *data) {
 		case PRECHARGE_SUCCESS:
 			// Used when bypassing precharge
 
+			bms_precharge_end(&data->bms);
 			return BMS_CHARGE;
 			break;
 
