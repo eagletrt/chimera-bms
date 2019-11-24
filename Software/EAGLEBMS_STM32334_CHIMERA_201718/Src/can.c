@@ -98,23 +98,12 @@ void can_send_current(CAN_HandleTypeDef *canh, int16_t current,
 
 	data[0] = CAN_OUT_CURRENT;
 
-	/* WARNING: THIS CODE IS ENDIAN-SPECIFIC. */
-	*(typeof(current) *)(data + i) = current;
-
-	i += sizeof(current);
-	/*
-		To convert data back to int16:
-		current = *(int16_t*)(data + 1);
-		"+ 1" is the position in the array
-
-	  See: https://os.mbed.com/forum/helloworld/topic/2053/?page=1
-	*/
+	data[i++] = (uint8_t)(abs(current) >> 8);
+	data[i++] = (uint8_t)abs(current);
 
 	data[i++] = (uint8_t)(power >> 8);
 	data[i++] = (uint8_t)(power);
 
-	//*(typeof(power) *)(data + i) = power;
-	/* END OF WARNING */
 	can_send(canh, CAN_ID_BMS, data, size);
 }
 
