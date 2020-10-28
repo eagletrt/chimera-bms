@@ -6,5 +6,7 @@ build/
 *.bin
 *.hex
 *.map
-.settings/
-.vscode
+.mxproject
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
