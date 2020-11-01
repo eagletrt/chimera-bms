@@ -99,6 +99,7 @@ BMS_STATE_T do_state_init(state_global_data_t *data) {
 
 	can_init(&hcan);
 	pack_init(&hadc1, &(data->pack));
+	fsm_chg_init(&(data->pack), &hcan);
 
 #if CHARGING > 0
 	HAL_Delay(10000);
