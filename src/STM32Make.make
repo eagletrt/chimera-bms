@@ -57,13 +57,16 @@ Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_tim.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_tim_ex.c \
 Src/bms.c \
 Src/can.c \
+Src/chg.c \
 Src/error.c \
 Src/ltc6804.c \
 Src/main.c \
 Src/pack.c \
 Src/stm32f3xx_hal_msp.c \
 Src/stm32f3xx_it.c \
-Src/system_stm32f3xx.c
+Src/system_stm32f3xx.c \
+lib/fsm/fsm.c \
+lib/pid/PID.c
 
 
 CPP_SOURCES = \
@@ -132,7 +135,10 @@ C_INCLUDES =  \
 -IDrivers/CMSIS/Include \
 -IDrivers/STM32F3xx_HAL_Driver/Inc \
 -IDrivers/STM32F3xx_HAL_Driver/Inc/Legacy \
--IInc
+-IInc \
+-Ilib/fsm \
+-Ilib/fsm/example \
+-Ilib/pid
 
 
 

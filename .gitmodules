@@ -1,0 +1,6 @@
+[submodule "src/lib/fsm"]
+	path = src/lib/fsm
+	url = git@github.com:eagletrt/fsm.git
+[submodule "src/lib/pid"]
+	path = src/lib/pid
+	url = https://github.com/pms67/PID

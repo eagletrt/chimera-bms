@@ -3,27 +3,27 @@
  * @brief		This file contains the functions to manage the battery pack
  *
  * @date		Apr 11, 2019
- * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
+ * @author		Matteo Bonora [matteo.bonora@studenti.unitn.it]
  */
 
 #ifndef PACK_H_
 #define PACK_H_
 
+#include <inttypes.h>
+
 #include "chimera_config.h"
 #include "error.h"
 #include "ltc6804.h"
-#include <inttypes.h>
 
 /** @brief Battery pack basic info */
-typedef struct
-{
+typedef struct {
 	ER_UINT16_T
 	voltages[PACK_MODULE_COUNT];				 /*!< [mV * 10] Cell voltages */
 	ER_UINT16_T temperatures[PACK_MODULE_COUNT]; /*!< [°C * 100] */
 
 	uint32_t total_voltage; /*!< [mV * 10] Total pack voltage */
-	uint16_t max_voltage;   /*!< [mV * 10] Maximum cell voltage */
-	uint16_t min_voltage;   /*!< [mV * 10] Minimum cell voltage */
+	uint16_t max_voltage;	/*!< [mV * 10] Maximum cell voltage */
+	uint16_t min_voltage;	/*!< [mV * 10] Minimum cell voltage */
 
 	uint16_t avg_temperature; /*!< [°C * 100] Average pack temperature */
 	uint16_t max_temperature; /*!< [°C * 100] Maximum temperature */

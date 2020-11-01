@@ -21,9 +21,10 @@ enum {
 								   Refer to cell distribution */
 
 	PACK_MODULE_COUNT =
-		LTC6804_COUNT * LTC6804_CELL_COUNT,  // Total number of cells in series
+		LTC6804_COUNT * LTC6804_CELL_COUNT,	 // Total number of cells in series
 
 	PACK_MAX_CURRENT = 200,
+	CHG_MAX_CURRENT = 8,
 
 	CELL_WARN_VOLTAGE = 28000,
 	CELL_MIN_VOLTAGE = 25000,
@@ -41,7 +42,7 @@ static const bool
 		1, 1, 1,  // GROUP A
 		1, 1, 0,  // GROUP B
 		1, 1, 1,  // GROUP C
-		1, 0, 0   // GROUP D
+		1, 0, 0	  // GROUP D
 };
 
 #endif /* CHIMERA_CONFIG_H_ */

@@ -30,14 +30,15 @@ typedef enum {
 
 	CAN_IN_BUS_VOLTAGE = 0xEB,
 	CAN_IN_TS_ON = 0x0A,
-	CAN_IN_TS_OFF = 0x0B
+	CAN_IN_TS_OFF = 0x0B,
+	CAN_IN_CHG_START = 0x01
 
 } CAN_CODE_T;
 
 typedef enum {
 	CAN_ID_BMS = 0xAA,
 	CAN_ID_ECU = 0x55,
-	CAN_ID_GUI = 0xA8,
+	CAN_ID_HANDCART = 0x69,
 	CAN_ID_IN_INVERTER_L = 0x181,
 	CAN_ID_OUT_INVERTER_L = 0x201
 
@@ -68,5 +69,6 @@ void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning,
 					  uint8_t index);
 void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
 					PACK_T *pack);
+void can_send_chg_current(CAN_HandleTypeDef *canh, uint16_t current);
 
 #endif /* CAN_H_ */

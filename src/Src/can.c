@@ -7,6 +7,7 @@
  */
 
 #include "can.h"
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -220,4 +221,8 @@ void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
 	}
 
 	can_send(canh, CAN_ID_BMS, data, size);
+}
+
+void can_send_chg_current(CAN_HandleTypeDef *canh, uint16_t current) {
+	can_send(canh, CAN_ID_HANDCART, (uint8_t *)current, 2);
 }

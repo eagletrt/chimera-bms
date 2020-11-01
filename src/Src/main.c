@@ -13,6 +13,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "can.h"
+#include "chg.h"
 #include "chimera_config.h"
 #include "error.h"
 /* USER CODE END Includes */
@@ -36,16 +37,16 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-state_func_t *const state_table[BMS_NUM_STATES] = {
-	do_state_init, do_state_idle,   do_state_precharge,
-	do_state_on,   do_state_charge, do_state_halt};
+state_func_t *const state_table[BMS_NUM_STATES] = {do_state_init, do_state_idle,
+												   do_state_precharge,
+												   do_state_on, do_state_halt};
 
 transition_func_t *const transition_table[BMS_NUM_STATES][BMS_NUM_STATES] = {
-	{NULL, to_idle, to_precharge, NULL, NULL, to_halt},  // from init
-	{NULL, NULL, to_precharge, NULL, NULL, to_halt},	 // from idle
-	{NULL, to_idle, NULL, to_on, to_charge, to_halt},	// from precharge
-	{NULL, to_idle, NULL, NULL, NULL, to_halt},			 // from on
-	{NULL, NULL, NULL, NULL, NULL, to_halt}};			 // from halt
+	{NULL, to_idle, to_precharge, NULL, to_halt},  // from init
+	{NULL, NULL, to_precharge, NULL, to_halt},	   // from idle
+	{NULL, to_idle, NULL, to_on, to_halt},		   // from precharge
+	{NULL, to_idle, NULL, NULL, to_halt},		   // from on
+	{NULL, NULL, NULL, NULL, to_halt}};			   // from halt
 
 BMS_STATE_T state = BMS_INIT;
 state_global_data_t data;
@@ -158,7 +159,7 @@ BMS_STATE_T do_state_precharge(state_global_data_t *data) {
 			// Used when bypassing precharge
 
 			bms_precharge_end(&data->bms);
-			return BMS_CHARGE;
+			return BMS_ON;
 			break;
 
 		case PRECHARGE_FAILURE:
@@ -182,20 +183,6 @@ BMS_STATE_T do_state_precharge(state_global_data_t *data) {
 	return BMS_PRECHARGE;
 }
 
-void to_charge(state_global_data_t *data) {
-	// send ready to charge message (TBD)
-}
-
-BMS_STATE_T do_state_charge(state_global_data_t *data) {
-	if (data->can_rx.StdId == CAN_ID_ECU) {
-		if (data->can_rx.Data[0] == CAN_IN_TS_OFF) {
-			return BMS_IDLE;
-		}
-	}
-
-	return BMS_CHARGE;
-}
-
 void to_on(state_global_data_t *data) {
 	bms_precharge_end(&data->bms);
 	HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
@@ -208,6 +195,17 @@ BMS_STATE_T do_state_on(state_global_data_t *data) {
 			return BMS_IDLE;
 		}
 	}
+	if (data->can_rx.StdId == CAN_ID_HANDCART) {
+		if (data->can_rx.Data[0] == CAN_IN_CHG_START) {
+			if (fsm_get_state(&fsm_chg) == CHG_OFF) {
+				// trigger charge start
+				fsm_set_state(&fsm_chg, CHG_CC);
+			}
+		}
+	}
+
+	// Run charging state machine
+	fsm_run(&fsm_chg);
 
 	return BMS_ON;
 }
