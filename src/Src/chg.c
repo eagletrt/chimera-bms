@@ -66,7 +66,7 @@ uint16_t do_cc(fsm* FSM) {
 }
 
 uint16_t do_cv(fsm* FSM) {
-	PIDController_Update(&pid, CELL_MAX_VOLTAGE, pack->current.value / 10.0f);
+	PIDController_Update(&pid, CELL_MAX_VOLTAGE, pack->current.value);
 
 	if (pid.out < 0.1) {  // TODO: Add max charging time
 		return CHG_OFF;

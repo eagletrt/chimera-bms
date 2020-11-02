@@ -16,7 +16,7 @@
         "STM32F334x8",
         "USE_HAL_DRIVER"
       ],
-      "compilerPath": "/sbin/arm-none-eabi-gcc"
+      "compilerPath": "/usr/bin/arm-none-eabi-gcc"
     }
   ],
   "version": 4
