@@ -1,0 +1,8 @@
+{
+    "C_Cpp.clang_format_fallbackStyle": "{BasedOnStyle: Google, UseTab: true, IndentWidth: 4, TabWidth: 4, ColumnLimit: 80, AllowShortIfStatementsOnASingleLine: false}",
+    "C_Cpp.default.cStandard": "c11",
+    "stm32-for-vscode.openOCDPath": "openocd",
+    "stm32-for-vscode.makePath": "make",
+    "stm32-for-vscode.armToolchainPath": "",
+    "cortex-debug.armToolchainPath": ""
+}
