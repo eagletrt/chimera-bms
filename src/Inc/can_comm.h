@@ -1,0 +1,71 @@
+/**
+ * @file		can.h
+ * @brief		This file contains some CAN functions to ease data
+ * transmission
+ *
+ * @author	Gregor
+ * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
+ */
+
+#ifndef CAN_COMM_H_
+#define CAN_COMM_H_
+
+#include "error.h"
+#include "pack.h"
+
+/**
+ * Defines CAN message codes
+ */
+typedef enum {
+  CAN_INITIAL_CHECK = 0x02,
+
+  CAN_OUT_PACK_VOLTS = 0x01,
+  CAN_OUT_PACK_TEMPS = 0x0A,
+  CAN_OUT_TS_ON = 0x03,
+  CAN_OUT_TS_OFF = 0x04,
+  CAN_OUT_CURRENT = 0x05,
+  CAN_OUT_AVG_TEMP = 0x06,
+  CAN_OUT_MAX_TEMP = 0x07,
+  CAN_OUT_ERROR = 0x08,
+  CAN_OUT_WARNING = 0x09,
+
+  CAN_IN_BUS_VOLTAGE = 0xEB,
+  CAN_IN_TS_ON = 0x0A,
+  CAN_IN_TS_OFF = 0x0B,
+  CAN_IN_CHG_START = 0x01
+
+} CAN_CODE_T;
+
+typedef enum {
+  CAN_ID_BMS = 0xAA,
+  CAN_ID_ECU = 0x55,
+  CAN_ID_HANDCART = 0x69,
+  CAN_ID_IN_INVERTER_L = 0x181,
+  CAN_ID_OUT_INVERTER_L = 0x201
+
+} CAN_ID_T;
+
+extern uint8_t CAN_MSG_BUS_VOLTAGE[8];
+extern uint8_t CAN_MSG_TS_ON[8];
+extern uint8_t CAN_MSG_TS_OFF[8];
+
+// CAN filter used during regular use
+extern CAN_FilterTypeDef CAN_FILTER_NORMAL;
+
+// CAN filter used during precharge cycle
+extern CAN_FilterTypeDef CAN_FILTER_PRECHARGE;
+
+void can_init();
+void can_send(uint16_t id, uint8_t data[], size_t size);
+HAL_StatusTypeDef can_receive(CAN_RxHeaderTypeDef *rx, uint8_t *data);
+
+bool can_check_error();
+
+void can_send_current(int16_t current, uint32_t voltage);
+void can_send_pack_voltage(PACK_T pack);
+void can_send_pack_temperature(PACK_T pack);
+void can_send_warning(WARNING_T warning, uint8_t index);
+void can_send_error(ERROR_T error, uint8_t index, PACK_T *pack);
+void can_send_chg_current(uint16_t current);
+
+#endif /* CAN_H_ */

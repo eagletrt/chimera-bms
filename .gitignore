@@ -1,6 +1,7 @@
 Release/
 Debug/
 build/
+Backup/
 *.o
 *.elf
 *.bin
@@ -8,6 +9,6 @@ build/
 *.map
 .mxproject
 
-*/.vscode/*
-!*/.vscode/settings.json
-!*/.vscode/extensions.json
+**/.vscode/*
+!**/.vscode/settings.json
+!**/.vscode/extensions.json

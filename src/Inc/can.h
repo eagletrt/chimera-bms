@@ -1,74 +1,52 @@
 /**
- * @file		can.h
- * @brief		This file contains some CAN functions to ease data transmission
- *
- * @author	Gregor
- * @author	Matteo Bonora [matteo.bonora@studenti.unitn.it]
- */
+  ******************************************************************************
+  * @file    can.h
+  * @brief   This file contains all the function prototypes for
+  *          the can.c file
+  ******************************************************************************
+  * @attention
+  *
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.</center></h2>
+  *
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
+  *
+  ******************************************************************************
+  */
+/* Define to prevent recursive inclusion -------------------------------------*/
+#ifndef __CAN_H__
+#define __CAN_H__
 
-#ifndef CAN_H_
-#define CAN_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "error.h"
-#include "pack.h"
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
 
-/**
- * Defines CAN message codes
- */
-typedef enum {
-	CAN_INITIAL_CHECK = 0x02,
+/* USER CODE BEGIN Includes */
 
-	CAN_OUT_PACK_VOLTS = 0x01,
-	CAN_OUT_PACK_TEMPS = 0x0A,
-	CAN_OUT_TS_ON = 0x03,
-	CAN_OUT_TS_OFF = 0x04,
-	CAN_OUT_CURRENT = 0x05,
-	CAN_OUT_AVG_TEMP = 0x06,
-	CAN_OUT_MAX_TEMP = 0x07,
-	CAN_OUT_ERROR = 0x08,
-	CAN_OUT_WARNING = 0x09,
+/* USER CODE END Includes */
 
-	CAN_IN_BUS_VOLTAGE = 0xEB,
-	CAN_IN_TS_ON = 0x0A,
-	CAN_IN_TS_OFF = 0x0B,
-	CAN_IN_CHG_START = 0x01
+extern CAN_HandleTypeDef hcan;
 
-} CAN_CODE_T;
+/* USER CODE BEGIN Private defines */
 
-typedef enum {
-	CAN_ID_BMS = 0xAA,
-	CAN_ID_ECU = 0x55,
-	CAN_ID_HANDCART = 0x69,
-	CAN_ID_IN_INVERTER_L = 0x181,
-	CAN_ID_OUT_INVERTER_L = 0x201
+/* USER CODE END Private defines */
 
-} CAN_ID_T;
+void MX_CAN_Init(void);
 
-extern uint8_t CAN_MSG_BUS_VOLTAGE[8];
-extern uint8_t CAN_MSG_TS_ON[8];
-extern uint8_t CAN_MSG_TS_OFF[8];
+/* USER CODE BEGIN Prototypes */
 
-// CAN filter used during regular use
-extern CAN_FilterConfTypeDef CAN_FILTER_NORMAL;
+/* USER CODE END Prototypes */
 
-// CAN filter used during precharge cycle
-extern CAN_FilterConfTypeDef CAN_FILTER_PRECHARGE;
+#ifdef __cplusplus
+}
+#endif
 
-void can_init(CAN_HandleTypeDef *canh);
-void can_send(CAN_HandleTypeDef *canh, uint16_t id, uint8_t data[],
-			  size_t size);
-uint8_t can_receive(CAN_HandleTypeDef *canh, CanRxMsgTypeDef *rx);
+#endif /* __CAN_H__ */
 
-bool can_check_error(CAN_HandleTypeDef *canh);
-
-void can_send_current(CAN_HandleTypeDef *canh, int16_t current,
-					  uint32_t voltage);
-void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack);
-void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack);
-void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning,
-					  uint8_t index);
-void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
-					PACK_T *pack);
-void can_send_chg_current(CAN_HandleTypeDef *canh, uint16_t current);
-
-#endif /* CAN_H_ */
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

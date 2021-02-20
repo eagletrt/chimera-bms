@@ -42,6 +42,7 @@ Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_adc_ex.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_can.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_cortex.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_dma.c \
+Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_exti.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_flash.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_flash_ex.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_gpio.c \
@@ -55,16 +56,23 @@ Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_spi.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_spi_ex.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_tim.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_tim_ex.c \
+Src/adc.c \
 Src/bms.c \
 Src/can.c \
+Src/can_comm.c \
 Src/chg.c \
+Src/dma.c \
 Src/error.c \
+Src/fsm_bms.c \
+Src/gpio.c \
 Src/ltc6804.c \
 Src/main.c \
 Src/pack.c \
+Src/spi.c \
 Src/stm32f3xx_hal_msp.c \
 Src/stm32f3xx_it.c \
 Src/system_stm32f3xx.c \
+Src/tim.c \
 lib/fsm/fsm.c \
 lib/pid/PID.c
 

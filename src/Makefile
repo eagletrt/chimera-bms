@@ -22,7 +22,7 @@ TARGET = EAGLESTM32334BMS
 # debug build?
 DEBUG = 1
 # optimization
-OPT = -Og
+OPT = -O3
 
 
 #######################################
@@ -47,11 +47,6 @@ Src/stm32f3xx_it.c \
 Src/system_stm32f3xx.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_adc.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_adc_ex.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_can.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_spi.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_spi_ex.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_tim.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_tim_ex.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_rcc.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_rcc_ex.c \
@@ -63,7 +58,18 @@ Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_pwr_ex.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_flash.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_flash_ex.c \
 Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_i2c.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_i2c_ex.c
+Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_i2c_ex.c \
+Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_exti.c \
+Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_can.c \
+Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_spi.c \
+Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_spi_ex.c \
+Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_tim.c \
+Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_tim_ex.c \
+Src/gpio.c \
+Src/adc.c \
+Src/dma.c \
+Src/spi.c \
+Src/tim.c
 
 
 CPP_SOURCES = \
