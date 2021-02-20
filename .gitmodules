@@ -1,8 +1,8 @@
 [submodule "software"]
 	path = software
-	url = ../chimera-bms
+	url = git@github.com:eagletrt/chimera-bms.git
 	branch = sw-master
 [submodule "hardware"]
 	path = hardware
-	url = ../chimera-bms
+	url = git@github.com:eagletrt/chimera-bms.git
 	branch = hw-master
