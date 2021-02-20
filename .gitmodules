@@ -1,0 +1,8 @@
+[submodule "software"]
+	path = software
+	url = ../chimera-bms
+	branch = sw-master
+[submodule "hardware"]
+	path = hardware
+	url = ../chimera-bms
+	branch = hw-master
