@@ -28,8 +28,8 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-ERROR_T error;
-uint8_t error_index;
+extern ERROR_T error;
+extern uint8_t error_index;
 
 /* USER CODE END ET */
 
