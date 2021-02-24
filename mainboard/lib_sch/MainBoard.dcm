@@ -1,0 +1,109 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP +TS
+D power-flag symbol
+K Power Flag Symbol
+$ENDCMP
+#
+$CMP -TS
+D power-flag symbol
+K Power Flag Symbol
+$ENDCMP
+#
+$CMP FODM611
+D Open drain Logic Output Optocoupler
+F https://www.onsemi.com/pub/Collateral/FODM611-D.pdf
+$ENDCMP
+#
+$CMP HM2103
+D HM2103 Pulse Transformer with center tap
+F https://productfinder.pulseeng.com/doc_type/WEB301/doc_num/HM2103NL/doc_part/HM2103NL.pdf
+$ENDCMP
+#
+$CMP HTFS200-P
+D Isolated Current Transducer PCB Mount
+F https://www.lem.com/sites/default/files/products_datasheets/htfs_200_800-p.pdf
+$ENDCMP
+#
+$CMP ISOW7841
+D ISOW7841 Isolator for SPI with Power
+F http://www.ti.com/lit/ds/symlink/isow7841.pdf
+$ENDCMP
+#
+$CMP KT12-1A
+D KT Series Reed Relay
+F https://standexelectronics.com/viewer/pdfjs/web/viewer.php?file=https%3A%2F%2Fstandexelectronics.com%2Fwp-content%2Fuploads%2F2015%2F03%2FKT_V03.pdf
+$ENDCMP
+#
+$CMP LP2989
+D LP29289 Fixed 500mA Low Noise LDO
+F http://www.ti.com/lit/ds/symlink/lp2989.pdf
+$ENDCMP
+#
+$CMP LTC1865L
+D LTC1865L Dual channel SPI ADC 3 V supply
+F http://www.analog.com/media/en/technical-documentation/data-sheets/18645lfs.pdf
+$ENDCMP
+#
+$CMP LTC6259
+D Rail-to-Rail Dual Precision OpAmp
+F www.analog.com/media/en/technical-documentation/data-sheets/6258960fa.pdf
+$ENDCMP
+#
+$CMP LTC6820
+D LTC6820 IsoSPI Communication Interface IC
+K IsoSPI, linear, isolated communication
+F http://www.analog.com/media/en/technical-documentation/data-sheets/6820fb.pdf
+$ENDCMP
+#
+$CMP M24M02
+D M24M02 EEPROM I2C
+F http://www.st.com/resource/en/datasheet/m24m02-dr.pdf
+$ENDCMP
+#
+$CMP MAX16053
+D Adjustable Voltage Supervisor with PP Output
+F https://www.mouser.it/datasheet/2/256/MAX16052-MAX16053-97702.pdf
+$ENDCMP
+#
+$CMP MC74VHC1G125
+D high speed CMOS noninverting 3−state buffer
+F http://www.onsemi.com/pub/Collateral/MC74VHC1G125-D.PDF
+$ENDCMP
+#
+$CMP MCP2562
+D MCP2562 CAN Transceiver with VIO
+F http://ww1.microchip.com/downloads/en/DeviceDoc/20005167C.pdf
+$ENDCMP
+#
+$CMP NX1029X
+D Complementary N/P Channel MOSFET
+F https://assets.nexperia.com/documents/data-sheet/NX1029X.pdf
+$ENDCMP
+#
+$CMP REF2940
+D 4.096 Precision Series Voltage Reference
+F www.ti.com/lit/ds/symlink/ref2940.pdf
+$ENDCMP
+#
+$CMP REF3433
+D High precision, Low drift 3.3 V reference
+F http://www.ti.com/lit/ds/symlink/ref3433.pdf
+$ENDCMP
+#
+$CMP SN74LVC1G123
+D Single Channel Monostable Multitivibrator
+F http://www.ti.com/lit/ds/symlink/sn74lvc1g123.pdf
+$ENDCMP
+#
+$CMP STM32F334K8
+D STM32F334 LQFP32 MCU
+F www.st.com/content/ccc/resource/technical/document/datasheet/d1/cd/3d/18/a2/2c/4e/d0/DM00097745.pdf/files/DM00097745.pdf/jcr:content/translations/en.DM00097745.pdf
+$ENDCMP
+#
+$CMP TPS3700
+D Window Comparator
+F http://www.ti.com/lit/ds/symlink/tps3700.pdf
+$ENDCMP
+#
+#End Doc Library
