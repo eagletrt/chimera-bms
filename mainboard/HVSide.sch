@@ -3,7 +3,7 @@ EELAYER 30 0
 EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
-Sheet 2 3
+Sheet 3 3
 Title ""
 Date ""
 Rev ""
@@ -324,30 +324,6 @@ F 3 "http://www.ti.com/lit/ds/symlink/isow7841.pdf" H 8800 1200 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 $Comp
-L MainBoard:ISOW7841 U?
-U 2 1 5B56F8AD
-P 6000 1450
-AR Path="/5B56F8AD" Ref="U?"  Part="2" 
-AR Path="/5B50ED38/5B56F8AD" Ref="U13"  Part="2" 
-F 0 "U13" H 6000 1865 50  0000 C CNN
-F 1 "ISOW7841" H 6000 1774 50  0000 C CNN
-F 2 "MainBoard:SOIC-16" H 6000 1150 50  0001 C CNN
-F 3 "http://www.ti.com/lit/ds/symlink/isow7841.pdf" H 6000 1250 50  0001 C CNN
-	2    6000 1450
-	-1   0    0    -1  
-$EndComp
-$Comp
-L MainBoard:LTC1865L U14
-U 1 1 5B56F8B4
-P 4600 1450
-F 0 "U14" H 4600 1915 50  0000 C CNN
-F 1 "LTC1865L" H 4600 1824 50  0000 C CNN
-F 2 "Package_SO:SSOP-10_3.9x4.9mm_P1.00mm" H 4600 1100 50  0001 C CNN
-F 3 "http://www.analog.com/media/en/technical-documentation/data-sheets/18645lfs.pdf" H 4600 1450 50  0001 C CNN
-	1    4600 1450
-	1    0    0    -1  
-$EndComp
-$Comp
 L MainBoard:LTC6259 U15
 U 1 1 5B56F8BB
 P 5700 3000
@@ -525,27 +501,6 @@ F 3 "" H 4550 3950 50  0001 C CNN
 	1    4550 4100
 	0    -1   -1   0   
 $EndComp
-Text Label 3700 1550 0    50   ~ 0
-PackV
-Wire Wire Line
-	4000 1550 3700 1550
-Text Label 3700 1650 0    50   ~ 0
-TSV
-Wire Wire Line
-	4000 1650 3700 1650
-Wire Wire Line
-	4000 1350 3900 1350
-$Comp
-L power:-BATT #PWR0100
-U 1 1 5B56F926
-P 3900 1350
-F 0 "#PWR0100" H 3900 1200 50  0001 C CNN
-F 1 "-BATT" V 3900 1500 50  0000 L CNN
-F 2 "" H 3900 1350 50  0001 C CNN
-F 3 "" H 3900 1350 50  0001 C CNN
-	1    3900 1350
-	0    -1   -1   0   
-$EndComp
 $Comp
 L MainBoard:REF3433 U16
 U 1 1 5B56F930
@@ -603,8 +558,6 @@ F 3 "" H 10150 3800 50  0001 C CNN
 $EndComp
 Text Label 10150 3300 2    50   ~ 0
 3V3ISO
-Text Label 3700 1250 0    50   ~ 0
-3V3ISO
 Wire Wire Line
 	8600 3400 8500 3400
 $Comp
@@ -626,8 +579,6 @@ Text Label 8400 3300 0    50   ~ 0
 5VISO
 Text Label 8400 3600 0    50   ~ 0
 5VISO
-Wire Wire Line
-	3700 1250 4000 1250
 Wire Wire Line
 	9400 1350 9500 1350
 Wire Wire Line
@@ -1169,32 +1120,6 @@ Wire Notes Line
 Text Notes 8050 2950 0    50   ~ 0
 ISOLATED 3.3V VOLTAGE REFERENCE
 Wire Notes Line
-	3450 900  3450 1900
-Text Notes 3450 900  0    50   ~ 0
-ISOLATED PACK VOLTAGE ADC WITH SPI ISOLATOR
-Wire Wire Line
-	6600 1300 6700 1300
-Text HLabel 6700 1300 2    50   Input ~ 0
-MOSI
-Wire Wire Line
-	6600 1400 6700 1400
-Text HLabel 6700 1400 2    50   Input ~ 0
-CS
-Wire Wire Line
-	6600 1500 6700 1500
-Text HLabel 6700 1500 2    50   Input ~ 0
-SCK
-Wire Wire Line
-	6600 1600 6700 1600
-Text HLabel 6700 1600 2    50   Input ~ 0
-MISO
-Wire Notes Line
-	7050 900  7050 1900
-Wire Notes Line
-	3450 1900 7050 1900
-Wire Notes Line
-	3450 900  7050 900 
-Wire Notes Line
 	4100 2400 6400 2400
 Wire Notes Line
 	6400 2400 6400 4900
@@ -1204,14 +1129,6 @@ Wire Notes Line
 	4100 4900 4100 2400
 Text Notes 4100 2400 0    50   ~ 0
 HV ADC BUFFERS
-Wire Wire Line
-	5200 1300 5400 1300
-Wire Wire Line
-	5200 1400 5400 1400
-Wire Wire Line
-	5200 1500 5400 1500
-Wire Wire Line
-	5200 1600 5400 1600
 $Comp
 L MainBoard:+TS #PWR0126
 U 1 1 5B9C7928
@@ -1310,8 +1227,6 @@ F 3 "" H 2000 4700 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	5300 6300 5300 6200
-Text Notes 4050 1850 0    50   ~ 0
-UPDATE COMPONENT TO 10 PIN PACKAGE
 $Comp
 L Device:Q_NMOS_GSD Q16
 U 1 1 5B05D828
@@ -1370,4 +1285,254 @@ F 3 "" H 8100 1300 50  0001 C CNN
 	1    8100 1300
 	0    -1   -1   0   
 $EndComp
+Wire Notes Line
+	7250 750  7250 1900
+Wire Notes Line
+	3450 750  3450 1900
+NoConn ~ 4750 1250
+NoConn ~ 4750 1150
+$Comp
+L Device:R R53
+U 1 1 6041ED95
+P 4950 1450
+F 0 "R53" V 4950 1450 50  0000 C CNN
+F 1 "22" V 5050 1450 50  0000 C CNN
+F 2 "" V 4880 1450 50  0001 C CNN
+F 3 "~" H 4950 1450 50  0001 C CNN
+	1    4950 1450
+	0    1    1    0   
+$EndComp
+$Comp
+L Device:R R52
+U 1 1 6041E63C
+P 4950 1350
+F 0 "R52" V 4950 1350 50  0000 C CNN
+F 1 "22" V 4850 1350 50  0000 C CNN
+F 2 "" V 4880 1350 50  0001 C CNN
+F 3 "~" H 4950 1350 50  0001 C CNN
+	1    4950 1350
+	0    1    1    0   
+$EndComp
+NoConn ~ 3950 1150
+Wire Wire Line
+	3950 1250 3650 1250
+Text Label 3650 1250 0    50   ~ 0
+TSV
+Wire Wire Line
+	3950 1350 3650 1350
+Text Label 3650 1350 0    50   ~ 0
+PackV
+NoConn ~ 3950 1450
+NoConn ~ 3950 1550
+$Comp
+L power:-BATT #PWR0100
+U 1 1 5B56F926
+P 3850 1750
+F 0 "#PWR0100" H 3850 1600 50  0001 C CNN
+F 1 "-BATT" V 3850 1900 50  0000 L CNN
+F 2 "" H 3850 1750 50  0001 C CNN
+F 3 "" H 3850 1750 50  0001 C CNN
+	1    3850 1750
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	3950 1750 3850 1750
+$Comp
+L si8900:Si8900 U14
+U 1 1 603C04CE
+P 4350 1350
+F 0 "U14" H 4350 1875 50  0000 C CNN
+F 1 "Si8900" H 4350 1784 50  0000 C CNN
+F 2 "" H 4200 1800 50  0001 C CNN
+F 3 "" H 4200 1800 50  0001 C CNN
+	1    4350 1350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3650 1050 3950 1050
+Text Label 3650 1050 0    50   ~ 0
+3V3ISO
+Text Notes 3450 750  0    50   ~ 0
+ISOLATED PACK VOLTAGE ADC WITH SPI ISOLATOR
+NoConn ~ 4750 1550
+$Comp
+L power:+3V3 #PWR015
+U 1 1 6046C081
+P 4750 1050
+F 0 "#PWR015" H 4750 900 50  0001 C CNN
+F 1 "+3V3" V 4750 1200 50  0000 L CNN
+F 2 "" H 4750 1050 50  0001 C CNN
+F 3 "" H 4750 1050 50  0001 C CNN
+	1    4750 1050
+	0    1    1    0   
+$EndComp
+$Comp
+L power:+3V3 #PWR099
+U 1 1 6046CB1E
+P 4750 1650
+F 0 "#PWR099" H 4750 1500 50  0001 C CNN
+F 1 "+3V3" V 4750 1800 50  0000 L CNN
+F 2 "" H 4750 1650 50  0001 C CNN
+F 3 "" H 4750 1650 50  0001 C CNN
+	1    4750 1650
+	0    1    1    0   
+$EndComp
+$Comp
+L power:GND #PWR0143
+U 1 1 6046D345
+P 4750 1750
+F 0 "#PWR0143" H 4750 1500 50  0001 C CNN
+F 1 "GND" V 4750 1600 50  0000 R CNN
+F 2 "" H 4750 1750 50  0001 C CNN
+F 3 "" H 4750 1750 50  0001 C CNN
+	1    4750 1750
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	4800 1350 4750 1350
+Wire Wire Line
+	4750 1450 4800 1450
+Wire Wire Line
+	5100 1350 5150 1350
+Wire Wire Line
+	5150 1450 5100 1450
+Text HLabel 5150 1450 2    50   Input ~ 0
+ISOADC_TX
+Text HLabel 5150 1350 2    50   Input ~ 0
+ISOADC_RX
+Text Label 3550 1650 0    50   ~ 0
+~RST~_ADCA
+Wire Wire Line
+	3550 1650 3950 1650
+Text Label 5650 1150 0    50   ~ 0
+~RST~_ADCA
+$Comp
+L Isolator:TCMT1103 U20
+U 1 1 604C2D8D
+P 6350 1550
+F 0 "U20" H 6350 1875 50  0000 C CNN
+F 1 "TCMT1103" H 6350 1784 50  0000 C CNN
+F 2 "Package_SO:SOP-4_4.4x2.6mm_P1.27mm" H 6350 1250 50  0001 C CNN
+F 3 "http://www.vishay.com/docs/83510/tcmt1100.pdf" H 6350 1500 50  0001 L CNN
+	1    6350 1550
+	-1   0    0    -1  
+$EndComp
+Wire Notes Line
+	4250 1850 4300 1850
+Wire Notes Line
+	4300 1850 4300 1000
+Wire Notes Line
+	4400 1850 4350 1850
+Wire Notes Line
+	4350 1850 4350 1000
+Wire Notes Line
+	6400 1750 6400 1350
+Wire Notes Line
+	6300 1750 6300 1350
+Text Label 5750 850  0    50   ~ 0
+3V3ISO
+Wire Wire Line
+	5650 1150 6050 1150
+$Comp
+L power:-BATT #PWR0144
+U 1 1 604F8741
+P 6050 1650
+F 0 "#PWR0144" H 6050 1500 50  0001 C CNN
+F 1 "-BATT" H 6050 1800 50  0000 C CNN
+F 2 "" H 6050 1650 50  0001 C CNN
+F 3 "" H 6050 1650 50  0001 C CNN
+	1    6050 1650
+	-1   0    0    1   
+$EndComp
+$Comp
+L Device:C_Small C13
+U 1 1 6050660D
+P 6050 1000
+F 0 "C13" H 6142 1046 50  0000 L CNN
+F 1 "10n" H 6142 955 50  0000 L CNN
+F 2 "" H 6050 1000 50  0001 C CNN
+F 3 "~" H 6050 1000 50  0001 C CNN
+	1    6050 1000
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R_Small R54
+U 1 1 60507EA6
+P 6350 1000
+F 0 "R54" H 6409 1046 50  0000 L CNN
+F 1 "2k" H 6409 955 50  0000 L CNN
+F 2 "" H 6350 1000 50  0001 C CNN
+F 3 "~" H 6350 1000 50  0001 C CNN
+	1    6350 1000
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5750 850  6050 850 
+Wire Wire Line
+	6350 850  6350 900 
+Wire Wire Line
+	6050 900  6050 850 
+Connection ~ 6050 850 
+Wire Wire Line
+	6050 850  6350 850 
+Wire Wire Line
+	6350 1100 6350 1150
+Wire Wire Line
+	6350 1150 6050 1150
+Wire Wire Line
+	6050 1100 6050 1150
+Connection ~ 6050 1150
+$Comp
+L Device:R_Small R55
+U 1 1 60526DB3
+P 6750 1250
+F 0 "R55" H 6809 1296 50  0000 L CNN
+F 1 "680" H 6809 1205 50  0000 L CNN
+F 2 "" H 6750 1250 50  0001 C CNN
+F 3 "~" H 6750 1250 50  0001 C CNN
+	1    6750 1250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R_Small R56
+U 1 1 6052770B
+P 6750 1550
+F 0 "R56" H 6809 1596 50  0000 L CNN
+F 1 "100k" H 6809 1505 50  0000 L CNN
+F 2 "" H 6750 1550 50  0001 C CNN
+F 3 "~" H 6750 1550 50  0001 C CNN
+	1    6750 1550
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR0145
+U 1 1 60527B6F
+P 6650 1650
+F 0 "#PWR0145" H 6650 1400 50  0001 C CNN
+F 1 "GND" H 6650 1500 50  0000 C CNN
+F 2 "" H 6650 1650 50  0001 C CNN
+F 3 "" H 6650 1650 50  0001 C CNN
+	1    6650 1650
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6650 1450 6750 1450
+Wire Wire Line
+	6750 1350 6750 1450
+Connection ~ 6750 1450
+Wire Wire Line
+	6750 1650 6650 1650
+Connection ~ 6650 1650
+Text HLabel 6800 1100 2    50   Input ~ 0
+RST_ADCB
+Wire Notes Line
+	3450 750  7250 750 
+Wire Notes Line
+	3450 1900 7250 1900
+Wire Wire Line
+	6750 1150 6750 1100
+Wire Wire Line
+	6750 1100 6800 1100
+Wire Wire Line
+	6050 1150 6050 1450
 $EndSCHEMATC
