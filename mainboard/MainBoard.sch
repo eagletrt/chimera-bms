@@ -1124,10 +1124,6 @@ $EndComp
 Text Label 4300 3850 0    50   ~ 0
 SDA
 Wire Wire Line
-	4300 3750 4600 3750
-Wire Wire Line
-	4300 3850 4600 3850
-Wire Wire Line
 	2300 2250 2500 2250
 Wire Wire Line
 	2300 2350 2500 2350
@@ -1868,7 +1864,7 @@ F 3 "~" H 4100 3300 50  0001 C CNN
 	-1   0    0    1   
 $EndComp
 Wire Wire Line
-	4100 3150 4100 3050
+	4100 3150 4100 3100
 $Comp
 L power:+3.3V #PWR0141
 U 1 1 5B2B9A60
@@ -1957,34 +1953,68 @@ S 3100 5150 900  700
 U 5B50ED38
 F0 "HV" 50
 F1 "HVSide.sch" 50
-F2 "ISOADC_TX" I L 3100 5350 50 
-F3 "ISOADC_RX" I L 3100 5450 50 
-F4 "RST_ADCB" I L 3100 5550 50 
+F2 "SDA" I L 3100 5300 50 
+F3 "SCL" I L 3100 5400 50 
+F4 "RST_ADCB" I L 3100 5500 50 
 $EndSheet
 Text Label 6200 3000 2    50   ~ 0
 PC_Ended
-Text Label 2600 5350 0    50   ~ 0
-ISOADC_RX
-Text Label 2600 5450 0    50   ~ 0
-ISOADC_TX
-Text Label 2600 5550 0    50   ~ 0
-RST_ADCB
-Wire Wire Line
-	2600 5350 3100 5350
-Wire Wire Line
-	2600 5450 3100 5450
-Wire Wire Line
-	3100 5550 2600 5550
-Text Label 6200 3200 2    50   ~ 0
-ISOADC_RX
-Text Label 6200 3100 2    50   ~ 0
-ISOADC_TX
-Wire Wire Line
-	6200 3200 5800 3200
-Wire Wire Line
-	6200 3100 5800 3100
 Wire Wire Line
 	5800 3600 6200 3600
 Text Label 6200 3600 2    50   ~ 0
 RST_ADCB
+$Comp
+L Device:R R58
+U 1 1 603E2CED
+P 3900 3300
+F 0 "R58" V 4000 3300 50  0000 C CNN
+F 1 "2k" V 3900 3300 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 3830 3300 50  0001 C CNN
+F 3 "~" H 3900 3300 50  0001 C CNN
+	1    3900 3300
+	-1   0    0    1   
+$EndComp
+$Comp
+L Device:R R57
+U 1 1 603E3010
+P 3700 3300
+F 0 "R57" V 3800 3300 50  0000 C CNN
+F 1 "2k" V 3700 3300 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 3630 3300 50  0001 C CNN
+F 3 "~" H 3700 3300 50  0001 C CNN
+	1    3700 3300
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	4100 3100 3900 3100
+Wire Wire Line
+	3700 3100 3700 3150
+Connection ~ 4100 3100
+Wire Wire Line
+	4100 3100 4100 3050
+Wire Wire Line
+	3900 3150 3900 3100
+Connection ~ 3900 3100
+Wire Wire Line
+	3900 3100 3700 3100
+Wire Wire Line
+	3900 3450 3900 3750
+Wire Wire Line
+	3900 3750 4600 3750
+Wire Wire Line
+	3700 3850 3700 3450
+Wire Wire Line
+	3700 3850 4600 3850
+Text Label 2700 5400 0    50   ~ 0
+SCL
+Text Label 2700 5300 0    50   ~ 0
+SDA
+Text Label 2700 5500 0    50   ~ 0
+RST_ADCB
+Wire Wire Line
+	2700 5300 3100 5300
+Wire Wire Line
+	3100 5400 2700 5400
+Wire Wire Line
+	3100 5500 2700 5500
 $EndSCHEMATC
