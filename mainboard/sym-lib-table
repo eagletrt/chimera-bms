@@ -1,3 +1,4 @@
 (sym_lib_table
   (lib (name MainBoard)(type Legacy)(uri ${KIPRJMOD}/lib_sch/MainBoard.lib)(options "")(descr ""))
+  (lib (name si8900)(type Legacy)(uri ${KIPRJMOD}/lib_sch/si8900.lib)(options "")(descr ""))
 )
