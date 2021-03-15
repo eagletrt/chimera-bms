@@ -6,7 +6,7 @@ encoding utf-8
 Sheet 1 3
 Title ""
 Date ""
-Rev ""
+Rev "V3"
 Comp ""
 Comment1 ""
 Comment2 ""
@@ -1415,7 +1415,7 @@ L Device:R R10
 U 1 1 5B4093B7
 P 1000 5550
 F 0 "R10" V 900 5550 50  0000 C CNN
-F 1 "590" V 1000 5550 50  0000 C CNN
+F 1 "10k" V 1000 5550 50  0000 C CNN
 F 2 "Resistor_SMD:R_0805_2012Metric" V 930 5550 50  0001 C CNN
 F 3 "~" H 1000 5550 50  0001 C CNN
 	1    1000 5550
@@ -1439,7 +1439,7 @@ L Device:R R9
 U 1 1 5B45397A
 P 1250 5300
 F 0 "R9" V 1150 5300 50  0000 C CNN
-F 1 "1.6K" V 1250 5300 50  0000 C CNN
+F 1 "33k" V 1250 5300 50  0000 C CNN
 F 2 "Resistor_SMD:R_0805_2012Metric" V 1180 5300 50  0001 C CNN
 F 3 "~" H 1250 5300 50  0001 C CNN
 	1    1250 5300
@@ -1918,8 +1918,8 @@ $Comp
 L Device:Polyfuse_Small F2
 U 1 1 5B2F3DA2
 P 1850 6650
-F 0 "F2" V 1645 6650 50  0000 C CNN
-F 1 "0ZCG 2A" V 1736 6650 50  0000 C CNN
+F 0 "F2" V 1750 6200 50  0000 C CNN
+F 1 "0ZCG 2A" V 1700 6150 50  0000 C CNN
 F 2 "Fuse:Fuse_1812_4532Metric" H 1900 6450 50  0001 L CNN
 F 3 "~" H 1850 6650 50  0001 C CNN
 	1    1850 6650
@@ -1931,8 +1931,8 @@ $Comp
 L Device:Polyfuse_Small F3
 U 1 1 5B3092A1
 P 1950 7050
-F 0 "F3" V 1745 7050 50  0000 C CNN
-F 1 "0ZCG 2A" V 1836 7050 50  0000 C CNN
+F 0 "F3" V 2050 7450 50  0000 C CNN
+F 1 "0ZCG 2A" V 2100 7500 50  0000 C CNN
 F 2 "Fuse:Fuse_1812_4532Metric" H 2000 6850 50  0001 L CNN
 F 3 "~" H 1950 7050 50  0001 C CNN
 	1    1950 7050
@@ -2076,8 +2076,8 @@ Wire Wire Line
 	10450 2750 10500 2750
 Text Notes 9900 2500 0    50   ~ 0
 HANDCART PRESENCE
-Text Notes 9900 3150 0    50   ~ 0
-close contact when on handcart\nremove before flight
+Text Notes 9850 3150 0    50   ~ 0
+close contact when on handcart,\nremove before flight
 Wire Notes Line
 	9850 2500 9850 3200
 Wire Notes Line
@@ -2087,4 +2087,10 @@ Wire Notes Line
 Wire Notes Line
 	9850 3200 11150 3200
 NoConn ~ 5800 3200
+Text Notes 1400 5850 0    50   ~ 0
+12V CMOS\nHIGH: OK\nLOW: fault
+Text Notes 600  4200 0    50   ~ 0
+CHECK: unpopulated
+Text Notes 8750 6350 0    50   ~ 0
+CHECK: What the f* even \nhappened to this on the board?
 $EndSCHEMATC
