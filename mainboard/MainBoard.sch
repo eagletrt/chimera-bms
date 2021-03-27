@@ -1159,55 +1159,38 @@ Wire Wire Line
 	4400 4700 4600 4700
 Text Label 4400 4700 0    50   ~ 0
 RST
-$Comp
-L Connector_Generic:Conn_01x05 J2
-U 1 1 5B04F48B
-P 9450 2900
-F 0 "J2" H 9450 3200 50  0000 C CNN
-F 1 "SWDebug" V 9550 2900 50  0000 C CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x05_P2.54mm_Vertical" H 9450 2900 50  0001 C CNN
-F 3 "~" H 9450 2900 50  0001 C CNN
-	1    9450 2900
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
-	9250 2700 9150 2700
+	8850 3000 8750 3000
 $Comp
 L power:+3.3V #PWR021
 U 1 1 5B059441
-P 9150 2700
-F 0 "#PWR021" H 9150 2550 50  0001 C CNN
-F 1 "+3.3V" V 9150 2850 50  0000 L CNN
-F 2 "" H 9150 2700 50  0001 C CNN
-F 3 "" H 9150 2700 50  0001 C CNN
-	1    9150 2700
+P 8750 3000
+F 0 "#PWR021" H 8750 2850 50  0001 C CNN
+F 1 "+3.3V" V 8750 3150 50  0000 L CNN
+F 2 "" H 8750 3000 50  0001 C CNN
+F 3 "" H 8750 3000 50  0001 C CNN
+	1    8750 3000
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	9250 3100 9150 3100
+	8850 2700 8750 2700
 $Comp
 L power:GND #PWR024
 U 1 1 5B0816C3
-P 9150 3100
-F 0 "#PWR024" H 9150 2850 50  0001 C CNN
-F 1 "GND" V 9150 2950 50  0000 R CNN
-F 2 "" H 9150 3100 50  0001 C CNN
-F 3 "" H 9150 3100 50  0001 C CNN
-	1    9150 3100
+P 8750 2700
+F 0 "#PWR024" H 8750 2450 50  0001 C CNN
+F 1 "GND" V 8750 2550 50  0000 R CNN
+F 2 "" H 8750 2700 50  0001 C CNN
+F 3 "" H 8750 2700 50  0001 C CNN
+	1    8750 2700
 	0    1    1    0   
 $EndComp
-Text Label 8950 2800 0    50   ~ 0
+Text Label 8450 2900 0    50   ~ 0
 SWDIO
-Text Label 8950 2900 0    50   ~ 0
+Text Label 8450 2800 0    50   ~ 0
 SWCLK
-Text Label 8950 3000 0    50   ~ 0
+Text Label 9750 2800 2    50   ~ 0
 RST
-Wire Wire Line
-	8950 2800 9250 2800
-Wire Wire Line
-	8950 2900 9250 2900
-Wire Wire Line
-	8950 3000 9250 3000
 Wire Notes Line
 	8050 4900 8050 6400
 Wire Notes Line
@@ -1270,15 +1253,7 @@ Wire Wire Line
 	4500 1400 4600 1400
 Wire Wire Line
 	4500 1500 4600 1500
-Wire Notes Line
-	9700 2500 8700 2500
-Wire Notes Line
-	8700 2500 8700 3200
-Wire Notes Line
-	8700 3200 9700 3200
-Wire Notes Line
-	9700 3200 9700 2500
-Text Notes 8700 2500 0    50   ~ 0
+Text Notes 8350 2400 0    50   ~ 0
 SWD INTERFACE
 $Comp
 L Device:C C11
@@ -2093,4 +2068,58 @@ Text Notes 600  4200 0    50   ~ 0
 CHECK: unpopulated
 Text Notes 8750 6350 0    50   ~ 0
 CHECK: What the f* even \nhappened to this on the board?
+$Comp
+L Connector_Generic:Conn_02x05_Odd_Even J?
+U 1 1 606179E7
+P 9050 2900
+F 0 "J?" H 9100 3317 50  0000 C CNN
+F 1 "SWD" H 9100 3226 50  0000 C CNN
+F 2 "" H 9050 2900 50  0001 C CNN
+F 3 "~" H 9050 2900 50  0001 C CNN
+	1    9050 2900
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	8450 2800 8850 2800
+Wire Wire Line
+	8450 2900 8850 2900
+$Comp
+L power:+5V #PWR?
+U 1 1 6073E490
+P 9450 3000
+F 0 "#PWR?" H 9450 2850 50  0001 C CNN
+F 1 "+5V" V 9450 3150 50  0000 L CNN
+F 2 "" H 9450 3000 50  0001 C CNN
+F 3 "" H 9450 3000 50  0001 C CNN
+	1    9450 3000
+	0    1    -1   0   
+$EndComp
+Wire Wire Line
+	9450 3000 9350 3000
+Wire Wire Line
+	9350 2800 9750 2800
+Wire Wire Line
+	9350 2700 9450 2700
+$Comp
+L power:GND #PWR?
+U 1 1 60784403
+P 9450 2700
+F 0 "#PWR?" H 9450 2450 50  0001 C CNN
+F 1 "GND" V 9450 2550 50  0000 R CNN
+F 2 "" H 9450 2700 50  0001 C CNN
+F 3 "" H 9450 2700 50  0001 C CNN
+	1    9450 2700
+	0    -1   -1   0   
+$EndComp
+NoConn ~ 9350 2900
+NoConn ~ 9350 3100
+NoConn ~ 8850 3100
+Wire Notes Line
+	8350 3200 9800 3200
+Wire Notes Line
+	9800 3200 9800 2400
+Wire Notes Line
+	8350 2400 9800 2400
+Wire Notes Line
+	8350 2400 8350 3200
 $EndSCHEMATC
