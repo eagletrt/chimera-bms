@@ -17,31 +17,31 @@
  * Defines CAN message codes
  */
 typedef enum {
-  CAN_INITIAL_CHECK = 0x02,
+	CAN_INITIAL_CHECK = 0x02,
 
-  CAN_OUT_PACK_VOLTS = 0x01,
-  CAN_OUT_PACK_TEMPS = 0x0A,
-  CAN_OUT_TS_ON = 0x03,
-  CAN_OUT_TS_OFF = 0x04,
-  CAN_OUT_CURRENT = 0x05,
-  CAN_OUT_AVG_TEMP = 0x06,
-  CAN_OUT_MAX_TEMP = 0x07,
-  CAN_OUT_ERROR = 0x08,
-  CAN_OUT_WARNING = 0x09,
+	CAN_OUT_PACK_VOLTS = 0x01,
+	CAN_OUT_PACK_TEMPS = 0x0A,
+	CAN_OUT_TS_ON = 0x03,
+	CAN_OUT_TS_OFF = 0x04,
+	CAN_OUT_CURRENT = 0x05,
+	CAN_OUT_AVG_TEMP = 0x06,
+	CAN_OUT_MAX_TEMP = 0x07,
+	CAN_OUT_ERROR = 0x08,
+	CAN_OUT_WARNING = 0x09,
 
-  CAN_IN_BUS_VOLTAGE = 0xEB,
-  CAN_IN_TS_ON = 0x0A,
-  CAN_IN_TS_OFF = 0x0B,
-  CAN_IN_CHG_START = 0x01
+	CAN_IN_BUS_VOLTAGE = 0xEB,
+	CAN_IN_TS_ON = 0x0A,
+	CAN_IN_TS_OFF = 0x0B,
+	CAN_IN_CHG_START = 0x01
 
 } CAN_CODE_T;
 
 typedef enum {
-  CAN_ID_BMS = 0xAA,
-  CAN_ID_ECU = 0x55,
-  CAN_ID_HANDCART = 0x69,
-  CAN_ID_IN_INVERTER_L = 0x181,
-  CAN_ID_OUT_INVERTER_L = 0x201
+	CAN_ID_BMS = 0xAA,
+	CAN_ID_ECU = 0x55,
+	CAN_ID_HANDCART = 0x69,
+	CAN_ID_IN_INVERTER_L = 0x181,
+	CAN_ID_OUT_INVERTER_L = 0x201
 
 } CAN_ID_T;
 
@@ -66,6 +66,7 @@ void can_send_pack_voltage(PACK_T pack);
 void can_send_pack_temperature(PACK_T pack);
 void can_send_warning(WARNING_T warning, uint8_t index);
 void can_send_error(ERROR_T error, uint8_t index, PACK_T *pack);
-void can_send_chg_current(uint16_t current);
+void can_send_chg_current(uint8_t current);
+void can_send_chg_state(uint8_t state);
 
-#endif /* CAN_H_ */
+#endif
