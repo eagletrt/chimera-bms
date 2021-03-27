@@ -1,0 +1,6 @@
+{
+    "recommendations": [
+        "ms-vscode.cpptools",
+        "bmd.stm32-for-vscode"
+    ]
+}
