@@ -8,6 +8,7 @@
 *.sch-bak
 *.kicad_pcb-bak
 
+output/*
  
 # old files
 bak/*
