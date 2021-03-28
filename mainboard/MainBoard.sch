@@ -4,10 +4,10 @@ EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 3
-Title ""
-Date ""
+Title "Chimera BMS"
+Date "2021-03-28"
 Rev "V3"
-Comp ""
+Comp "E-Agle TRT"
 Comment1 ""
 Comment2 ""
 Comment3 ""
