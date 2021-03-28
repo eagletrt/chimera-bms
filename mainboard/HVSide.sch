@@ -1157,28 +1157,6 @@ Wire Notes Line
 	3450 750  3450 1900
 NoConn ~ 5100 1250
 NoConn ~ 5100 1150
-$Comp
-L Device:R R53
-U 1 1 6041ED95
-P 5300 1450
-F 0 "R53" V 5400 1450 50  0000 C CNN
-F 1 "22" V 5300 1450 50  0000 C CNN
-F 2 "" V 5230 1450 50  0001 C CNN
-F 3 "~" H 5300 1450 50  0001 C CNN
-	1    5300 1450
-	0    1    1    0   
-$EndComp
-$Comp
-L Device:R R52
-U 1 1 6041E63C
-P 5300 1350
-F 0 "R52" V 5200 1350 50  0000 C CNN
-F 1 "22" V 5300 1350 50  0000 C CNN
-F 2 "" V 5230 1350 50  0001 C CNN
-F 3 "~" H 5300 1350 50  0001 C CNN
-	1    5300 1350
-	0    1    1    0   
-$EndComp
 NoConn ~ 4300 1150
 Text Label 4000 1250 0    50   ~ 0
 TSV
@@ -1235,16 +1213,12 @@ F 3 "" H 5100 1750 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	5150 1350 5100 1350
+	5100 1350 5150 1350
 Wire Wire Line
-	5100 1450 5150 1450
-Wire Wire Line
-	5450 1350 5500 1350
-Wire Wire Line
-	5500 1450 5450 1450
-Text HLabel 5500 1450 2    50   Input ~ 0
+	5150 1450 5100 1450
+Text HLabel 5150 1450 2    50   Input ~ 0
 SDA
-Text HLabel 5500 1350 2    50   Input ~ 0
+Text HLabel 5150 1350 2    50   Input ~ 0
 SCL
 Text Label 3900 1550 0    50   ~ 0
 ~RST~_ADCA
