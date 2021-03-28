@@ -1,4 +1,4 @@
-19287320062040078
+19288991880044078
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -56596,6 +56596,13 @@ Through hole pin header THT 1x08 2.54mm single row
 8
 MainBoard
 RFMM-0505S
+
+
+0
+4
+4
+MainBoard
+ROE-0505S
 
 
 0
