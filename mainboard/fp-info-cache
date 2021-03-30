@@ -1,4 +1,4 @@
-19288991880044078
+19292226059891078
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -56661,6 +56661,20 @@ MainBoard
 TO-252-2
 TO-252 / DPAK SMD package, http://www.infineon.com/cms/en/product/packages/PG-TO252/PG-TO252-3-1/
 DPAK TO-252 DPAK-3 TO-252-3 SOT-428
+0
+3
+3
+MainBoard
+logo_fox
+
+
+0
+0
+0
+MainBoard
+pwr163
+
+
 0
 3
 3

@@ -4,8 +4,8 @@ EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 2 3
-Title "Chimera BMS"
-Date "2021-03-28"
+Title "Chimera BMS - MainBoard"
+Date "2021-03-29"
 Rev "V3"
 Comp "E-Agle TRT"
 Comment1 ""
@@ -168,8 +168,6 @@ F 3 "https://standexelectronics.com/viewer/pdfjs/web/viewer.php?file=https%3A%2F
 	1    5900 6950
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	6300 7150 6400 7150
 $Comp
 L power:GND #PWR093
 U 1 1 5B0DE0D4
@@ -182,71 +180,31 @@ F 3 "" H 5300 7150 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L Device:R R34
-U 1 1 5B0DE0DA
-P 6400 7400
-F 0 "R34" V 6300 7400 50  0000 C CNN
-F 1 "10k" V 6400 7400 50  0000 C CNN
-F 2 "MainBoard:TO-247_wHeatsink" V 6330 7400 50  0001 C CNN
-F 3 "~" H 6400 7400 50  0001 C CNN
-	1    6400 7400
-	1    0    0    -1  
-$EndComp
-Text Notes 6550 7600 1    50   ~ 0
-AP101 10K
-$Comp
 L MainBoard:+TS #PWR097
 U 1 1 5B0DE0E2
-P 6300 7650
-F 0 "#PWR097" H 6300 7500 50  0001 C CNN
-F 1 "+TS" V 6300 7800 50  0000 L CNN
-F 2 "" H 6200 7400 50  0001 C CNN
-F 3 "" H 6300 7500 50  0001 C CNN
-	1    6300 7650
-	0    -1   -1   0   
-$EndComp
-$Comp
-L Device:R R35
-U 1 1 5B0DE0E8
-P 6700 7400
-F 0 "R35" V 6600 7400 50  0000 C CNN
-F 1 "10k" V 6700 7400 50  0000 C CNN
-F 2 "MainBoard:TO-247_wHeatsink" V 6630 7400 50  0001 C CNN
-F 3 "~" H 6700 7400 50  0001 C CNN
-	1    6700 7400
-	1    0    0    -1  
+P 6700 6750
+F 0 "#PWR097" H 6700 6600 50  0001 C CNN
+F 1 "+TS" V 6700 6900 50  0000 L CNN
+F 2 "" H 6600 6500 50  0001 C CNN
+F 3 "" H 6700 6600 50  0001 C CNN
+	1    6700 6750
+	0    1    1    0   
 $EndComp
 Wire Wire Line
 	6300 6750 6400 6750
 $Comp
 L power:+BATT #PWR092
 U 1 1 5B0DE0F0
-P 6400 6750
-F 0 "#PWR092" H 6400 6600 50  0001 C CNN
-F 1 "+BATT" V 6400 6900 50  0000 L CNN
-F 2 "" H 6400 6750 50  0001 C CNN
-F 3 "" H 6400 6750 50  0001 C CNN
-	1    6400 6750
+P 6300 7150
+F 0 "#PWR092" H 6300 7000 50  0001 C CNN
+F 1 "+BATT" V 6300 7300 50  0000 L CNN
+F 2 "" H 6300 7150 50  0001 C CNN
+F 3 "" H 6300 7150 50  0001 C CNN
+	1    6300 7150
 	0    1    1    0   
 $EndComp
-Wire Wire Line
-	6400 7550 6400 7650
-Wire Wire Line
-	6400 7150 6400 7250
-Connection ~ 6400 7150
 Text Notes 4750 6450 0    50   ~ 0
 PRE-CHARGE CIRCUIT
-Wire Wire Line
-	6300 7650 6400 7650
-Connection ~ 6400 7650
-Wire Wire Line
-	6700 7650 6700 7550
-Wire Wire Line
-	6400 7650 6700 7650
-Wire Wire Line
-	6700 7150 6700 7250
-Wire Wire Line
-	6400 7150 6700 7150
 $Comp
 L Connector_Generic:Conn_01x02 J6
 U 1 1 5B0DE10C
@@ -689,9 +647,9 @@ F 3 "" H 6750 950 50  0001 C CNN
 $EndComp
 Text HLabel 7050 3250 0    50   Input ~ 0
 TS_ON
-Text Label 7700 3450 0    50   ~ 0
-BMS_LATCHED
 Text Label 7700 3550 0    50   ~ 0
+BMS_LATCHED
+Text Label 7700 3450 0    50   ~ 0
 IMD_LATCHED
 $Comp
 L power:+12V #PWR0155
@@ -721,35 +679,11 @@ Text GLabel 5850 4600 2    50   Output ~ 0
 IMD_LED
 Text Notes 3550 4250 0    50   ~ 0
 12V CMOS\nHIGH: OK\nLOW: fault
-Text Notes 2700 3600 0    50   ~ 0
-3V3 uC\nHIGH: OK\nLOW: fault
 Wire Wire Line
 	3200 1300 2900 1300
 Connection ~ 2900 1300
 Text Notes 1100 2200 0    50   ~ 0
 Power supply controller, gives a delay on \n~RESET~ line after reset event.
-$Comp
-L Comparator:LM339 U13
-U 1 1 604E735B
-P 3500 3750
-F 0 "U13" H 3500 4117 50  0000 C CNN
-F 1 "TS3704IPT" H 3500 4026 50  0000 C CNN
-F 2 "Package_SO:TSSOP-14_4.4x5mm_P0.65mm" H 3450 3850 50  0001 C CNN
-F 3 "https://www.st.com/resource/en/datasheet/lm139.pdf" H 3550 3950 50  0001 C CNN
-	1    3500 3750
-	1    0    0    -1  
-$EndComp
-$Comp
-L Comparator:LM339 U13
-U 2 1 604E8BD0
-P 7350 3350
-F 0 "U13" H 7350 3717 50  0000 C CNN
-F 1 "TS3704IPT" H 7350 3626 50  0000 C CNN
-F 2 "Package_SO:TSSOP-14_4.4x5mm_P0.65mm" H 7300 3450 50  0001 C CNN
-F 3 "https://www.st.com/resource/en/datasheet/lm139.pdf" H 7400 3550 50  0001 C CNN
-	2    7350 3350
-	1    0    0    -1  
-$EndComp
 $Comp
 L Comparator:LM339 U13
 U 3 1 604EA080
@@ -1244,9 +1178,9 @@ Wire Wire Line
 Wire Wire Line
 	6700 4650 6750 4650
 Wire Wire Line
-	7700 3450 8150 3450
-Wire Wire Line
 	7700 3550 8150 3550
+Wire Wire Line
+	7700 3450 8150 3450
 Wire Wire Line
 	7650 3350 8150 3350
 Text GLabel 10300 3250 2    50   Input ~ 0
@@ -1274,4 +1208,43 @@ Wire Wire Line
 	2250 6800 2350 6800
 Wire Wire Line
 	2800 7150 3350 7150
+$Comp
+L Comparator:LM339 U13
+U 1 1 604E735B
+P 3500 3750
+F 0 "U13" H 3500 4117 50  0000 C CNN
+F 1 "TS3704IPT" H 3500 4026 50  0000 C CNN
+F 2 "Package_SO:TSSOP-14_4.4x5mm_P0.65mm" H 3450 3850 50  0001 C CNN
+F 3 "https://www.st.com/resource/en/datasheet/lm139.pdf" H 3550 3950 50  0001 C CNN
+	1    3500 3750
+	1    0    0    -1  
+$EndComp
+Text Notes 2700 3600 0    50   ~ 0
+3V3 uC\nHIGH: OK\nLOW: fault
+$Comp
+L Comparator:LM339 U13
+U 2 1 604E8BD0
+P 7350 3350
+F 0 "U13" H 7350 3717 50  0000 C CNN
+F 1 "TS3704IPT" H 7350 3626 50  0000 C CNN
+F 2 "Package_SO:TSSOP-14_4.4x5mm_P0.65mm" H 7300 3450 50  0001 C CNN
+F 3 "https://www.st.com/resource/en/datasheet/lm139.pdf" H 7400 3550 50  0001 C CNN
+	2    7350 3350
+	1    0    0    -1  
+$EndComp
+$Comp
+L MainBoard:R_power_backplane R20
+U 1 1 606B3E8B
+P 6550 6750
+F 0 "R20" H 6620 6750 50  0000 L CNN
+F 1 "PWR163S-25-1002J 10k" V 6700 6750 50  0001 C CNN
+F 2 "MainBoard:pwr163" V 6510 6750 50  0001 C CNN
+F 3 "~" H 6550 6750 50  0001 C CNN
+	1    6550 6750
+	0    -1   -1   0   
+$EndComp
+Text Label 6850 7000 3    50   ~ 0
+R20_heatsink
+Wire Wire Line
+	6550 7000 6850 7000
 $EndSCHEMATC
