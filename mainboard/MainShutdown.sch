@@ -4,8 +4,8 @@ EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 2 3
-Title "Chimera BMS"
-Date "2021-03-28"
+Title "Chimera BMS - MainBoard"
+Date "2021-03-29"
 Rev "V3"
 Comp "E-Agle TRT"
 Comment1 ""
@@ -79,12 +79,12 @@ $EndComp
 $Comp
 L Device:R R13
 U 1 1 5B0461F5
-P 700 1300
-F 0 "R13" V 600 1300 50  0000 C CNN
-F 1 "220k" V 700 1300 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric" V 630 1300 50  0001 C CNN
-F 3 "~" H 700 1300 50  0001 C CNN
-	1    700  1300
+P 700 1100
+F 0 "R13" V 600 1100 50  0000 C CNN
+F 1 "100k" V 700 1100 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 630 1100 50  0001 C CNN
+F 3 "~" H 700 1100 50  0001 C CNN
+	1    700  1100
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -151,10 +151,7 @@ F 3 "" H 2900 2150 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	700  1450 700  1650
-Wire Wire Line
 	700  1650 1600 1650
-Connection ~ 700  1650
 Wire Wire Line
 	700  1650 700  1750
 $Comp
@@ -168,8 +165,6 @@ F 3 "https://standexelectronics.com/viewer/pdfjs/web/viewer.php?file=https%3A%2F
 	1    5900 6950
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	6300 7150 6400 7150
 $Comp
 L power:GND #PWR093
 U 1 1 5B0DE0D4
@@ -182,71 +177,31 @@ F 3 "" H 5300 7150 50  0001 C CNN
 	0    1    1    0   
 $EndComp
 $Comp
-L Device:R R34
-U 1 1 5B0DE0DA
-P 6400 7400
-F 0 "R34" V 6300 7400 50  0000 C CNN
-F 1 "10k" V 6400 7400 50  0000 C CNN
-F 2 "MainBoard:TO-247_wHeatsink" V 6330 7400 50  0001 C CNN
-F 3 "~" H 6400 7400 50  0001 C CNN
-	1    6400 7400
-	1    0    0    -1  
-$EndComp
-Text Notes 6550 7600 1    50   ~ 0
-AP101 10K
-$Comp
 L MainBoard:+TS #PWR097
 U 1 1 5B0DE0E2
-P 6300 7650
-F 0 "#PWR097" H 6300 7500 50  0001 C CNN
-F 1 "+TS" V 6300 7800 50  0000 L CNN
-F 2 "" H 6200 7400 50  0001 C CNN
-F 3 "" H 6300 7500 50  0001 C CNN
-	1    6300 7650
-	0    -1   -1   0   
-$EndComp
-$Comp
-L Device:R R35
-U 1 1 5B0DE0E8
-P 6700 7400
-F 0 "R35" V 6600 7400 50  0000 C CNN
-F 1 "10k" V 6700 7400 50  0000 C CNN
-F 2 "MainBoard:TO-247_wHeatsink" V 6630 7400 50  0001 C CNN
-F 3 "~" H 6700 7400 50  0001 C CNN
-	1    6700 7400
-	1    0    0    -1  
+P 6700 6750
+F 0 "#PWR097" H 6700 6600 50  0001 C CNN
+F 1 "+TS" V 6700 6900 50  0000 L CNN
+F 2 "" H 6600 6500 50  0001 C CNN
+F 3 "" H 6700 6600 50  0001 C CNN
+	1    6700 6750
+	0    1    1    0   
 $EndComp
 Wire Wire Line
 	6300 6750 6400 6750
 $Comp
 L power:+BATT #PWR092
 U 1 1 5B0DE0F0
-P 6400 6750
-F 0 "#PWR092" H 6400 6600 50  0001 C CNN
-F 1 "+BATT" V 6400 6900 50  0000 L CNN
-F 2 "" H 6400 6750 50  0001 C CNN
-F 3 "" H 6400 6750 50  0001 C CNN
-	1    6400 6750
+P 6300 7150
+F 0 "#PWR092" H 6300 7000 50  0001 C CNN
+F 1 "+BATT" V 6300 7300 50  0000 L CNN
+F 2 "" H 6300 7150 50  0001 C CNN
+F 3 "" H 6300 7150 50  0001 C CNN
+	1    6300 7150
 	0    1    1    0   
 $EndComp
-Wire Wire Line
-	6400 7550 6400 7650
-Wire Wire Line
-	6400 7150 6400 7250
-Connection ~ 6400 7150
 Text Notes 4750 6450 0    50   ~ 0
 PRE-CHARGE CIRCUIT
-Wire Wire Line
-	6300 7650 6400 7650
-Connection ~ 6400 7650
-Wire Wire Line
-	6700 7650 6700 7550
-Wire Wire Line
-	6400 7650 6700 7650
-Wire Wire Line
-	6700 7150 6700 7250
-Wire Wire Line
-	6400 7150 6700 7150
 $Comp
 L Connector_Generic:Conn_01x02 J6
 U 1 1 5B0DE10C
@@ -263,7 +218,7 @@ L Device:R R33
 U 1 1 5B0DE119
 P 1450 7400
 F 0 "R33" V 1350 7400 50  0000 C CNN
-F 1 "100k" V 1450 7400 50  0000 C CNN
+F 1 "10k" V 1450 7400 50  0000 C CNN
 F 2 "Resistor_SMD:R_0805_2012Metric" V 1380 7400 50  0001 C CNN
 F 3 "~" H 1450 7400 50  0001 C CNN
 	1    1450 7400
@@ -285,7 +240,7 @@ L Device:R R31
 U 1 1 5B0DE127
 P 1200 7250
 F 0 "R31" V 1100 7250 50  0000 C CNN
-F 1 "3.3k" V 1200 7250 50  0000 C CNN
+F 1 "22" V 1200 7250 50  0000 C CNN
 F 2 "Resistor_SMD:R_0805_2012Metric" V 1130 7250 50  0001 C CNN
 F 3 "~" H 1200 7250 50  0001 C CNN
 	1    1200 7250
@@ -453,8 +408,6 @@ Wire Notes Line
 Wire Notes Line
 	4750 7750 4750 6450
 Wire Wire Line
-	700  950  700  1150
-Wire Wire Line
 	1000 950  1000 1150
 Text Label 3200 1300 2    50   ~ 0
 ~RESET
@@ -573,7 +526,7 @@ L Device:Q_NMOS_GSD Q17
 U 1 1 6041C6DC
 P 1750 7250
 F 0 "Q17" H 1954 7296 50  0000 L CNN
-F 1 "IRLML0100TRPbF" H 1954 7205 50  0000 L CNN
+F 1 "DMN10H220L-7 " H 1954 7205 50  0000 L CNN
 F 2 "Package_TO_SOT_SMD:SOT-23" H 1950 7350 50  0001 C CNN
 F 3 "https://www.mouser.it/datasheet/2/196/irlml0100pbf-1228126.pdf" H 1750 7250 50  0001 C CNN
 	1    1750 7250
@@ -689,9 +642,9 @@ F 3 "" H 6750 950 50  0001 C CNN
 $EndComp
 Text HLabel 7050 3250 0    50   Input ~ 0
 TS_ON
-Text Label 7700 3450 0    50   ~ 0
-BMS_LATCHED
 Text Label 7700 3550 0    50   ~ 0
+BMS_LATCHED
+Text Label 7700 3450 0    50   ~ 0
 IMD_LATCHED
 $Comp
 L power:+12V #PWR0155
@@ -721,35 +674,11 @@ Text GLabel 5850 4600 2    50   Output ~ 0
 IMD_LED
 Text Notes 3550 4250 0    50   ~ 0
 12V CMOS\nHIGH: OK\nLOW: fault
-Text Notes 2700 3600 0    50   ~ 0
-3V3 uC\nHIGH: OK\nLOW: fault
 Wire Wire Line
 	3200 1300 2900 1300
 Connection ~ 2900 1300
 Text Notes 1100 2200 0    50   ~ 0
 Power supply controller, gives a delay on \n~RESET~ line after reset event.
-$Comp
-L Comparator:LM339 U13
-U 1 1 604E735B
-P 3500 3750
-F 0 "U13" H 3500 4117 50  0000 C CNN
-F 1 "TS3704IPT" H 3500 4026 50  0000 C CNN
-F 2 "Package_SO:TSSOP-14_4.4x5mm_P0.65mm" H 3450 3850 50  0001 C CNN
-F 3 "https://www.st.com/resource/en/datasheet/lm139.pdf" H 3550 3950 50  0001 C CNN
-	1    3500 3750
-	1    0    0    -1  
-$EndComp
-$Comp
-L Comparator:LM339 U13
-U 2 1 604E8BD0
-P 7350 3350
-F 0 "U13" H 7350 3717 50  0000 C CNN
-F 1 "TS3704IPT" H 7350 3626 50  0000 C CNN
-F 2 "Package_SO:TSSOP-14_4.4x5mm_P0.65mm" H 7300 3450 50  0001 C CNN
-F 3 "https://www.st.com/resource/en/datasheet/lm139.pdf" H 7400 3550 50  0001 C CNN
-	2    7350 3350
-	1    0    0    -1  
-$EndComp
 $Comp
 L Comparator:LM339 U13
 U 3 1 604EA080
@@ -811,7 +740,7 @@ U 1 1 60542F99
 P 650 3550
 F 0 "C19" V 500 3550 50  0000 C CNN
 F 1 "100n" V 800 3550 50  0000 C CNN
-F 2 "Capacitor_SMD:C_0805_2012Metric" H 688 3400 50  0001 C CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 688 3400 50  0001 C CNN
 F 3 "~" H 650 3550 50  0001 C CNN
 	1    650  3550
 	1    0    0    -1  
@@ -862,7 +791,7 @@ U 1 1 60591BE0
 P 1350 3650
 F 0 "C27" V 1200 3650 50  0000 C CNN
 F 1 "100n" V 1500 3650 50  0000 C CNN
-F 2 "Capacitor_SMD:C_0805_2012Metric" H 1388 3500 50  0001 C CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 1388 3500 50  0001 C CNN
 F 3 "~" H 1350 3650 50  0001 C CNN
 	1    1350 3650
 	1    0    0    -1  
@@ -937,7 +866,7 @@ U 1 1 6069369E
 P 3850 3150
 F 0 "C29" V 3700 3150 50  0000 C CNN
 F 1 "100n" V 4000 3150 50  0000 C CNN
-F 2 "Capacitor_SMD:C_0805_2012Metric" H 3888 3000 50  0001 C CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 3888 3000 50  0001 C CNN
 F 3 "~" H 3850 3150 50  0001 C CNN
 	1    3850 3150
 	1    0    0    -1  
@@ -980,7 +909,7 @@ L Device:R R65
 U 1 1 606B200F
 P 9300 3500
 F 0 "R65" V 9400 3500 50  0000 C CNN
-F 1 "10" V 9300 3500 50  0000 C CNN
+F 1 "22" V 9300 3500 50  0000 C CNN
 F 2 "Resistor_SMD:R_0805_2012Metric" V 9230 3500 50  0001 C CNN
 F 3 "~" H 9300 3500 50  0001 C CNN
 	1    9300 3500
@@ -1110,7 +1039,7 @@ Wire Notes Line
 	600  6150 2300 6150
 Wire Notes Line
 	2300 6150 2300 4650
-Text Notes 9550 2250 0    50   ~ 0
+Text Notes 10100 2350 0    50   ~ 0
 Actual daisychain connection \nof the shutdown line
 $Comp
 L Device:C C30
@@ -1118,7 +1047,7 @@ U 1 1 6045E313
 P 8050 2750
 F 0 "C30" V 7900 2750 50  0000 C CNN
 F 1 "100n" V 8200 2750 50  0000 C CNN
-F 2 "Capacitor_SMD:C_0805_2012Metric" H 8088 2600 50  0001 C CNN
+F 2 "Capacitor_SMD:C_0603_1608Metric" H 8088 2600 50  0001 C CNN
 F 3 "~" H 8050 2750 50  0001 C CNN
 	1    8050 2750
 	1    0    0    -1  
@@ -1161,22 +1090,11 @@ F 3 "http://www.taiwansemi.com/products/datasheet/TSM2306_B15.pdf" H 9750 3500 5
 	1    0    0    -1  
 $EndComp
 $Comp
-L Device:Q_NMOS_GSD Q18
-U 1 1 60521BAF
-P 5700 4850
-F 0 "Q18" H 5900 4900 50  0000 L CNN
-F 1 "TSM2306" H 5900 4800 50  0000 L CNN
-F 2 "Package_TO_SOT_SMD:SOT-23" H 5900 4950 50  0001 C CNN
-F 3 "http://www.taiwansemi.com/products/datasheet/TSM2306_B15.pdf" H 5700 4850 50  0001 C CNN
-	1    5700 4850
-	1    0    0    -1  
-$EndComp
-$Comp
 L Device:R R62
 U 1 1 60555676
 P 5500 4700
 F 0 "R62" V 5600 4700 50  0000 C CNN
-F 1 "10" V 5500 4700 50  0000 C CNN
+F 1 "22" V 5500 4700 50  0000 C CNN
 F 2 "Resistor_SMD:R_0805_2012Metric" V 5430 4700 50  0001 C CNN
 F 3 "~" H 5500 4700 50  0001 C CNN
 	1    5500 4700
@@ -1220,7 +1138,7 @@ L Device:R R63
 U 1 1 60555021
 P 6400 4750
 F 0 "R63" V 6500 4750 50  0000 C CNN
-F 1 "10" V 6400 4750 50  0000 C CNN
+F 1 "22" V 6400 4750 50  0000 C CNN
 F 2 "Resistor_SMD:R_0805_2012Metric" V 6330 4750 50  0001 C CNN
 F 3 "~" H 6400 4750 50  0001 C CNN
 	1    6400 4750
@@ -1244,9 +1162,9 @@ Wire Wire Line
 Wire Wire Line
 	6700 4650 6750 4650
 Wire Wire Line
-	7700 3450 8150 3450
-Wire Wire Line
 	7700 3550 8150 3550
+Wire Wire Line
+	7700 3450 8150 3450
 Wire Wire Line
 	7650 3350 8150 3350
 Text GLabel 10300 3250 2    50   Input ~ 0
@@ -1274,4 +1192,68 @@ Wire Wire Line
 	2250 6800 2350 6800
 Wire Wire Line
 	2800 7150 3350 7150
+$Comp
+L Comparator:LM339 U13
+U 1 1 604E735B
+P 3500 3750
+F 0 "U13" H 3500 4117 50  0000 C CNN
+F 1 "TS3704IPT" H 3500 4026 50  0000 C CNN
+F 2 "Package_SO:TSSOP-14_4.4x5mm_P0.65mm" H 3450 3850 50  0001 C CNN
+F 3 "https://www.st.com/resource/en/datasheet/lm139.pdf" H 3550 3950 50  0001 C CNN
+	1    3500 3750
+	1    0    0    -1  
+$EndComp
+Text Notes 2700 3600 0    50   ~ 0
+3V3 uC\nHIGH: OK\nLOW: fault
+$Comp
+L Comparator:LM339 U13
+U 2 1 604E8BD0
+P 7350 3350
+F 0 "U13" H 7350 3717 50  0000 C CNN
+F 1 "TS3704IPT" H 7350 3626 50  0000 C CNN
+F 2 "Package_SO:TSSOP-14_4.4x5mm_P0.65mm" H 7300 3450 50  0001 C CNN
+F 3 "https://www.st.com/resource/en/datasheet/lm139.pdf" H 7400 3550 50  0001 C CNN
+	2    7350 3350
+	1    0    0    -1  
+$EndComp
+$Comp
+L MainBoard:R_power_backplane R20
+U 1 1 606B3E8B
+P 6550 6750
+F 0 "R20" H 6620 6750 50  0000 L CNN
+F 1 "PWR163S-25-1002J 10k" V 6700 6750 50  0001 C CNN
+F 2 "MainBoard:pwr163" V 6510 6750 50  0001 C CNN
+F 3 "~" H 6550 6750 50  0001 C CNN
+	1    6550 6750
+	0    -1   -1   0   
+$EndComp
+Text Label 6850 7000 3    50   ~ 0
+R20_heatsink
+Wire Wire Line
+	6550 7000 6850 7000
+$Comp
+L Device:Q_NMOS_GSD Q18
+U 1 1 60521BAF
+P 5700 4850
+F 0 "Q18" H 5900 4900 50  0000 L CNN
+F 1 "TSM2306" H 5900 4800 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 5900 4950 50  0001 C CNN
+F 3 "http://www.taiwansemi.com/products/datasheet/TSM2306_B15.pdf" H 5700 4850 50  0001 C CNN
+	1    5700 4850
+	1    0    0    -1  
+$EndComp
+$Comp
+L Device:R R23
+U 1 1 60DE7370
+P 700 1400
+F 0 "R23" V 600 1400 50  0000 C CNN
+F 1 "100k" V 700 1400 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 630 1400 50  0001 C CNN
+F 3 "~" H 700 1400 50  0001 C CNN
+	1    700  1400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	700  1550 700  1650
+Connection ~ 700  1650
 $EndSCHEMATC

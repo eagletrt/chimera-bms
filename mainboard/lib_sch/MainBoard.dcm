@@ -91,6 +91,12 @@ D High precision, Low drift 3.3 V reference
 F http://www.ti.com/lit/ds/symlink/ref3433.pdf
 $ENDCMP
 #
+$CMP R_power_backplane
+D Resistor
+K R res resistor
+F ~
+$ENDCMP
+#
 $CMP SN74LVC1G123
 D Single Channel Monostable Multitivibrator
 F http://www.ti.com/lit/ds/symlink/sn74lvc1g123.pdf
