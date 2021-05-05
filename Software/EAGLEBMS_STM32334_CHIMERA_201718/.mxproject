@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=/home/bonnee/src/eagle/eagle-bms/Software/EAGLEBMS_STM32334_CHIMERA_201718/Inc
+HeaderPath=/home/bonnee/src/eagle/chimera-bms/Software/EAGLEBMS_STM32334_CHIMERA_201718/Inc
 HeaderFiles=stm32f3xx_it.h;stm32f3xx_hal_conf.h;main.h;
-SourcePath=/home/bonnee/src/eagle/eagle-bms/Software/EAGLEBMS_STM32334_CHIMERA_201718/Src
+SourcePath=/home/bonnee/src/eagle/chimera-bms/Software/EAGLEBMS_STM32334_CHIMERA_201718/Src
 SourceFiles=stm32f3xx_it.c;stm32f3xx_hal_msp.c;main.c;
 
 [PreviousLibFiles]

@@ -25,8 +25,7 @@ extern "C" {
 #include "pack.h"
 /* USER CODE END Includes */
 
-/* Exported types
- * ------------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
 typedef struct {
 	BMS_CONFIG_T bms;
@@ -54,20 +53,17 @@ typedef BMS_STATE_T state_func_t(state_global_data_t *data);
 typedef void transition_func_t(state_global_data_t *data);
 /* USER CODE END ET */
 
-/* Exported constants
- * --------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
 /* USER CODE BEGIN EC */
 
 /* USER CODE END EC */
 
-/* Exported macro
- * ------------------------------------------------------------*/
+/* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
 
 /* USER CODE END EM */
 
-/* Exported functions prototypes
- * ---------------------------------------------*/
+/* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
@@ -94,10 +90,10 @@ void read_temps(state_global_data_t *data);
 #define CurrentSensor_GPIO_Port GPIOA
 #define PreChargeEnd_Pin GPIO_PIN_1
 #define PreChargeEnd_GPIO_Port GPIOA
-#define CS_6820_Pin GPIO_PIN_3
-#define CS_6820_GPIO_Port GPIOA
 #define ShutDownStatus_Pin GPIO_PIN_6
 #define ShutDownStatus_GPIO_Port GPIOA
+#define CS_6820_Pin GPIO_PIN_1
+#define CS_6820_GPIO_Port GPIOB
 #define TS_ON_Pin GPIO_PIN_9
 #define TS_ON_GPIO_Port GPIOA
 #define BMS_FAULT_Pin GPIO_PIN_10

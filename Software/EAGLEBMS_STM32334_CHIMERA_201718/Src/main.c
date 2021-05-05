@@ -34,16 +34,24 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
+
+CAN_HandleTypeDef hcan;
+
+SPI_HandleTypeDef hspi1;
+
+TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN PV */
 state_func_t *const state_table[BMS_NUM_STATES] = {
-	do_state_init, do_state_idle,   do_state_precharge,
+	do_state_init, do_state_idle,	do_state_precharge,
 	do_state_on,   do_state_charge, do_state_halt};
 
 transition_func_t *const transition_table[BMS_NUM_STATES][BMS_NUM_STATES] = {
-	{NULL, to_idle, to_precharge, NULL, NULL, to_halt},  // from init
+	{NULL, to_idle, to_precharge, NULL, NULL, to_halt},	 // from init
 	{NULL, NULL, to_precharge, NULL, NULL, to_halt},	 // from idle
-	{NULL, to_idle, NULL, to_on, to_charge, to_halt},	// from precharge
+	{NULL, to_idle, NULL, to_on, to_charge, to_halt},	 // from precharge
 	{NULL, to_idle, NULL, NULL, NULL, to_halt},			 // from on
 	{NULL, NULL, NULL, NULL, NULL, to_halt}};			 // from halt
 
@@ -322,8 +330,8 @@ int main(void) {
 	/* MCU
 	 * Configuration--------------------------------------------------------*/
 
-	/* Reset of all peripherals, Initializes the Flash interface and
-	 * the Systick. */
+	/* Reset of all peripherals, Initializes the Flash interface and the
+	 * Systick. */
 	HAL_Init();
 
 	/* USER CODE BEGIN Init */
@@ -638,11 +646,8 @@ static void MX_GPIO_Init(void) {
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(CS_6820_GPIO_Port, CS_6820_Pin, GPIO_PIN_SET);
 
-	/*Configure GPIO pins : PreChargeEnd_Pin CS_6820_Pin TS_ON_Pin
-	 * BMS_FAULT_Pin
-	 */
-	GPIO_InitStruct.Pin =
-		PreChargeEnd_Pin | CS_6820_Pin | TS_ON_Pin | BMS_FAULT_Pin;
+	/*Configure GPIO pins : PreChargeEnd_Pin TS_ON_Pin BMS_FAULT_Pin */
+	GPIO_InitStruct.Pin = PreChargeEnd_Pin | TS_ON_Pin | BMS_FAULT_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -653,6 +658,13 @@ static void MX_GPIO_Init(void) {
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
 	GPIO_InitStruct.Pull = GPIO_PULLUP;
 	HAL_GPIO_Init(ShutDownStatus_GPIO_Port, &GPIO_InitStruct);
+
+	/*Configure GPIO pin : CS_6820_Pin */
+	GPIO_InitStruct.Pin = CS_6820_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(CS_6820_GPIO_Port, &GPIO_InitStruct);
 }
 
 /* USER CODE BEGIN 4 */
@@ -689,5 +701,4 @@ void assert_failed(char *file, uint32_t line) {
 }
 #endif /* USE_FULL_ASSERT */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF
- * FILE****/
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -12,6 +12,8 @@
 
 #define CHARGING 0
 
+#define BOARD_REV volpe
+
 enum {
 	LTC6804_COUNT = 12,		/*!< Number of daisy chained LTCs */
 	LTC6804_CELL_COUNT = 9, /*!< Number of cells a single IC controls. Refer to
@@ -21,7 +23,7 @@ enum {
 								   Refer to cell distribution */
 
 	PACK_MODULE_COUNT =
-		LTC6804_COUNT * LTC6804_CELL_COUNT,  // Total number of cells in series
+		LTC6804_COUNT * LTC6804_CELL_COUNT,	 // Total number of cells in series
 
 	PACK_MAX_CURRENT = 200,
 
@@ -41,7 +43,7 @@ static const bool
 		1, 1, 1,  // GROUP A
 		1, 1, 0,  // GROUP B
 		1, 1, 1,  // GROUP C
-		1, 0, 0   // GROUP D
+		1, 0, 0	  // GROUP D
 };
 
 #endif /* CHIMERA_CONFIG_H_ */
