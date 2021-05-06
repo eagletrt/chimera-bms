@@ -152,7 +152,6 @@ void _ltc6804_adcv(SPI_HandleTypeDef *spi, bool dcp)
 	_wakeup_idle(spi, false);
 	ltc6804_enable_cs(spi, CS_6820_GPIO_Port, CS_6820_Pin);
 	HAL_SPI_Transmit(spi, cmd, 4, 100);
-	HAL_Delay(1);
 	ltc6804_disable_cs(spi, CS_6820_GPIO_Port, CS_6820_Pin);
 }
 
@@ -423,7 +422,7 @@ End:;
 void _wakeup_idle(SPI_HandleTypeDef *hspi, bool apply_delay)
 {
 	uint8_t data = 0xFF;
-	ltc6804_disable_cs(hspi, CS_6820_GPIO_Port, CS_6820_Pin);
+	ltc6804_enable_cs(hspi, CS_6820_GPIO_Port, CS_6820_Pin);
 
 	HAL_SPI_Transmit(hspi, &data, 1, 1);
 
