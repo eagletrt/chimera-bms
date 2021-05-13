@@ -205,45 +205,45 @@ PRE-CHARGE CIRCUIT
 $Comp
 L Connector_Generic:Conn_01x02 J6
 U 1 1 5B0DE10C
-P 2550 6700
-F 0 "J6" H 2550 6800 50  0000 C CNN
-F 1 "AIR+" V 2650 6650 50  0000 C CNN
-F 2 "Connector_Molex:Molex_Micro-Fit_3.0_43650-0215_1x02_P3.00mm_Vertical" H 2550 6700 50  0001 C CNN
-F 3 "http://www.gigavac.com/sites/default/files/catalog/spec_sheet/gx14.pdf" H 2550 6700 50  0001 C CNN
-	1    2550 6700
+P 3000 6700
+F 0 "J6" H 3000 6800 50  0000 C CNN
+F 1 "AIR+" V 3100 6650 50  0000 C CNN
+F 2 "Connector_Molex:Molex_Micro-Fit_3.0_43650-0215_1x02_P3.00mm_Vertical" H 3000 6700 50  0001 C CNN
+F 3 "http://www.gigavac.com/sites/default/files/catalog/spec_sheet/gx14.pdf" H 3000 6700 50  0001 C CNN
+	1    3000 6700
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:R R33
 U 1 1 5B0DE119
-P 1450 7400
-F 0 "R33" V 1350 7400 50  0000 C CNN
-F 1 "10k" V 1450 7400 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric" V 1380 7400 50  0001 C CNN
-F 3 "~" H 1450 7400 50  0001 C CNN
-	1    1450 7400
+P 1900 7400
+F 0 "R33" V 1800 7400 50  0000 C CNN
+F 1 "10k" V 1900 7400 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 1830 7400 50  0001 C CNN
+F 3 "~" H 1900 7400 50  0001 C CNN
+	1    1900 7400
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR094
 U 1 1 5B0DE121
-P 1450 7550
-F 0 "#PWR094" H 1450 7300 50  0001 C CNN
-F 1 "GND" H 1450 7400 50  0000 C CNN
-F 2 "" H 1450 7550 50  0001 C CNN
-F 3 "" H 1450 7550 50  0001 C CNN
-	1    1450 7550
+P 1900 7550
+F 0 "#PWR094" H 1900 7300 50  0001 C CNN
+F 1 "GND" H 1900 7400 50  0000 C CNN
+F 2 "" H 1900 7550 50  0001 C CNN
+F 3 "" H 1900 7550 50  0001 C CNN
+	1    1900 7550
 	1    0    0    -1  
 $EndComp
 $Comp
 L Device:R R31
 U 1 1 5B0DE127
-P 1200 7250
-F 0 "R31" V 1100 7250 50  0000 C CNN
-F 1 "22" V 1200 7250 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric" V 1130 7250 50  0001 C CNN
-F 3 "~" H 1200 7250 50  0001 C CNN
-	1    1200 7250
+P 1650 7250
+F 0 "R31" V 1550 7250 50  0000 C CNN
+F 1 "22" V 1650 7250 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric" V 1580 7250 50  0001 C CNN
+F 3 "~" H 1650 7250 50  0001 C CNN
+	1    1650 7250
 	0    1    1    0   
 $EndComp
 Text Notes 1650 6250 0    50   ~ 0
@@ -301,34 +301,34 @@ $EndComp
 $Comp
 L Device:D_Zener DZ4
 U 1 1 5B0DE15E
-P 2650 7150
-F 0 "DZ4" H 2650 7050 50  0000 C CNN
-F 1 "MMBZ4624 4V7" H 2650 7250 50  0000 C CNN
-F 2 "Diode_SMD:D_SOT-23_ANK" H 2650 7150 50  0001 C CNN
-F 3 "http://www.vishay.com/docs/85770/mmbz4617.pdf" H 2650 7150 50  0001 C CNN
-	1    2650 7150
+P 3100 7150
+F 0 "DZ4" H 3100 7050 50  0000 C CNN
+F 1 "MMBZ4624 4V7" H 3100 7250 50  0000 C CNN
+F 2 "Diode_SMD:D_SOT-23_ANK" H 3100 7150 50  0001 C CNN
+F 3 "http://www.vishay.com/docs/85770/mmbz4617.pdf" H 3100 7150 50  0001 C CNN
+	1    3100 7150
 	1    0    0    -1  
 $EndComp
 $Comp
 L Connector_Generic:Conn_01x02 J5
 U 1 1 5B0DE167
-P 1500 6700
-F 0 "J5" H 1500 6800 50  0000 C CNN
-F 1 "AIR-" V 1600 6650 50  0000 C CNN
-F 2 "Connector_Molex:Molex_Micro-Fit_3.0_43650-0215_1x02_P3.00mm_Vertical" H 1500 6700 50  0001 C CNN
-F 3 "http://www.gigavac.com/sites/default/files/catalog/spec_sheet/gx14.pdf" H 1500 6700 50  0001 C CNN
-	1    1500 6700
+P 1950 6700
+F 0 "J5" H 1950 6800 50  0000 C CNN
+F 1 "AIR-" V 2050 6650 50  0000 C CNN
+F 2 "Connector_Molex:Molex_Micro-Fit_3.0_43650-0215_1x02_P3.00mm_Vertical" H 1950 6700 50  0001 C CNN
+F 3 "http://www.gigavac.com/sites/default/files/catalog/spec_sheet/gx14.pdf" H 1950 6700 50  0001 C CNN
+	1    1950 6700
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR091
 U 1 1 5B0DE170
-P 1200 6800
-F 0 "#PWR091" H 1200 6550 50  0001 C CNN
-F 1 "GND" V 1200 6650 50  0000 R CNN
-F 2 "" H 1200 6800 50  0001 C CNN
-F 3 "" H 1200 6800 50  0001 C CNN
-	1    1200 6800
+P 1650 6800
+F 0 "#PWR091" H 1650 6550 50  0001 C CNN
+F 1 "GND" V 1650 6650 50  0000 R CNN
+F 2 "" H 1650 6800 50  0001 C CNN
+F 3 "" H 1650 6800 50  0001 C CNN
+	1    1650 6800
 	0    1    1    0   
 $EndComp
 Wire Notes Line
@@ -366,7 +366,7 @@ Wire Wire Line
 	5400 6800 5400 6750
 Wire Wire Line
 	5400 6750 5500 6750
-Text HLabel 1050 7250 0    50   Input ~ 0
+Text HLabel 900  7150 0    50   Input ~ 0
 PC_Ended
 Wire Wire Line
 	4050 6850 4050 6900
@@ -378,14 +378,14 @@ Wire Wire Line
 Text GLabel 4150 6900 2    50   Input ~ 0
 INV_Enable
 Wire Wire Line
-	2350 6700 2250 6700
-Text GLabel 2250 6700 0    50   Input ~ 0
+	2800 6700 2700 6700
+Text GLabel 2700 6700 0    50   Input ~ 0
 From_TSMS
 Wire Wire Line
-	1200 6800 1300 6800
+	1650 6800 1750 6800
 Wire Wire Line
-	1300 6700 1200 6700
-Text GLabel 1200 6700 0    50   Input ~ 0
+	1750 6700 1650 6700
+Text GLabel 1650 6700 0    50   Input ~ 0
 From_TSMS
 Wire Wire Line
 	5300 6750 5400 6750
@@ -524,30 +524,30 @@ Wire Wire Line
 $Comp
 L Device:Q_NMOS_GSD Q17
 U 1 1 6041C6DC
-P 1750 7250
-F 0 "Q17" H 1954 7296 50  0000 L CNN
-F 1 "DMN10H220L-7 " H 1954 7205 50  0000 L CNN
-F 2 "Package_TO_SOT_SMD:SOT-23" H 1950 7350 50  0001 C CNN
-F 3 "https://www.mouser.it/datasheet/2/196/irlml0100pbf-1228126.pdf" H 1750 7250 50  0001 C CNN
-	1    1750 7250
+P 2200 7250
+F 0 "Q17" H 2404 7296 50  0000 L CNN
+F 1 "DMN10H220L-7 " H 2404 7205 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-23" H 2400 7350 50  0001 C CNN
+F 3 "https://www.mouser.it/datasheet/2/196/irlml0100pbf-1228126.pdf" H 2200 7250 50  0001 C CNN
+	1    2200 7250
 	1    0    0    -1  
 $EndComp
 $Comp
 L power:GND #PWR0142
 U 1 1 604431DD
-P 1850 7450
-F 0 "#PWR0142" H 1850 7200 50  0001 C CNN
-F 1 "GND" H 1850 7300 50  0000 C CNN
-F 2 "" H 1850 7450 50  0001 C CNN
-F 3 "" H 1850 7450 50  0001 C CNN
-	1    1850 7450
+P 2300 7450
+F 0 "#PWR0142" H 2300 7200 50  0001 C CNN
+F 1 "GND" H 2300 7300 50  0000 C CNN
+F 2 "" H 2300 7450 50  0001 C CNN
+F 3 "" H 2300 7450 50  0001 C CNN
+	1    2300 7450
 	1    0    0    -1  
 $EndComp
-Connection ~ 1450 7250
+Connection ~ 1900 7250
 Wire Wire Line
-	1450 7250 1550 7250
+	1900 7250 2000 7250
 Wire Wire Line
-	1350 7250 1450 7250
+	1800 7250 1900 7250
 Wire Wire Line
 	4400 3850 4050 3850
 Wire Wire Line
@@ -693,12 +693,12 @@ $EndComp
 $Comp
 L Comparator:LM339 U13
 U 4 1 604EB5FB
-P 5400 1250
-F 0 "U13" H 5400 1617 50  0000 C CNN
-F 1 "TS3704IPT" H 5400 1526 50  0000 C CNN
-F 2 "Package_SO:TSSOP-14_4.4x5mm_P0.65mm" H 5350 1350 50  0001 C CNN
-F 3 "https://www.st.com/resource/en/datasheet/lm139.pdf" H 5450 1450 50  0001 C CNN
-	4    5400 1250
+P 1200 7250
+F 0 "U13" H 1200 7617 50  0000 C CNN
+F 1 "TS3704IPT" H 1200 7526 50  0000 C CNN
+F 2 "Package_SO:TSSOP-14_4.4x5mm_P0.65mm" H 1150 7350 50  0001 C CNN
+F 3 "https://www.st.com/resource/en/datasheet/lm139.pdf" H 1250 7450 50  0001 C CNN
+	4    1200 7250
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -852,10 +852,10 @@ Text Label 3750 1350 0    50   ~ 0
 1V5_REF
 Wire Wire Line
 	3750 1350 4100 1350
-Text Label 4750 1350 0    50   ~ 0
+Text Label 550  7350 0    50   ~ 0
 1V5_REF
 Wire Wire Line
-	4750 1350 5100 1350
+	550  7350 900  7350
 Wire Wire Line
 	3800 3750 4400 3750
 Wire Wire Line
@@ -1180,18 +1180,18 @@ Wire Notes Line
 Wire Notes Line
 	600  6250 4650 6250
 Wire Wire Line
-	1850 7050 1850 6800
+	2300 7050 2300 6800
 Wire Wire Line
-	1850 6800 2250 6800
+	2300 6800 2700 6800
 Wire Wire Line
-	2500 7150 2250 7150
+	2950 7150 2700 7150
 Wire Wire Line
-	2250 7150 2250 6800
-Connection ~ 2250 6800
+	2700 7150 2700 6800
+Connection ~ 2700 6800
 Wire Wire Line
-	2250 6800 2350 6800
+	2700 6800 2800 6800
 Wire Wire Line
-	2800 7150 3350 7150
+	3250 7150 3350 7150
 $Comp
 L Comparator:LM339 U13
 U 1 1 604E735B
@@ -1256,4 +1256,6 @@ $EndComp
 Wire Wire Line
 	700  1550 700  1650
 Connection ~ 700  1650
+Text Notes 5250 7050 1    50   ~ 0
+DNP
 $EndSCHEMATC
