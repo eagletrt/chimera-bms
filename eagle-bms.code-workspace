@@ -12,9 +12,27 @@
 			"${workspaceRoot}/Drivers/CMSIS/Include"
 		],
 		"stm32-for-vscode.openocdPath": "openocd",
-		"cortex-debug.openocdPath": "openocd",
+		"cortex-debug.openocdPath": "/usr/bin/openocd",
 		"stm32-for-vscode.makePath": "make",
-		"stm32-for-vscode.armToolchainPath": "",
-		"cortex-debug.armToolchainPath": ""
+		"stm32-for-vscode.armToolchainPath": "/usr/bin",
+		"cortex-debug.armToolchainPath": "/usr/bin"
+	},
+	"launch": {
+		"configurations": [
+			{
+				"showDevDebugOutput": true,
+				"cwd": "${workspaceRoot}",
+				"executable": "./build/EAGLESTM32334BMS.elf",
+				"name": "Debug STM32",
+				"request": "launch",
+				"type": "cortex-debug",
+				"servertype": "openocd",
+				"preLaunchTask": "Build STM",
+				"device": "stlink",
+				"configFiles": [
+					"openocd.cfg"
+				]
+			}
+		]
 	}
 }
