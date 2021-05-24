@@ -58,10 +58,10 @@ void read_temps();
 #define CurrentSensor_GPIO_Port GPIOA
 #define PreChargeEnd_Pin GPIO_PIN_1
 #define PreChargeEnd_GPIO_Port GPIOA
-#define CS_6820_Pin GPIO_PIN_3
-#define CS_6820_GPIO_Port GPIOA
 #define ShutDownStatus_Pin GPIO_PIN_6
 #define ShutDownStatus_GPIO_Port GPIOA
+#define CS_6820_Pin GPIO_PIN_1
+#define CS_6820_GPIO_Port GPIOB
 #define TS_ON_Pin GPIO_PIN_9
 #define TS_ON_GPIO_Port GPIOA
 #define BMS_FAULT_Pin GPIO_PIN_10

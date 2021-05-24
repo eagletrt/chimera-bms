@@ -13,7 +13,7 @@
 ######################################
 # target
 ######################################
-TARGET = EAGLESTM32334BMS
+TARGET = 
 
 
 ######################################
@@ -36,45 +36,6 @@ BUILD_DIR = build
 ######################################
 # C sources
 C_SOURCES =  \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_adc.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_adc_ex.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_can.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_cortex.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_dma.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_exti.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_flash.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_flash_ex.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_gpio.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_i2c.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_i2c_ex.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_pwr.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_pwr_ex.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_rcc.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_rcc_ex.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_spi.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_spi_ex.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_tim.c \
-Drivers/STM32F3xx_HAL_Driver/Src/stm32f3xx_hal_tim_ex.c \
-Src/adc.c \
-Src/bms.c \
-Src/can.c \
-Src/can_comm.c \
-Src/chg.c \
-Src/dma.c \
-Src/error.c \
-Src/fsm_bms.c \
-Src/gpio.c \
-Src/ltc6804.c \
-Src/main.c \
-Src/pack.c \
-Src/spi.c \
-Src/stm32f3xx_hal_msp.c \
-Src/stm32f3xx_it.c \
-Src/system_stm32f3xx.c \
-Src/tim.c \
-lib/fsm/fsm.c \
-lib/pid/PID.c
 
 
 CPP_SOURCES = \
@@ -82,7 +43,6 @@ CPP_SOURCES = \
 
 # ASM sources
 ASM_SOURCES =  \
-startup_stm32f334x8.s
 
 
 
@@ -114,13 +74,13 @@ BIN = $(CP) -O binary -S
 # CFLAGS
 #######################################
 # cpu
-CPU = -mcpu=cortex-m4
+CPU = 
 
 # fpu
-FPU = -mfpu=fpv4-sp-d16
+FPU = 
 
 # float-abi
-FLOAT-ABI = -mfloat-abi=hard
+FLOAT-ABI = 
 
 # mcu
 MCU = $(CPU) -mthumb $(FPU) $(FLOAT-ABI)
@@ -131,8 +91,6 @@ AS_DEFS =
 
 # C defines
 C_DEFS =  \
--DSTM32F334x8 \
--DUSE_HAL_DRIVER
 
 
 # AS includes
@@ -140,13 +98,6 @@ AS_INCLUDES = \
 
 # C includes
 C_INCLUDES =  \
--IDrivers/CMSIS/Device/ST/STM32F3xx/Include \
--IDrivers/CMSIS/Include \
--IDrivers/STM32F3xx_HAL_Driver/Inc \
--IDrivers/STM32F3xx_HAL_Driver/Inc/Legacy \
--IInc \
--Ilib/fsm \
--Ilib/pid
 
 
 
@@ -170,10 +121,10 @@ CXXFLAGS += -feliminate-unused-debug-types
 # LDFLAGS
 #######################################
 # link script
-LDSCRIPT = STM32F334K8Tx_FLASH.ld
+LDSCRIPT = 
 
 # libraries
-LIBS = -lc -lm -lnosys 
+LIBS = 
 LIBDIR = \
 
 
@@ -225,13 +176,13 @@ $(BUILD_DIR):
 # flash
 #######################################
 flash: $(BUILD_DIR)/$(TARGET).elf
-	"openocd" -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
+	"/usr/bin/openocd" -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
 
 #######################################
 # erase
 #######################################
 erase: $(BUILD_DIR)/$(TARGET).elf
-	"openocd" -f ./openocd.cfg -c "init; reset halt; stm32f3x mass_erase 0; exit"
+	"/usr/bin/openocd" -f ./openocd.cfg -c "init; reset halt;  mass_erase 0; exit"
 
 #######################################
 # clean up
