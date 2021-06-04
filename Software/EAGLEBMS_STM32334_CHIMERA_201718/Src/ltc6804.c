@@ -20,17 +20,14 @@ void _wakeup_idle(SPI_HandleTypeDef *hspi, bool apply_delay);
 
 void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start, bool parity);
 
-void ltc6804_enable_cs(SPI_HandleTypeDef *spi, GPIO_TypeDef *gpio,
-					   uint16_t pin) {
+void ltc6804_enable_cs(SPI_HandleTypeDef *spi, GPIO_TypeDef *gpio, uint16_t pin) {
 	HAL_GPIO_WritePin(gpio, pin, GPIO_PIN_RESET);
+	// HAL_Delay(1);
 	while (spi->State != HAL_SPI_STATE_READY)
 		;
-	HAL_Delay(1);
 }
 
-void ltc6804_disable_cs(SPI_HandleTypeDef *spi, GPIO_TypeDef *gpio,
-						uint16_t pin) {
-	HAL_Delay(1);
+void ltc6804_disable_cs(SPI_HandleTypeDef *spi, GPIO_TypeDef *gpio, uint16_t pin) {
 	while (spi->State != HAL_SPI_STATE_READY)
 		;
 	HAL_GPIO_WritePin(gpio, pin, GPIO_PIN_SET);
@@ -52,8 +49,7 @@ void ltc6804_disable_cs(SPI_HandleTypeDef *spi, GPIO_TypeDef *gpio,
  * @param		volts	The array of voltages
  * @param		error	The error return value
  */
-uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
-							  ER_UINT16_T *volts, WARNING_T *warning,
+uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc, ER_UINT16_T *volts, WARNING_T *warning,
 							  ERROR_T *error) {
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
@@ -73,11 +69,9 @@ uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 		_wakeup_idle(spi, false);
 
 		ltc6804_enable_cs(spi, CS_6820_GPIO_Port, CS_6820_Pin);
-
 		HAL_SPI_Transmit(spi, cmd, 4, 100);
-		HAL_Delay(1);
+		// HAL_Delay(1);
 		HAL_SPI_Receive(spi, data, 8, 100);
-
 		ltc6804_disable_cs(spi, CS_6820_GPIO_Port, CS_6820_Pin);
 
 #if LTC6804_EMU > 0
@@ -102,8 +96,7 @@ uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc,
 			uint8_t cell = 0;  // Counts the cell inside the register
 			for (cell = 0; cell < LTC6804_REG_CELL_COUNT; cell++) {
 				// If cell is present
-				if (ltc->cell_distribution[reg * LTC6804_REG_CELL_COUNT +
-										   cell]) {
+				if (ltc->cell_distribution[reg * LTC6804_REG_CELL_COUNT + cell]) {
 					volts[count].value = _convert_voltage(&data[2 * cell]);
 
 					ltc6804_check_voltage(&volts[count], warning, error);
@@ -231,8 +224,7 @@ void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start_bal, bool even) {
 	_ltc6804_adcv(hspi, start_bal);
 }
 
-void ltc6804_configure_temperature(SPI_HandleTypeDef *hspi, bool enable,
-								   bool even) {
+void ltc6804_configure_temperature(SPI_HandleTypeDef *hspi, bool enable, bool even) {
 	_ltc6804_wrcfg(hspi, enable, even);	 // switch between even and odd
 	_ltc6804_adcv(hspi, enable);
 }
@@ -252,8 +244,7 @@ void ltc6804_configure_temperature(SPI_HandleTypeDef *hspi, bool enable,
  * @param		temps		The array of temperatures
  * @param		error		The error return value
  */
-uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
-								  bool even, ER_UINT16_T *temps,
+uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, bool even, ER_UINT16_T *temps,
 								  ERROR_T *error) {
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
@@ -273,9 +264,11 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
 
 		ltc6804_enable_cs(hspi, CS_6820_GPIO_Port, CS_6820_Pin);
 
+		HAL_Delay(1);
 		HAL_SPI_Transmit(hspi, cmd, 4, 100);
 		HAL_SPI_Receive(hspi, data, 8, 100);
 
+		HAL_Delay(1);
 		ltc6804_disable_cs(hspi, CS_6820_GPIO_Port, CS_6820_Pin);
 
 #if LTC6804_EMU > 0
@@ -306,8 +299,7 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc,
 					bool is_even = count % 2 == 0;
 					// If the cell we're reading respects the even condition
 					if (is_even == even) {
-						uint16_t temp =
-							_convert_temp(_convert_voltage(&data[2 * cell]));
+						uint16_t temp = _convert_temp(_convert_voltage(&data[2 * cell]));
 
 						if (temp > 0) {
 							temps[count].value = temp;
@@ -338,8 +330,7 @@ End:;
  * @param		volts		The voltage
  * @param		error		The error return code
  */
-void ltc6804_check_voltage(ER_UINT16_T *volts, WARNING_T *warning,
-						   ERROR_T *error) {
+void ltc6804_check_voltage(ER_UINT16_T *volts, WARNING_T *warning, ERROR_T *error) {
 	if (volts->value < CELL_WARN_VOLTAGE) {
 		*warning = WARN_CELL_LOW_VOLTAGE;
 	}
@@ -421,9 +412,7 @@ uint16_t _pec15(uint8_t len, uint8_t data[]) {
  *
  * @retval	Voltage [mV]
  */
-uint16_t _convert_voltage(uint8_t v_data[]) {
-	return v_data[0] + (v_data[1] << 8);
-}
+uint16_t _convert_voltage(uint8_t v_data[]) { return v_data[0] + (v_data[1] << 8); }
 
 /**
  * @brief		This function converts a voltage data from the zener sensor
@@ -436,7 +425,6 @@ uint16_t _convert_voltage(uint8_t v_data[]) {
 uint16_t _convert_temp(uint16_t volt) {
 	float voltf = volt * 0.0001;
 	float temp;
-	temp = -225.7 * voltf * voltf * voltf + 1310.6 * voltf * voltf -
-		   2594.8 * voltf + 1767.8;
+	temp = -225.7 * voltf * voltf * voltf + 1310.6 * voltf * voltf - 2594.8 * voltf + 1767.8;
 	return (uint16_t)(temp * 100);
 }

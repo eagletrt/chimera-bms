@@ -7,6 +7,7 @@
  */
 
 #include "can.h"
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,40 +24,30 @@ CAN_FilterConfTypeDef CAN_FILTER_PRECHARGE;
 
 void can_init(CAN_HandleTypeDef *canh) {
 	// CAN Filter Initialization
-	CAN_FILTER_NORMAL =
-		(CAN_FilterConfTypeDef){.FilterNumber = 0,
-								.FilterMode = CAN_FILTERMODE_IDLIST,
-								.FilterIdLow = 0x55 << 5,
-								.FilterIdHigh = 0xA8 << 5,
-								.FilterMaskIdHigh = 0x55 << 5,
-								.FilterMaskIdLow = 0x55 << 5,
-								.FilterFIFOAssignment = CAN_FILTER_FIFO0,
-								.FilterScale = CAN_FILTERSCALE_16BIT,
-								.FilterActivation = ENABLE};
+	CAN_FILTER_NORMAL = (CAN_FilterConfTypeDef){.FilterNumber = 0,
+												.FilterMode = CAN_FILTERMODE_IDLIST,
+												.FilterIdLow = 0x55 << 5,
+												.FilterIdHigh = 0xA8 << 5,
+												.FilterMaskIdHigh = 0x55 << 5,
+												.FilterMaskIdLow = 0x55 << 5,
+												.FilterFIFOAssignment = CAN_FILTER_FIFO0,
+												.FilterScale = CAN_FILTERSCALE_16BIT,
+												.FilterActivation = ENABLE};
 
-	CAN_FILTER_PRECHARGE =
-		(CAN_FilterConfTypeDef){.FilterNumber = 0,
-								.FilterMode = CAN_FILTERMODE_IDLIST,
-								.FilterIdLow = 0x181 << 5,
-								.FilterIdHigh = 0x181 << 5,
-								.FilterMaskIdHigh = 0x181 << 5,
-								.FilterMaskIdLow = 0x181 << 5,
-								.FilterFIFOAssignment = CAN_FILTER_FIFO0,
-								.FilterScale = CAN_FILTERSCALE_16BIT,
-								.FilterActivation = ENABLE};
+	CAN_FILTER_PRECHARGE = (CAN_FilterConfTypeDef){.FilterNumber = 0,
+												   .FilterMode = CAN_FILTERMODE_IDLIST,
+												   .FilterIdLow = 0x181 << 5,
+												   .FilterIdHigh = 0x181 << 5,
+												   .FilterMaskIdHigh = 0x181 << 5,
+												   .FilterMaskIdLow = 0x181 << 5,
+												   .FilterFIFOAssignment = CAN_FILTER_FIFO0,
+												   .FilterScale = CAN_FILTERSCALE_16BIT,
+												   .FilterActivation = ENABLE};
 
 	HAL_CAN_ConfigFilter(canh, &CAN_FILTER_NORMAL);
 }
 
-uint8_t can_receive(CAN_HandleTypeDef *canh, CanRxMsgTypeDef *rx) {
-	(*canh).pRxMsg = rx;
-	// return HAL_CAN_Receive(canh, CAN_FIFO0, 1) == HAL_OK;
-	return HAL_CAN_Receive_IT(canh, CAN_FIFO0) == HAL_OK;
-}
-
-bool can_check_error(CAN_HandleTypeDef *canh) {
-	return HAL_CAN_GetState(canh) == HAL_CAN_ERROR_BOF;
-}
+bool can_check_error(CAN_HandleTypeDef *canh) { return HAL_CAN_GetState(canh) == HAL_CAN_ERROR_BOF; }
 
 /**
  * @brief		This function is used to transmit a CAN message
@@ -64,10 +55,8 @@ bool can_check_error(CAN_HandleTypeDef *canh) {
  * @param		canh	The CAN configuration structure
  * @param		data	The data to send
  */
-void can_send(CAN_HandleTypeDef *canh, uint16_t id, uint8_t data[],
-			  size_t size) {
-	CanTxMsgTypeDef tx = {
-		.IDE = CAN_ID_STD, .StdId = id, .DLC = size, .RTR = CAN_RTR_DATA};
+void can_send(CAN_HandleTypeDef *canh, uint16_t id, uint8_t data[], size_t size) {
+	CanTxMsgTypeDef tx = {.IDE = CAN_ID_STD, .StdId = id, .DLC = size, .RTR = CAN_RTR_DATA};
 
 	uint8_t i;
 	for (i = 0; i < tx.DLC; i++) {
@@ -86,11 +75,9 @@ void can_send(CAN_HandleTypeDef *canh, uint16_t id, uint8_t data[],
  * @param		current	The current value
  * @param		voltage	The voltage value
  */
-void can_send_current(CAN_HandleTypeDef *canh, int16_t current,
-					  uint32_t voltage) {
+void can_send_current(CAN_HandleTypeDef *canh, int16_t current, uint32_t voltage) {
 	// Calculate output power (in kW * 10)
-	uint16_t power =
-		abs(round(((float)voltage / 1000) * ((float)current / 10) / 10000));
+	uint16_t power = abs(round(((float)voltage / 1000) * ((float)current / 10) / 10000));
 	uint8_t i = 1;
 
 	size_t size = 1 + sizeof(current) + sizeof(power);
@@ -157,8 +144,7 @@ void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack) {
  * @param		index		The index of the component that generated the
  * 									warning
  */
-void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning,
-					  uint8_t index) {
+void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning, uint8_t index) {
 	static uint32_t timer = 0;
 
 	size_t size = 3;
@@ -168,8 +154,7 @@ void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning,
 	data[1] = warning;
 	data[2] = index;
 
-	if (warning != WARN_CELL_LOW_VOLTAGE ||
-		(warning == WARN_CELL_LOW_VOLTAGE && HAL_GetTick() - timer >= 1000)) {
+	if (warning != WARN_CELL_LOW_VOLTAGE || (warning == WARN_CELL_LOW_VOLTAGE && HAL_GetTick() - timer >= 1000)) {
 		timer = HAL_GetTick();
 		can_send(canh, CAN_ID_BMS, data, size);
 	}
@@ -183,8 +168,7 @@ void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning,
  * @param		index	The index of the component that generated the error
  * @param		pack	The pack structure with data to send
  */
-void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
-					PACK_T *pack) {
+void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index, PACK_T *pack) {
 	size_t size = 6;
 	uint8_t data[size];
 	memset(data, 0, size);

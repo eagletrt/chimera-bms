@@ -24,8 +24,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TEMPS_READ_INTERVAL 200
-#define VOLTS_READ_INTERVAL 40
+#define TEMPS_READ_INTERVAL 100
+#define VOLTS_READ_INTERVAL 20
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -44,16 +44,16 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN PV */
-state_func_t *const state_table[BMS_NUM_STATES] = {
-	do_state_init, do_state_idle, do_state_precharge,
-	do_state_on, do_state_charge, do_state_halt};
+state_func_t *const state_table[BMS_NUM_STATES] = {do_state_init, do_state_idle,   do_state_precharge,
+												   do_state_on,	  do_state_charge, do_state_halt};
 
 transition_func_t *const transition_table[BMS_NUM_STATES][BMS_NUM_STATES] = {
-	{NULL, to_idle, to_precharge, NULL, NULL, to_halt}, // from init
-	{NULL, NULL, to_precharge, NULL, NULL, to_halt},	// from idle
-	{NULL, to_idle, NULL, to_on, to_charge, to_halt},	// from precharge
-	{NULL, to_idle, NULL, NULL, NULL, to_halt},			// from on
-	{NULL, NULL, NULL, NULL, NULL, to_halt}};			// from halt
+	{NULL, to_idle, to_precharge, NULL, NULL, to_halt},	 // from init
+	{NULL, NULL, to_precharge, NULL, NULL, to_halt},	 // from idle
+	{NULL, to_idle, NULL, to_on, to_charge, to_halt},	 // from precharge
+	{NULL, to_idle, NULL, NULL, NULL, to_halt},			 // from on
+	{NULL, to_idle, NULL, NULL, NULL, to_halt},			 // from charge
+	{NULL, NULL, NULL, NULL, NULL, to_halt}};			 // from halt
 
 BMS_STATE_T state = BMS_INIT;
 state_global_data_t data;
@@ -84,8 +84,7 @@ static void MX_TIM6_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-BMS_STATE_T do_state_init(state_global_data_t *data)
-{
+BMS_STATE_T do_state_init(state_global_data_t *data) {
 	error_init(&data->can_error);
 
 	data->error = ERROR_OK;
@@ -105,7 +104,6 @@ BMS_STATE_T do_state_init(state_global_data_t *data)
 	bms_write_pin(&(data->bms.pin_chip_select), GPIO_PIN_SET);
 	bms_write_pin(&(data->bms.pin_precharge_end), GPIO_PIN_RESET);
 
-	can_init(&hcan);
 	pack_init(&hadc1, &(data->pack));
 
 #if CHARGING > 0
@@ -116,33 +114,20 @@ BMS_STATE_T do_state_init(state_global_data_t *data)
 	return BMS_IDLE;
 }
 
-void to_idle(state_global_data_t *data)
-{
+void to_idle(state_global_data_t *data) {
 	bms_set_ts_off(&data->bms);
 	HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
 	can_send(&hcan, CAN_ID_BMS, CAN_MSG_TS_OFF, 8);
 }
 
-BMS_STATE_T do_state_idle(state_global_data_t *data)
-{
-	if (data->can_rx.StdId == CAN_ID_ECU)
-	{
-		if (data->can_rx.Data[0] == CAN_IN_TS_ON)
-		{
-			// TS On
-			if (data->can_rx.Data[1] == 0x01)
-			{
-				// Charge command
-				data->bms.precharge_bypass = true;
-			}
-			return BMS_PRECHARGE;
-		}
+BMS_STATE_T do_state_idle(state_global_data_t *data) {
+	if (data->ts_on) {
+		return BMS_PRECHARGE;
 	}
 	return BMS_IDLE;
 }
 
-void to_precharge(state_global_data_t *data)
-{
+void to_precharge(state_global_data_t *data) {
 	// Precharge
 	bms_precharge_start(&data->bms);
 	timer_precharge = HAL_GetTick();
@@ -151,98 +136,75 @@ void to_precharge(state_global_data_t *data)
 	can_send(&hcan, CAN_ID_OUT_INVERTER_L, CAN_MSG_BUS_VOLTAGE, 8);
 }
 
-BMS_STATE_T do_state_precharge(state_global_data_t *data)
-{
-	// Check for incoming voltage
-	if (data->can_rx.StdId == CAN_ID_IN_INVERTER_L)
-	{
-		if (data->can_rx.Data[0] == CAN_IN_BUS_VOLTAGE)
-		{
-			uint16_t bus_voltage = 0;
-
-			bus_voltage = data->can_rx.Data[2] << 8;
-			bus_voltage += data->can_rx.Data[1];
-			bus_voltage /= 31.99;
-
-			if (bus_voltage >= data->pack.total_voltage / 10000 * 0.95)
-			{
-				bms_precharge_end(&data->bms);
-				return BMS_ON;
-			}
-		}
-	}
-
-	switch (bms_precharge_check(&(data)->bms))
-	{
-	case PRECHARGE_SUCCESS:
-		// Used when bypassing precharge
-
-		bms_precharge_end(&data->bms);
-		return BMS_CHARGE;
-		break;
-
-	case PRECHARGE_FAILURE:
-		// Precharge timed out
-
-		can_send_warning(&hcan, WARN_PRECHARGE_FAIL, 0);
-
+BMS_STATE_T do_state_precharge(state_global_data_t *data) {
+	if (data->ts_off) {
 		return BMS_IDLE;
-		break;
+	}
+	switch (bms_precharge_check(&(data)->bms)) {
+		case PRECHARGE_SUCCESS:
+			// Used when bypassing precharge
 
-	case PRECHARGE_WAITING:
-		// If precharge is still running, send the bus voltage request
+			return BMS_CHARGE;
+			break;
 
-		if (HAL_GetTick() - timer_precharge >= 20)
-		{
-			timer_precharge = HAL_GetTick();
+		case PRECHARGE_FAILURE:
+			// Precharge timed out
 
-			can_send(&hcan, CAN_ID_OUT_INVERTER_L, CAN_MSG_BUS_VOLTAGE, 8);
-		}
-		break;
+			can_send_warning(&hcan, WARN_PRECHARGE_FAIL, 0);
+
+			return BMS_IDLE;
+			break;
+
+		case PRECHARGE_WAITING:
+			// If precharge is still running, send the bus voltage request
+
+			if (HAL_GetTick() - timer_precharge >= 20) {
+				timer_precharge = HAL_GetTick();
+
+				// uint16_t bus_voltage = 0;
+				// si8900_read_channel(&huart1, SI8900_AIN0, &bus_voltage);
+
+				if (data->pack.bus_voltage >= data->pack.total_voltage / 10000.0 * .85) {
+					// bms_precharge_end(&data->bms);
+					return BMS_ON;
+				}
+
+				can_send(&hcan, CAN_ID_OUT_INVERTER_L, CAN_MSG_BUS_VOLTAGE, 8);
+			}
+			break;
 	}
 	return BMS_PRECHARGE;
 }
 
-void to_charge(state_global_data_t *data)
-{
-	// send ready to charge message (TBD)
-}
-
-BMS_STATE_T do_state_charge(state_global_data_t *data)
-{
-	if (data->can_rx.StdId == CAN_ID_ECU)
-	{
-		if (data->can_rx.Data[0] == CAN_IN_TS_OFF)
-		{
-			return BMS_IDLE;
-		}
-	}
-
-	return BMS_CHARGE;
-}
-
-void to_on(state_global_data_t *data)
-{
+void to_charge(state_global_data_t *data) {
 	bms_precharge_end(&data->bms);
 	HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
 	can_send(&hcan, CAN_ID_BMS, CAN_MSG_TS_ON, 8);
 }
 
-BMS_STATE_T do_state_on(state_global_data_t *data)
-{
-	if (data->can_rx.StdId == CAN_ID_ECU)
-	{
-		if (data->can_rx.Data[0] == CAN_IN_TS_OFF)
-		{
-			return BMS_IDLE;
-		}
+BMS_STATE_T do_state_charge(state_global_data_t *data) {
+	if (data->ts_off) {
+		return BMS_IDLE;
+	}
+
+	return BMS_CHARGE;
+}
+
+void to_on(state_global_data_t *data) {
+	bms_precharge_end(&data->bms);
+	HAL_CAN_ConfigFilter(&hcan, &CAN_FILTER_NORMAL);
+	can_send(&hcan, CAN_ID_BMS, CAN_MSG_TS_ON, 8);
+}
+
+BMS_STATE_T do_state_on(state_global_data_t *data) {
+	if (data->ts_off) {
+		return BMS_IDLE;
 	}
 
 	return BMS_ON;
 }
 
-void to_halt(state_global_data_t *data)
-{
+void to_halt(state_global_data_t *data) {
 	bms_set_ts_off(&data->bms);
 	bms_set_fault(&data->bms);
 
@@ -251,32 +213,27 @@ void to_halt(state_global_data_t *data)
 
 BMS_STATE_T do_state_halt(state_global_data_t *data) { return BMS_HALT; }
 
-BMS_STATE_T run_state(BMS_STATE_T state, state_global_data_t *data)
-{
+BMS_STATE_T run_state(BMS_STATE_T state, state_global_data_t *data) {
 	BMS_STATE_T new_state = state_table[state](data);
 
-	if (data->error != ERROR_OK)
-	{
+	if (data->error != ERROR_OK) {
 		new_state = BMS_HALT;
 	}
 
 	transition_func_t *transition = transition_table[state][new_state];
 
-	if (transition)
-	{
+	if (transition) {
 		transition(data);
 	}
 
 	return new_state;
 }
 
-void check_timers(state_global_data_t *data)
-{
+void check_timers(state_global_data_t *data) {
 	uint32_t tick = HAL_GetTick();
 
 	// Read and send temperatures
-	if (tick - timer_temps >= TEMPS_READ_INTERVAL)
-	{
+	if (tick - timer_temps >= TEMPS_READ_INTERVAL) {
 		timer_temps = tick;
 
 		read_temps(data);
@@ -287,8 +244,7 @@ void check_timers(state_global_data_t *data)
 	}
 
 	// Read and send voltages and current
-	if (tick - timer_volts >= VOLTS_READ_INTERVAL)
-	{
+	if (tick - timer_volts >= VOLTS_READ_INTERVAL) {
 		timer_volts = tick;
 
 		read_volts(data);
@@ -302,17 +258,14 @@ End:;
  * @brief Runs all the checks mandated by the rules
  * @details It runs voltage and current measurements
  */
-void read_volts(state_global_data_t *data)
-{
+void read_volts(state_global_data_t *data) {
 	// Voltages
 	WARNING_T warning = WARN_OK;
 
-	data->error_index =
-		pack_update_voltages(&hspi1, &data->pack, &warning, &data->error);
+	data->error_index = pack_update_voltages(&hspi1, &data->pack, &warning, &data->error);
 	ER_CHK(&data->error);
 
-	if (warning != WARN_OK)
-	{
+	if (warning != WARN_OK) {
 		can_send_warning(&hcan, warning, 0);
 	}
 
@@ -327,11 +280,9 @@ void read_volts(state_global_data_t *data)
 End:;
 }
 
-void read_temps(state_global_data_t *data)
-{
+void read_temps(state_global_data_t *data) {
 	// Temperatures
-	data->error_index =
-		pack_update_temperatures(&hspi1, &data->pack, &data->error);
+	data->error_index = pack_update_temperatures(&hspi1, &data->pack, &data->error);
 	ER_CHK(&data->error);
 
 	can_send_pack_temperature(&hcan, data->pack);
@@ -341,12 +292,43 @@ void read_temps(state_global_data_t *data)
 	uint8_t num_cells = pack_check_voltage_drops(&data->pack, volts);
 
 	uint8_t i;
-	for (i = 0; i < num_cells; i++)
-	{
+	for (i = 0; i < num_cells; i++) {
 		can_send_warning(&hcan, WARN_CELL_DROPPING, volts[i]);
 	}
 
 End:;
+}
+
+void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef *hcan) {
+	uint32_t id = hcan->pRxMsg->StdId;
+
+	if (id == CAN_ID_IN_INVERTER_L) {
+		if (hcan->pRxMsg->Data[0] == CAN_IN_BUS_VOLTAGE) {
+			data.pack.bus_voltage = hcan->pRxMsg->Data[2] << 8;
+			data.pack.bus_voltage += hcan->pRxMsg->Data[1];
+			data.pack.bus_voltage /= 31.99;
+		}
+	} else if (id == CAN_ID_ECU) {
+		if (hcan->pRxMsg->Data[0] == CAN_IN_TS_ON) {
+			data.ts_on = true;
+
+			if (hcan->pRxMsg->Data[1] == 0x01) {
+				// Charge command
+				data.bms.precharge_bypass = true;
+			} else {
+				data.bms.precharge_bypass = false;
+			}
+		} else if (hcan->pRxMsg->Data[0] == CAN_IN_TS_OFF) {
+			data.ts_off = true;
+		}
+	}
+
+	HAL_StatusTypeDef status = HAL_CAN_Receive_IT(hcan, CAN_FIFO0);
+	if (status != HAL_OK) {
+		// CAN ERRORS? DON'T WASTE BESTEMMIE, HAVE A LOOK HERE:
+		// https://community.st.com/s/question/0D50X00009XkdpC/stm32f0-can-bus-busy-error
+		Error_Handler();
+	}
 }
 /* USER CODE END 0 */
 
@@ -354,17 +336,14 @@ End:;
  * @brief  The application entry point.
  * @retval int
  */
-int main(void)
-{
+int main(void) {
 	/* USER CODE BEGIN 1 */
 
 	/* USER CODE END 1 */
 
-	/* MCU
-	 * Configuration--------------------------------------------------------*/
+	/* MCU Configuration--------------------------------------------------------*/
 
-	/* Reset of all peripherals, Initializes the Flash interface and the
-	 * Systick. */
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
 	HAL_Init();
 
 	/* USER CODE BEGIN Init */
@@ -385,34 +364,34 @@ int main(void)
 	MX_ADC1_Init();
 	MX_CAN_Init();
 	MX_TIM6_Init();
+	MX_USART1_UART_Init();
 	/* USER CODE BEGIN 2 */
 
+	if (HAL_CAN_Receive_IT(&hcan, CAN_FIFO0) != HAL_OK) {
+		Error_Handler();
+	}
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 
-	while (1)
-	{
+	while (1) {
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
 		state = run_state(state, &data);
 
-		if (can_check_error(&hcan))
-		{
+		data.ts_on = false;
+		data.ts_off = false;
+
+		if (can_check_error(&hcan)) {
 			error_set(ERROR_CAN, &data.can_error, HAL_GetTick());
-		}
-		else
-		{
+		} else {
 			error_unset(ERROR_CAN, &data.can_error);
 		}
 
 		data.error = error_check_fatal(&data.can_error, HAL_GetTick());
 		ER_CHK(&data.error);
-
-		data.can_rx.StdId = 0;
-		can_receive(&hcan, &(data.can_rx));
 
 		check_timers(&data);
 		ER_CHK(&data.error);
@@ -462,10 +441,10 @@ int main(void)
  * @brief System Clock Configuration
  * @retval None
  */
-void SystemClock_Config(void)
-{
+void SystemClock_Config(void) {
 	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
 	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+	RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
 
 	/** Initializes the CPU, AHB and APB busses clocks
 	 */
@@ -475,21 +454,23 @@ void SystemClock_Config(void)
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
 	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
 	RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL16;
-	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-	{
+	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
 		Error_Handler();
 	}
 	/** Initializes the CPU, AHB and APB busses clocks
 	 */
-	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK |
-								  RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
 	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
 	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
 	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
-	{
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
+		Error_Handler();
+	}
+	PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1;
+	PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK1;
+	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK) {
 		Error_Handler();
 	}
 }
@@ -499,8 +480,7 @@ void SystemClock_Config(void)
  * @param None
  * @retval None
  */
-static void MX_ADC1_Init(void)
-{
+static void MX_ADC1_Init(void) {
 	/* USER CODE BEGIN ADC1_Init 0 */
 
 	/* USER CODE END ADC1_Init 0 */
@@ -527,15 +507,13 @@ static void MX_ADC1_Init(void)
 	hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
 	hadc1.Init.LowPowerAutoWait = DISABLE;
 	hadc1.Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
-	if (HAL_ADC_Init(&hadc1) != HAL_OK)
-	{
+	if (HAL_ADC_Init(&hadc1) != HAL_OK) {
 		Error_Handler();
 	}
 	/** Configure the ADC multi-mode
 	 */
 	multimode.Mode = ADC_MODE_INDEPENDENT;
-	if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
-	{
+	if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK) {
 		Error_Handler();
 	}
 	/** Configure Regular Channel
@@ -546,8 +524,7 @@ static void MX_ADC1_Init(void)
 	sConfig.SamplingTime = ADC_SAMPLETIME_601CYCLES_5;
 	sConfig.OffsetNumber = ADC_OFFSET_NONE;
 	sConfig.Offset = 0;
-	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
-	{
+	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK) {
 		Error_Handler();
 	}
 	/* USER CODE BEGIN ADC1_Init 2 */
@@ -560,33 +537,36 @@ static void MX_ADC1_Init(void)
  * @param None
  * @retval None
  */
-static void MX_CAN_Init(void)
-{
+static void MX_CAN_Init(void) {
 	/* USER CODE BEGIN CAN_Init 0 */
 
 	/* USER CODE END CAN_Init 0 */
 
 	/* USER CODE BEGIN CAN_Init 1 */
+	static CanRxMsgTypeDef rx;
+	static CanTxMsgTypeDef tx;
 
+	hcan.pRxMsg = &rx;
+	hcan.pTxMsg = &tx;
 	/* USER CODE END CAN_Init 1 */
 	hcan.Instance = CAN;
-	hcan.Init.Prescaler = 4;
+	hcan.Init.Prescaler = 2;
 	hcan.Init.Mode = CAN_MODE_NORMAL;
 	hcan.Init.SJW = CAN_SJW_1TQ;
-	hcan.Init.BS1 = CAN_BS1_6TQ;
-	hcan.Init.BS2 = CAN_BS2_1TQ;
+	hcan.Init.BS1 = CAN_BS1_13TQ;
+	hcan.Init.BS2 = CAN_BS2_2TQ;
 	hcan.Init.TTCM = DISABLE;
 	hcan.Init.ABOM = DISABLE;
-	hcan.Init.AWUM = DISABLE;
+	hcan.Init.AWUM = ENABLE;
 	hcan.Init.NART = DISABLE;
-	hcan.Init.RFLM = DISABLE;
-	hcan.Init.TXFP = DISABLE;
-	if (HAL_CAN_Init(&hcan) != HAL_OK)
-	{
+	hcan.Init.RFLM = ENABLE;
+	hcan.Init.TXFP = ENABLE;
+	if (HAL_CAN_Init(&hcan) != HAL_OK) {
 		Error_Handler();
 	}
 	/* USER CODE BEGIN CAN_Init 2 */
 
+	can_init(&hcan);
 	/* USER CODE END CAN_Init 2 */
 }
 
@@ -595,8 +575,7 @@ static void MX_CAN_Init(void)
  * @param None
  * @retval None
  */
-static void MX_SPI1_Init(void)
-{
+static void MX_SPI1_Init(void) {
 	/* USER CODE BEGIN SPI1_Init 0 */
 
 	/* USER CODE END SPI1_Init 0 */
@@ -619,8 +598,7 @@ static void MX_SPI1_Init(void)
 	hspi1.Init.CRCPolynomial = 7;
 	hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
 	hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
-	if (HAL_SPI_Init(&hspi1) != HAL_OK)
-	{
+	if (HAL_SPI_Init(&hspi1) != HAL_OK) {
 		Error_Handler();
 	}
 	/* USER CODE BEGIN SPI1_Init 2 */
@@ -633,8 +611,7 @@ static void MX_SPI1_Init(void)
  * @param None
  * @retval None
  */
-static void MX_TIM6_Init(void)
-{
+static void MX_TIM6_Init(void) {
 	/* USER CODE BEGIN TIM6_Init 0 */
 
 	/* USER CODE END TIM6_Init 0 */
@@ -649,15 +626,12 @@ static void MX_TIM6_Init(void)
 	htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
 	htim6.Init.Period = 0;
 	htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-	if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
-	{
+	if (HAL_TIM_Base_Init(&htim6) != HAL_OK) {
 		Error_Handler();
 	}
 	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
 	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-	if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) !=
-		HAL_OK)
-	{
+	if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK) {
 		Error_Handler();
 	}
 	/* USER CODE BEGIN TIM6_Init 2 */
@@ -668,8 +642,7 @@ static void MX_TIM6_Init(void)
 /**
  * Enable DMA controller clock
  */
-static void MX_DMA_Init(void)
-{
+static void MX_DMA_Init(void) {
 	/* DMA controller clock enable */
 	__HAL_RCC_DMA1_CLK_ENABLE();
 
@@ -684,8 +657,7 @@ static void MX_DMA_Init(void)
  * @param None
  * @retval None
  */
-static void MX_GPIO_Init(void)
-{
+static void MX_GPIO_Init(void) {
 	GPIO_InitTypeDef GPIO_InitStruct = {0};
 
 	/* GPIO Ports Clock Enable */
@@ -693,14 +665,13 @@ static void MX_GPIO_Init(void)
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 
 	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(GPIOA, PreChargeEnd_Pin | TS_ON_Pin | BMS_FAULT_Pin,
-					  GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, PreChargeEnd_Pin | ADC_SIN_Pin | TS_ON_Pin | BMS_FAULT_Pin, GPIO_PIN_RESET);
 
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(CS_6820_GPIO_Port, CS_6820_Pin, GPIO_PIN_SET);
 
-	/*Configure GPIO pins : PreChargeEnd_Pin TS_ON_Pin BMS_FAULT_Pin */
-	GPIO_InitStruct.Pin = PreChargeEnd_Pin | TS_ON_Pin | BMS_FAULT_Pin;
+	/*Configure GPIO pins : PreChargeEnd_Pin ADC_SIN_Pin TS_ON_Pin BMS_FAULT_Pin */
+	GPIO_InitStruct.Pin = PreChargeEnd_Pin | ADC_SIN_Pin | TS_ON_Pin | BMS_FAULT_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -727,14 +698,15 @@ static void MX_GPIO_Init(void)
  * @brief  This function is executed in case of error occurrence.
  * @retval None
  */
-void Error_Handler(void)
-{
+void Error_Handler(void) {
 	/* USER CODE BEGIN Error_Handler_Debug */
+	bms_set_ts_off(&data.bms);
+	can_send(&hcan, CAN_ID_BMS, CAN_MSG_TS_OFF, 8);
+	can_send_error(&hcan, ERROR_CAN, 0, &data.pack);
 	/* User can add his own implementation to report the HAL error
 	 * return state
 	 */
-	while (1)
-	{
+	while (1) {
 	}
 	/* USER CODE END Error_Handler_Debug */
 }
@@ -747,12 +719,11 @@ void Error_Handler(void)
  * @param  line: assert_param error line source number
  * @retval None
  */
-void assert_failed(char *file, uint32_t line)
-{
+void assert_failed(char *file, uint32_t line) {
 	/* USER CODE BEGIN 6 */
-	/* User can add his own implementation to report the file name and line
-	   number, tex: printf("Wrong parameters value: file %s on line %d\r\n",
-	   file, line) */
+	/* User can add his own implementation to report the file name and
+	   line number, tex: printf("Wrong parameters value: file %s on line
+	   %d\r\n", file, line) */
 	/* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

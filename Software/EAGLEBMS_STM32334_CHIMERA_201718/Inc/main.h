@@ -31,23 +31,17 @@ typedef struct {
 	BMS_CONFIG_T bms;
 	PACK_T pack;
 
-	CanRxMsgTypeDef can_rx;
 	ERROR_STATUS_T can_error;
 
 	ERROR_T error;
 	uint8_t error_index;
 
+	bool ts_on;
+	bool ts_off;
+
 } state_global_data_t;
 
-typedef enum {
-	BMS_INIT,
-	BMS_IDLE,
-	BMS_PRECHARGE,
-	BMS_ON,
-	BMS_CHARGE,
-	BMS_HALT,
-	BMS_NUM_STATES
-} BMS_STATE_T;
+typedef enum { BMS_INIT, BMS_IDLE, BMS_PRECHARGE, BMS_ON, BMS_CHARGE, BMS_HALT, BMS_NUM_STATES } BMS_STATE_T;
 
 typedef BMS_STATE_T state_func_t(state_global_data_t *data);
 typedef void transition_func_t(state_global_data_t *data);

@@ -4,7 +4,7 @@
 	}],
 	"settings": {
 		"C_Cpp.default.cStandard": "c11",
-		"C_Cpp.clang_format_fallbackStyle": "{BasedOnStyle: Google, UseTab: true, IndentWidth: 4, TabWidth: 4, ColumnLimit: 80, AllowShortIfStatementsOnASingleLine: false}",
+		"C_Cpp.clang_format_fallbackStyle": "{BasedOnStyle: Google, UseTab: true, IndentWidth: 4, TabWidth: 4, ColumnLimit: 120, AllowShortIfStatementsOnASingleLine: false}",
 		"C_Cpp.default.includePath": [
 			"${workspaceRoot}/Inc",
 			"${workspaceRoot}/Drivers/STM32F3xx_HAL_Driver/Inc",
@@ -15,7 +15,10 @@
 		"cortex-debug.openocdPath": "/usr/bin/openocd",
 		"stm32-for-vscode.makePath": "make",
 		"stm32-for-vscode.armToolchainPath": "/usr/bin",
-		"cortex-debug.armToolchainPath": "/usr/bin"
+		"cortex-debug.armToolchainPath": "/usr/bin",
+		"files.associations": {
+			"can.h": "c"
+		}
 	},
 	"launch": {
 		"configurations": [
