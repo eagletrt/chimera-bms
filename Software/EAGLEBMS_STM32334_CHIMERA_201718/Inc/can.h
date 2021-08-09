@@ -37,9 +37,10 @@ typedef enum {
 typedef enum {
 	CAN_ID_BMS = 0xAA,
 	CAN_ID_ECU = 0x55,
-	CAN_ID_GUI = 0xA8,
 	CAN_ID_IN_INVERTER_L = 0x181,
-	CAN_ID_OUT_INVERTER_L = 0x201
+	CAN_ID_OUT_INVERTER_L = 0x201,
+	CAN_ID_IN_INVERTER_R = 0x182,
+	CAN_ID_OUT_INVERTER_R = 0x202
 
 } CAN_ID_T;
 
@@ -47,26 +48,16 @@ extern uint8_t CAN_MSG_BUS_VOLTAGE[8];
 extern uint8_t CAN_MSG_TS_ON[8];
 extern uint8_t CAN_MSG_TS_OFF[8];
 
-// CAN filter used during regular use
-extern CAN_FilterConfTypeDef CAN_FILTER_NORMAL;
-
-// CAN filter used during precharge cycle
-extern CAN_FilterConfTypeDef CAN_FILTER_PRECHARGE;
-
 void can_init(CAN_HandleTypeDef *canh);
-void can_send(CAN_HandleTypeDef *canh, uint16_t id, uint8_t data[],
-			  size_t size);
+void can_send(CAN_HandleTypeDef *canh, uint16_t id, uint8_t data[], size_t size);
 uint8_t can_receive(CAN_HandleTypeDef *canh, CanRxMsgTypeDef *rx);
 
 bool can_check_error(CAN_HandleTypeDef *canh);
 
-void can_send_current(CAN_HandleTypeDef *canh, int16_t current,
-					  uint32_t voltage);
+void can_send_current(CAN_HandleTypeDef *canh, int16_t current, uint32_t voltage);
 void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack);
 void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack);
-void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning,
-					  uint8_t index);
-void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index,
-					PACK_T *pack);
+void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning, uint8_t index);
+void can_send_error(CAN_HandleTypeDef *canh, ERROR_T error, uint8_t index, PACK_T *pack);
 
 #endif /* CAN_H_ */

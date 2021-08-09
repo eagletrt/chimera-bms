@@ -146,12 +146,14 @@ ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
 endif
 
+# Add additional flags
+CFLAGS += 
+ASFLAGS += -specs=nosys.specs 
+CXXFLAGS = 
+CXXFLAGS += -feliminate-unused-debug-types
 
 # Generate dependency information
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
-
-CXXFLAGS?=
-CXXFLAGS += -feliminate-unused-debug-types
 
 #######################################
 # LDFLAGS
@@ -212,13 +214,13 @@ $(BUILD_DIR):
 # flash
 #######################################
 flash: $(BUILD_DIR)/$(TARGET).elf
-	"openocd" -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
+	"/usr/bin/openocd" -f ./openocd.cfg -c "program $(BUILD_DIR)/$(TARGET).elf verify reset exit"
 
 #######################################
 # erase
 #######################################
 erase: $(BUILD_DIR)/$(TARGET).elf
-	"openocd" -f ./openocd.cfg -c "init; reset halt; stm32f3x mass_erase 0; exit"
+	"/usr/bin/openocd" -f ./openocd.cfg -c "init; reset halt; stm32f3x mass_erase 0; exit"
 
 #######################################
 # clean up

@@ -16,35 +16,18 @@ uint8_t CAN_MSG_BUS_VOLTAGE[8] = {0x3D, 0xEB, 0, 0, 0, 0, 0, 0};
 uint8_t CAN_MSG_TS_ON[8] = {CAN_OUT_TS_ON, 0, 0, 0, 0, 0, 0, 0};
 uint8_t CAN_MSG_TS_OFF[8] = {CAN_OUT_TS_OFF, 0, 0, 0, 0, 0, 0, 0};
 
-// CAN filter used during regular use
-CAN_FilterConfTypeDef CAN_FILTER_NORMAL;
-
-// CAN filter used during precharge cycle
-CAN_FilterConfTypeDef CAN_FILTER_PRECHARGE;
-
 void can_init(CAN_HandleTypeDef *canh) {
-	// CAN Filter Initialization
-	CAN_FILTER_NORMAL = (CAN_FilterConfTypeDef){.FilterNumber = 0,
-												.FilterMode = CAN_FILTERMODE_IDLIST,
-												.FilterIdLow = 0x55 << 5,
-												.FilterIdHigh = 0xA8 << 5,
-												.FilterMaskIdHigh = 0x55 << 5,
-												.FilterMaskIdLow = 0x55 << 5,
-												.FilterFIFOAssignment = CAN_FILTER_FIFO0,
-												.FilterScale = CAN_FILTERSCALE_16BIT,
-												.FilterActivation = ENABLE};
+	CAN_FilterConfTypeDef filter = {.FilterNumber = 0,
+									.FilterMode = CAN_FILTERMODE_IDLIST,
+									.FilterIdHigh = CAN_ID_ECU << 5,
+									.FilterIdLow = CAN_ID_IN_INVERTER_L << 5,
+									.FilterMaskIdHigh = 0,	// CAN_ID_IN_INVERTER_L << 5,
+									.FilterMaskIdLow = 0,	// CAN_ID_ECU << 5,
+									.FilterFIFOAssignment = CAN_FILTER_FIFO0,
+									.FilterScale = CAN_FILTERSCALE_16BIT,
+									.FilterActivation = ENABLE};
 
-	CAN_FILTER_PRECHARGE = (CAN_FilterConfTypeDef){.FilterNumber = 0,
-												   .FilterMode = CAN_FILTERMODE_IDLIST,
-												   .FilterIdLow = 0x181 << 5,
-												   .FilterIdHigh = 0x181 << 5,
-												   .FilterMaskIdHigh = 0x181 << 5,
-												   .FilterMaskIdLow = 0x181 << 5,
-												   .FilterFIFOAssignment = CAN_FILTER_FIFO0,
-												   .FilterScale = CAN_FILTERSCALE_16BIT,
-												   .FilterActivation = ENABLE};
-
-	HAL_CAN_ConfigFilter(canh, &CAN_FILTER_NORMAL);
+	HAL_CAN_ConfigFilter(canh, &filter);
 }
 
 bool can_check_error(CAN_HandleTypeDef *canh) { return HAL_CAN_GetState(canh) == HAL_CAN_ERROR_BOF; }
@@ -123,8 +106,7 @@ void can_send_pack_voltage(CAN_HandleTypeDef *canh, PACK_T pack) {
  * @param		pack	The pack structure with data to send
  */
 void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack) {
-	size_t size = 7;
-	uint8_t data[size];
+	uint8_t data[7] = {0};
 
 	data[0] = CAN_OUT_PACK_TEMPS;
 	data[1] = (uint8_t)(pack.avg_temperature >> 8);
@@ -133,7 +115,7 @@ void can_send_pack_temperature(CAN_HandleTypeDef *canh, PACK_T pack) {
 	data[4] = (uint8_t)(pack.max_temperature);
 	data[5] = (uint8_t)(pack.min_temperature >> 8);
 	data[6] = (uint8_t)(pack.min_temperature);
-	can_send(canh, CAN_ID_BMS, data, size);
+	can_send(canh, CAN_ID_BMS, data, 7);
 }
 
 /**
