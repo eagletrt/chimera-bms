@@ -16,8 +16,17 @@ uint8_t CAN_MSG_BUS_VOLTAGE[8] = {0x3D, 0xEB, 0, 0, 0, 0, 0, 0};
 uint8_t CAN_MSG_TS_ON[8] = {CAN_OUT_TS_ON, 0, 0, 0, 0, 0, 0, 0};
 uint8_t CAN_MSG_TS_OFF[8] = {CAN_OUT_TS_OFF, 0, 0, 0, 0, 0, 0, 0};
 
-void can_init(CAN_HandleTypeDef *canh) {
-	CAN_FilterConfTypeDef filter = {.FilterNumber = 0,
+CAN_FilterConfTypeDef filter_ecu = {.FilterNumber = 0,
+									.FilterMode = CAN_FILTERMODE_IDLIST,
+									.FilterIdHigh = CAN_ID_ECU << 5,
+									.FilterIdLow = 0,
+									.FilterMaskIdHigh = 0,
+									.FilterMaskIdLow = 0,
+									.FilterFIFOAssignment = CAN_FILTER_FIFO0,
+									.FilterScale = CAN_FILTERSCALE_16BIT,
+									.FilterActivation = ENABLE};
+
+CAN_FilterConfTypeDef filter_inv = {.FilterNumber = 0,
 									.FilterMode = CAN_FILTERMODE_IDLIST,
 									.FilterIdHigh = CAN_ID_ECU << 5,
 									.FilterIdLow = CAN_ID_IN_INVERTER_L << 5,
@@ -27,8 +36,7 @@ void can_init(CAN_HandleTypeDef *canh) {
 									.FilterScale = CAN_FILTERSCALE_16BIT,
 									.FilterActivation = ENABLE};
 
-	HAL_CAN_ConfigFilter(canh, &filter);
-}
+void can_init(CAN_HandleTypeDef *canh) { HAL_CAN_ConfigFilter(canh, &filter_ecu); }
 
 bool can_check_error(CAN_HandleTypeDef *canh) { return HAL_CAN_GetState(canh) == HAL_CAN_ERROR_BOF; }
 

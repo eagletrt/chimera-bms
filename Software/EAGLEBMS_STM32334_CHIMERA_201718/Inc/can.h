@@ -48,6 +48,9 @@ extern uint8_t CAN_MSG_BUS_VOLTAGE[8];
 extern uint8_t CAN_MSG_TS_ON[8];
 extern uint8_t CAN_MSG_TS_OFF[8];
 
+extern CAN_FilterConfTypeDef filter_ecu;
+extern CAN_FilterConfTypeDef filter_inv;
+
 void can_init(CAN_HandleTypeDef *canh);
 void can_send(CAN_HandleTypeDef *canh, uint16_t id, uint8_t data[], size_t size);
 uint8_t can_receive(CAN_HandleTypeDef *canh, CanRxMsgTypeDef *rx);

@@ -117,9 +117,11 @@ BMS_STATE_T do_state_init(state_global_data_t *data) {
 void to_idle(state_global_data_t *data) {
 	bms_set_ts_off(&data->bms);
 	can_send(&hcan, CAN_ID_BMS, CAN_MSG_TS_OFF, 8);
+	HAL_CAN_ConfigFilter(&hcan, &filter_ecu);
 }
 
 BMS_STATE_T do_state_idle(state_global_data_t *data) {
+	data->ts_off = false;
 	if (data->ts_on) {
 		return BMS_PRECHARGE;
 	}
@@ -129,11 +131,15 @@ BMS_STATE_T do_state_idle(state_global_data_t *data) {
 void to_precharge(state_global_data_t *data) {
 	// Precharge
 	bms_precharge_start(&data->bms);
+	data->pack.bus_voltage = 0;
 	timer_precharge = HAL_GetTick();
+	HAL_CAN_ConfigFilter(&hcan, &filter_inv);
 }
 
 BMS_STATE_T do_state_precharge(state_global_data_t *data) {
+	data->ts_on = false;
 	if (data->ts_off) {
+		data->ts_off = false;
 		return BMS_IDLE;
 	}
 	switch (bms_precharge_check(&(data)->bms)) {
@@ -159,14 +165,14 @@ BMS_STATE_T do_state_precharge(state_global_data_t *data) {
 				return BMS_ON;
 			}
 
-			//			if (HAL_GetTick() - timer_precharge >= 20) {
-			//				timer_precharge = HAL_GetTick();
-			//
-			//				// uint16_t bus_voltage = 0;
-			//				// si8900_read_channel(&huart1, SI8900_AIN0, &bus_voltage);
-			//
-			//				can_send(&hcan, CAN_ID_OUT_INVERTER_L, CAN_MSG_BUS_VOLTAGE, 8);
-			//			}
+			if (HAL_GetTick() - timer_precharge >= 20) {
+				timer_precharge = HAL_GetTick();
+
+				// uint16_t bus_voltage = 0;
+				// si8900_read_channel(&huart1, SI8900_AIN0, &bus_voltage);
+
+				can_send(&hcan, CAN_ID_OUT_INVERTER_L, CAN_MSG_BUS_VOLTAGE, 8);
+			}
 			break;
 	}
 
@@ -176,10 +182,13 @@ BMS_STATE_T do_state_precharge(state_global_data_t *data) {
 void to_charge(state_global_data_t *data) {
 	bms_precharge_end(&data->bms);
 	can_send(&hcan, CAN_ID_BMS, CAN_MSG_TS_ON, 8);
+	HAL_CAN_ConfigFilter(&hcan, &filter_ecu);
 }
 
 BMS_STATE_T do_state_charge(state_global_data_t *data) {
+	data->ts_on = false;
 	if (data->ts_off) {
+		data->ts_off = false;
 		return BMS_IDLE;
 	}
 
@@ -189,10 +198,13 @@ BMS_STATE_T do_state_charge(state_global_data_t *data) {
 void to_on(state_global_data_t *data) {
 	bms_precharge_end(&data->bms);
 	can_send(&hcan, CAN_ID_BMS, CAN_MSG_TS_ON, 8);
+	HAL_CAN_ConfigFilter(&hcan, &filter_ecu);
 }
 
 BMS_STATE_T do_state_on(state_global_data_t *data) {
+	data->ts_on = false;
 	if (data->ts_off) {
+		data->ts_off = false;
 		return BMS_IDLE;
 	}
 
@@ -204,9 +216,17 @@ void to_halt(state_global_data_t *data) {
 	bms_set_fault(&data->bms);
 
 	can_send_error(&hcan, data->error, data->error_index, &data->pack);
+	HAL_CAN_ConfigFilter(&hcan, &filter_ecu);
 }
 
-BMS_STATE_T do_state_halt(state_global_data_t *data) { return BMS_HALT; }
+BMS_STATE_T do_state_halt(state_global_data_t *data) {
+	data->ts_off = false;
+	data->ts_on = false;
+	if (data->error == ERROR_OK) {
+		return BMS_IDLE;
+	}
+	return BMS_HALT;
+}
 
 BMS_STATE_T run_state(BMS_STATE_T state, state_global_data_t *data) {
 	BMS_STATE_T new_state = state_table[state](data);
@@ -230,8 +250,6 @@ void check_timers(state_global_data_t *data) {
 	// Read and send temperatures
 	if (tick - timer_temps >= TEMPS_READ_INTERVAL) {
 		timer_temps = tick;
-
-		can_send(&hcan, CAN_ID_OUT_INVERTER_L, CAN_MSG_BUS_VOLTAGE, 8);
 
 		read_temps(data);
 		ER_CHK(&data->error);
@@ -326,7 +344,7 @@ void HAL_CAN_RxCpltCallback(CAN_HandleTypeDef *hcan) {
 	if (status != HAL_OK) {
 		// CAN ERRORS? DON'T WASTE BESTEMMIE, HAVE A LOOK HERE:
 		// https://community.st.com/s/question/0D50X00009XkdpC/stm32f0-can-bus-busy-error
-		// Error_Handler();
+		Error_Handler();
 	}
 }
 /* USER CODE END 0 */
@@ -365,9 +383,9 @@ int main(void) {
 	MX_TIM6_Init();
 	/* USER CODE BEGIN 2 */
 
-	if (HAL_CAN_Receive_IT(&hcan, CAN_FIFO0) != HAL_OK) {
-		Error_Handler();
-	}
+	// if (HAL_CAN_Receive_IT(&hcan, CAN_FIFO0) != HAL_OK) {
+	//	Error_Handler();
+	//}
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -377,10 +395,32 @@ int main(void) {
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
-		state = run_state(state, &data);
+		hcan.pRxMsg->StdId = 0;
+		HAL_CAN_Receive(&hcan, CAN_FIFO0, 10);
+		uint32_t id = hcan.pRxMsg->StdId;
 
-		data.ts_on = false;
-		data.ts_off = false;
+		if (id == CAN_ID_IN_INVERTER_L) {
+			if (hcan.pRxMsg->Data[0] == CAN_IN_BUS_VOLTAGE) {
+				data.pack.bus_voltage = hcan.pRxMsg->Data[2] << 8;
+				data.pack.bus_voltage += hcan.pRxMsg->Data[1];
+				data.pack.bus_voltage /= 31.99;
+			}
+		} else if (id == CAN_ID_ECU) {
+			if (hcan.pRxMsg->Data[0] == CAN_IN_TS_ON) {
+				data.ts_on = true;
+
+				if (hcan.pRxMsg->Data[1] == 0x01) {
+					// Charge command
+					data.bms.precharge_bypass = true;
+				} else {
+					data.bms.precharge_bypass = false;
+				}
+			} else if (hcan.pRxMsg->Data[0] == CAN_IN_TS_OFF) {
+				data.ts_off = true;
+			}
+		}
+
+		state = run_state(state, &data);
 
 		if (can_check_error(&hcan)) {
 			error_set(ERROR_CAN, &data.can_error, HAL_GetTick());
@@ -664,6 +704,8 @@ void Error_Handler(void) {
 	bms_set_ts_off(&data.bms);
 	can_send(&hcan, CAN_ID_BMS, CAN_MSG_TS_OFF, 8);
 	can_send_error(&hcan, ERROR_CAN, 0, &data.pack);
+
+	HAL_NVIC_SystemReset();
 	/* User can add his own implementation to report the HAL error
 	 * return state
 	 */
