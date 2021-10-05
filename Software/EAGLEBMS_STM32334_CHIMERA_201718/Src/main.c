@@ -24,8 +24,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TEMPS_READ_INTERVAL 100
-#define VOLTS_READ_INTERVAL 20
+#define TEMPS_READ_INTERVAL 200
+#define VOLTS_READ_INTERVAL 15
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -106,6 +106,10 @@ BMS_STATE_T do_state_init(state_global_data_t *data) {
 
 	pack_init(&hadc1, &(data->pack));
 
+	HAL_Delay(1000);
+	pack_update_current(&(data->pack.current), &(data->error));
+	pack_zero_current(&(data->pack));
+
 #if CHARGING > 0
 	HAL_Delay(3000);
 	data->bms.precharge_bypass = true;
@@ -130,6 +134,10 @@ BMS_STATE_T do_state_idle(state_global_data_t *data) {
 
 void to_precharge(state_global_data_t *data) {
 	// Precharge
+
+	pack_zero_current(&data->pack);
+
+	// data->bms.precharge_bypass = true;
 	bms_precharge_start(&data->bms);
 	data->pack.bus_voltage = 0;
 	timer_precharge = HAL_GetTick();
@@ -160,7 +168,7 @@ BMS_STATE_T do_state_precharge(state_global_data_t *data) {
 		case PRECHARGE_WAITING:
 			// If precharge is still running, send the bus voltage request
 
-			if (data->pack.bus_voltage >= data->pack.total_voltage / 10000.0 * .80) {
+			if (data->pack.bus_voltage >= data->pack.total_voltage / 10000.0 * .70) {
 				// bms_precharge_end(&data->bms);
 				return BMS_ON;
 			}
@@ -255,7 +263,7 @@ void check_timers(state_global_data_t *data) {
 		ER_CHK(&data->error);
 
 		// Delay voltage measurement to avoid interferences
-		timer_volts = HAL_GetTick() - (VOLTS_READ_INTERVAL / 2);
+		// timer_volts = HAL_GetTick() - (VOLTS_READ_INTERVAL / 2);
 	}
 
 	// Start voltage conversion ahead of time

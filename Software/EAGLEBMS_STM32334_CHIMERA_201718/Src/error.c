@@ -13,27 +13,25 @@
  * 	- 500ms for voltage and current
  * 	- 1s for temperatures
  */
-#define LTC6804_PEC_TIMEOUT_COUNT 0 // 5000
+#define LTC6804_PEC_TIMEOUT_COUNT 100  // 5000
 #define CELL_UNDER_VOLTAGE_TIMEOUT_MS 500
 #define CELL_OVER_VOLTAGE_TIMEOUT_MS 500
 #define CELL_UNDER_TEMPERATURE_TIMEOUT_MS 1000
 #define CELL_OVER_TEMPERATURE_TIMEOUT_MS 1000
-#define OVER_CURRENT_TIMEOUT_MS 0 // 400
-#define CAN_TIMEOUT_COUNT 0
+#define OVER_CURRENT_TIMEOUT_MS 500
+#define CAN_TIMEOUT_COUNT 500
 
 /** @brief	Defines the timeout in count or time for each error type */
-ERROR_LIMITS_T timeout[ERROR_NUM_ERRORS] = {
-	{LTC6804_PEC_TIMEOUT_COUNT, 0},	{0, CELL_UNDER_VOLTAGE_TIMEOUT_MS},
-	{0, CELL_OVER_VOLTAGE_TIMEOUT_MS}, {0, CELL_OVER_TEMPERATURE_TIMEOUT_MS},
-	{0, OVER_CURRENT_TIMEOUT_MS},	  {CAN_TIMEOUT_COUNT, 0}};
+ERROR_LIMITS_T timeout[ERROR_NUM_ERRORS] = {{LTC6804_PEC_TIMEOUT_COUNT, 0},	   {0, CELL_UNDER_VOLTAGE_TIMEOUT_MS},
+											{0, CELL_OVER_VOLTAGE_TIMEOUT_MS}, {0, CELL_OVER_TEMPERATURE_TIMEOUT_MS},
+											{0, OVER_CURRENT_TIMEOUT_MS},	   {CAN_TIMEOUT_COUNT, 0}};
 
 /**
  * @brief	Initializes an error structure
  *
  * @param	error	The error structure to initialize
  */
-void error_init(ERROR_STATUS_T *error)
-{
+void error_init(ERROR_STATUS_T *error) {
 	error->type = ERROR_OK;
 	error->count = 0;
 	error->active = false;
@@ -48,19 +46,14 @@ void error_init(ERROR_STATUS_T *error)
  * @param	er		The error structure to activate
  * @param	now		The current time
  */
-void error_set(ERROR_T type, ERROR_STATUS_T *er, uint32_t now)
-{
+void error_set(ERROR_T type, ERROR_STATUS_T *er, uint32_t now) {
 	// If the error is already enabled
-	if (er->active)
-	{
+	if (er->active) {
 		// and it's the same error type
-		if (er->type == type)
-		{
+		if (er->type == type) {
 			er->count++;
 		}
-	}
-	else
-	{
+	} else {
 		er->type = type;
 		er->active = true;
 		er->time_stamp = now;
@@ -74,12 +67,10 @@ void error_set(ERROR_T type, ERROR_STATUS_T *er, uint32_t now)
  * @param		type	The type of error to deactivate
  * @param		er		The error structure to deactivate
  */
-void error_unset(ERROR_T type, ERROR_STATUS_T *er)
-{
+void error_unset(ERROR_T type, ERROR_STATUS_T *er) {
 	// Disable only if the types are the same. We don't want to disable
 	// different errors
-	if (er->type == type)
-	{
+	if (er->type == type) {
 		er->type = ERROR_OK;
 		er->active = false;
 		er->fatal = false;
@@ -96,12 +87,9 @@ void error_unset(ERROR_T type, ERROR_STATUS_T *er)
  *
  * @retval	The error return value.
  */
-ERROR_T error_check_fatal(ERROR_STATUS_T *error, uint32_t now)
-{
-	if (error->active)
-	{
-		if (_error_check_count(error) || _error_check_timeout(error, now))
-		{
+ERROR_T error_check_fatal(ERROR_STATUS_T *error, uint32_t now) {
+	if (error->active) {
+		if (_error_check_count(error) || _error_check_timeout(error, now)) {
 			error->fatal = true;
 			return error->type;
 		}
@@ -118,13 +106,10 @@ ERROR_T error_check_fatal(ERROR_STATUS_T *error, uint32_t now)
  *
  * @retval	true for error, false for OK
  */
-bool _error_check_count(ERROR_STATUS_T *error)
-{
-	if (timeout[error->type].count)
-	{
+bool _error_check_count(ERROR_STATUS_T *error) {
+	if (timeout[error->type].count) {
 		/** Compares the actual count to the timeout for this error type */
-		if (error->count > timeout[error->type].count)
-		{
+		if (error->count > timeout[error->type].count) {
 			return true;
 		}
 	}
@@ -143,12 +128,9 @@ bool _error_check_count(ERROR_STATUS_T *error)
  *
  * @retval	true for error, false for OK
  */
-bool _error_check_timeout(ERROR_STATUS_T *error, uint32_t now)
-{
-	if (timeout[error->type].timeout)
-	{
-		if (now - error->time_stamp > timeout[error->type].timeout)
-		{
+bool _error_check_timeout(ERROR_STATUS_T *error, uint32_t now) {
+	if (timeout[error->type].timeout) {
+		if (now - error->time_stamp > timeout[error->type].timeout) {
 			return true;
 		}
 	}

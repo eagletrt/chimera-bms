@@ -13,10 +13,12 @@
 #include <stm32f3xx_hal.h>
 #include <string.h>
 
-#define CURRENT_ARRAY_LENGTH 512
+#define CURRENT_ARRAY_LENGTH 128
+#define CURRENT_ROLLING_AVERAGE_FACTOR 0.75f
 #define PACK_DROP_DELTA 2000  // 0.2V
 
 uint32_t adc_current[CURRENT_ARRAY_LENGTH];
+int16_t current_zero = 0;
 
 LTC6804_T ltc[LTC6804_COUNT];
 
@@ -155,11 +157,13 @@ void pack_update_current(ER_INT16_T *current, ERROR_T *error) {
 	tmp /= CURRENT_ARRAY_LENGTH;
 
 	// We calculate the input voltage
-	float in_volt = (((float)tmp * 3.3) / 4096);
+	float in_volt = (((tmp * 3.3f) / 4096) * 2);
 
+	int16_t cur = (int16_t)round(-(((in_volt - 2.169f) * 200 / 1.25f)) * 10);
 	// Check the current sensor datasheet for the correct formula
-	current->value = (int16_t)(-round((((in_volt - 2.048) * 200 / 1.25)) * 10));
-	current->value += 100;
+	current->value = cur - current_zero;
+	// current->value =
+	//(CURRENT_ROLLING_AVERAGE_FACTOR * cur + (1 - CURRENT_ROLLING_AVERAGE_FACTOR) * current->value) - current_zero;
 
 	if (current->value > PACK_MAX_CURRENT) {
 		error_set(ERROR_OVER_CURRENT, &current->error, HAL_GetTick());
@@ -172,6 +176,8 @@ void pack_update_current(ER_INT16_T *current, ERROR_T *error) {
 
 End:;
 }
+
+void pack_zero_current(PACK_T *pack) { current_zero += pack->current.value; }
 
 /**
  * @brief		Updates the pack's voltage stats

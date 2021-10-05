@@ -70,7 +70,7 @@ uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc, ER_UINT16_
 
 		ltc6804_enable_cs(spi, CS_6820_GPIO_Port, CS_6820_Pin);
 		HAL_SPI_Transmit(spi, cmd, 4, 10);
-		HAL_SPI_Receive(spi, data, 8, 10);
+		HAL_SPI_Receive(spi, data, 8, 100);
 		ltc6804_disable_cs(spi, CS_6820_GPIO_Port, CS_6820_Pin);
 
 #if LTC6804_EMU > 0
@@ -263,7 +263,6 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, bool 
 
 		ltc6804_enable_cs(hspi, CS_6820_GPIO_Port, CS_6820_Pin);
 
-		HAL_Delay(0);
 		HAL_SPI_Transmit(hspi, cmd, 4, 10);
 		HAL_SPI_Receive(hspi, data, 8, 10);
 
