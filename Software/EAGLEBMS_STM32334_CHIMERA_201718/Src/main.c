@@ -24,8 +24,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TEMPS_READ_INTERVAL 200
-#define VOLTS_READ_INTERVAL 15
+#define TEMPS_READ_INTERVAL 600
+#define VOLTS_READ_INTERVAL 20
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -65,8 +65,8 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim6;
 
 uint32_t timer_precharge = 0;
-uint32_t timer_volts = 0;
-uint32_t timer_temps = 0;
+uint32_t timer_volts = 1000;
+uint32_t timer_temps = 1000;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -253,26 +253,35 @@ BMS_STATE_T run_state(BMS_STATE_T state, state_global_data_t *data) {
 }
 
 void check_timers(state_global_data_t *data) {
-	uint32_t tick = HAL_GetTick();
-
+	// Start temperature conversion ahead of time
+	if (HAL_GetTick() - timer_temps >= TEMPS_READ_INTERVAL - 4) {
+		if ((VOLTS_READ_INTERVAL - 4) - (HAL_GetTick() - timer_volts) <= 4) {
+			timer_volts += 5;
+		}
+		_ltc6804_adcv(&hspi1, 0);
+		pack_init_temperature_conversion(&hspi1);
+	}
 	// Read and send temperatures
-	if (tick - timer_temps >= TEMPS_READ_INTERVAL) {
-		timer_temps = tick;
+	if (HAL_GetTick() - timer_temps >= TEMPS_READ_INTERVAL) {
+		timer_temps = HAL_GetTick();
 
 		read_temps(data);
 		ER_CHK(&data->error);
 
 		// Delay voltage measurement to avoid interferences
-		// timer_volts = HAL_GetTick() - (VOLTS_READ_INTERVAL / 2);
+		timer_volts = HAL_GetTick() - (VOLTS_READ_INTERVAL / 2);
 	}
 
 	// Start voltage conversion ahead of time
-	if (tick - timer_volts >= VOLTS_READ_INTERVAL - 4) {
+	if (HAL_GetTick() - timer_volts >= VOLTS_READ_INTERVAL - 4) {
+		if ((TEMPS_READ_INTERVAL - 4) - (HAL_GetTick() - timer_temps) <= 4) {
+			timer_temps += 5;
+		}
 		_ltc6804_adcv(&hspi1, 0);
 	}
 	// Read and send voltages and current
-	if (tick - timer_volts >= VOLTS_READ_INTERVAL) {
-		timer_volts = tick;
+	if (HAL_GetTick() - timer_volts >= VOLTS_READ_INTERVAL) {
+		timer_volts = HAL_GetTick();
 
 		read_volts(data);
 		ER_CHK(&data->error);

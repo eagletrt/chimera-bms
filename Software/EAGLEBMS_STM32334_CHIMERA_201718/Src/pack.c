@@ -19,6 +19,7 @@
 
 uint32_t adc_current[CURRENT_ARRAY_LENGTH];
 int16_t current_zero = 0;
+bool temp_even = false;
 
 LTC6804_T ltc[LTC6804_COUNT];
 
@@ -90,6 +91,8 @@ End:;
 	return cell;
 }
 
+void pack_init_temperature_conversion(SPI_HandleTypeDef *spi) { ltc6804_configure_temperature(spi, true, temp_even); }
+
 /**
  * @brief		Polls the LTCs for temperatures
  * @details	Temperature measurements with the current hardware architecture
@@ -111,26 +114,23 @@ End:;
  */
 uint8_t pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack, ERROR_T *error) {
 	static uint8_t ltc_index = 0;
-	static bool even = false;
 	uint8_t cell_index = 0;
-
-	ltc6804_configure_temperature(spi, true, even);
 
 	// Read 2 LTCs at a time. Roll back to 0 if limit exceeded
 	uint8_t tmp = (ltc_index + 2) % LTC6804_COUNT;
 	while (ltc_index != tmp) {
-		cell_index = ltc6804_read_temperatures(spi, &ltc[ltc_index], even,
+		cell_index = ltc6804_read_temperatures(spi, &ltc[ltc_index], temp_even,
 											   &pack->temperatures[ltc_index * LTC6804_CELL_COUNT], error);
 
 		ER_CHK(error);
 
 		ltc_index = (ltc_index + 1) % LTC6804_COUNT;
 		if (ltc_index == 0) {
-			even = !even;
+			temp_even = !temp_even;
 		}
 	}
 
-	ltc6804_configure_temperature(spi, false, even);
+	ltc6804_configure_temperature(spi, false, temp_even);
 
 	pack_update_temperature_stats(pack);
 

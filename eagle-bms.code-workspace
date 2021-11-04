@@ -17,7 +17,10 @@
 		"stm32-for-vscode.armToolchainPath": "/usr/bin",
 		"cortex-debug.armToolchainPath": "/usr/bin",
 		"files.associations": {
-			"can.h": "c"
+			"can.h": "c",
+			"*.tcc": "c",
+			"typeinfo": "c",
+			"pack.h": "c"
 		}
 	},
 	"launch": {

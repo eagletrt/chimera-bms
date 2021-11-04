@@ -22,7 +22,6 @@ void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start, bool parity);
 
 void ltc6804_enable_cs(SPI_HandleTypeDef *spi, GPIO_TypeDef *gpio, uint16_t pin) {
 	HAL_GPIO_WritePin(gpio, pin, GPIO_PIN_RESET);
-	// HAL_Delay(0);
 	while (spi->State != HAL_SPI_STATE_READY)
 		;
 }
@@ -262,6 +261,7 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, bool 
 		_wakeup_idle(hspi, false);
 
 		ltc6804_enable_cs(hspi, CS_6820_GPIO_Port, CS_6820_Pin);
+		HAL_Delay(0);
 
 		HAL_SPI_Transmit(hspi, cmd, 4, 10);
 		HAL_SPI_Receive(hspi, data, 8, 10);
