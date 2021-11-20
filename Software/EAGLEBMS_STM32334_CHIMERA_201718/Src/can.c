@@ -144,7 +144,7 @@ void can_send_warning(CAN_HandleTypeDef *canh, WARNING_T warning, uint8_t index)
 	data[1] = warning;
 	data[2] = index;
 
-	if (warning != WARN_CELL_LOW_VOLTAGE || (warning == WARN_CELL_LOW_VOLTAGE && HAL_GetTick() - timer >= 1000)) {
+	if (warning != WARN_CELL_LOW_VOLTAGE || (warning == WARN_CELL_LOW_VOLTAGE && HAL_GetTick() - timer >= 500)) {
 		timer = HAL_GetTick();
 		can_send(canh, CAN_ID_BMS, data, size);
 	}
