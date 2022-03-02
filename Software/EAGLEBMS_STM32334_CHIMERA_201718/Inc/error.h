@@ -21,7 +21,7 @@
  */
 #define ER_CHK(ST_P)                                                           \
 	/*1*/ {                                                                    \
-		if (*ST_P != ERROR_OK)                                                 \
+		if ((ST_P) != ERROR_OK)                                                 \
 		{                                                                      \
 			/*3*/ goto End;                                                    \
 		}                                                                      \

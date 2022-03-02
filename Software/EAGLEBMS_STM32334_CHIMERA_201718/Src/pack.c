@@ -79,7 +79,7 @@ uint8_t pack_update_voltages(SPI_HandleTypeDef *spi, PACK_T *pack, WARNING_T *wa
 
 	for (ltc_i = 0; ltc_i < LTC6804_COUNT || !error; ltc_i++) {
 		cell = ltc6804_read_voltages(spi, &ltc[ltc_i], &pack->voltages[ltc_i * LTC6804_CELL_COUNT], warning, error);
-		ER_CHK(error);
+		ER_CHK(*error);
 	}
 
 End:;
@@ -122,7 +122,7 @@ uint8_t pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack, ERROR_T *
 		cell_index = ltc6804_read_temperatures(spi, &ltc[ltc_index], temp_even,
 											   &pack->temperatures[ltc_index * LTC6804_CELL_COUNT], error);
 
-		ER_CHK(error);
+		ER_CHK(*error);
 
 		ltc_index = (ltc_index + 1) % LTC6804_COUNT;
 		if (ltc_index == 0) {
@@ -172,7 +172,7 @@ void pack_update_current(ER_INT16_T *current, ERROR_T *error) {
 	}
 
 	*error = error_check_fatal(&current->error, HAL_GetTick());
-	ER_CHK(error);
+	ER_CHK(*error);
 
 End:;
 }
@@ -237,9 +237,9 @@ uint8_t pack_check_errors(PACK_T *pack, ERROR_T *error) {
 	uint8_t i;
 	for (i = 0; i < PACK_MODULE_COUNT; i++) {
 		ltc6804_check_voltage(&pack->voltages[i], &warning, error);
-		ER_CHK(error);
+		ER_CHK(*error);
 		ltc6804_check_temperature(&pack->temperatures[i], error);
-		ER_CHK(error);
+		ER_CHK(*error);
 	}
 
 End:

@@ -98,7 +98,7 @@ uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc, ER_UINT16_
 					volts[count].value = _convert_voltage(&data[2 * cell]);
 
 					ltc6804_check_voltage(&volts[count], warning, error);
-					ER_CHK(error);
+					ER_CHK(*error);
 
 					count++;
 				}
@@ -108,7 +108,7 @@ uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc, ER_UINT16_
 		}
 
 		*error = error_check_fatal(&ltc->error, HAL_GetTick());
-		ER_CHK(error);
+		ER_CHK(*error);
 	}
 End:;
 	return count;
@@ -302,7 +302,7 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, bool 
 							temps[count].value = temp;
 
 							ltc6804_check_temperature(&temps[count], error);
-							ER_CHK(error);
+							ER_CHK(*error);
 						}
 					}
 					count++;
@@ -314,7 +314,7 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, bool 
 	}
 
 	*error = error_check_fatal(&ltc->error, HAL_GetTick());
-	ER_CHK(error);	// In case of error, set the error and goto label End
+	ER_CHK(*error);	// In case of error, set the error and goto label End
 
 End:;
 
@@ -345,7 +345,7 @@ void ltc6804_check_voltage(ER_UINT16_T *volts, WARNING_T *warning, ERROR_T *erro
 	}
 
 	*error = error_check_fatal(&volts->error, HAL_GetTick());
-	ER_CHK(error);
+	ER_CHK(*error);
 
 End:;
 }
@@ -364,7 +364,7 @@ void ltc6804_check_temperature(ER_UINT16_T *temp, ERROR_T *error) {
 	}
 
 	*error = error_check_fatal(&temp->error, HAL_GetTick());
-	ER_CHK(error);
+	ER_CHK(*error);
 
 End:;
 }

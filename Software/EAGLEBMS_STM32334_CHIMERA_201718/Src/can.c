@@ -16,7 +16,7 @@ uint8_t CAN_MSG_BUS_VOLTAGE[8] = {0x3D, 0xEB, 0, 0, 0, 0, 0, 0};
 uint8_t CAN_MSG_TS_ON[8] = {CAN_OUT_TS_ON, 0, 0, 0, 0, 0, 0, 0};
 uint8_t CAN_MSG_TS_OFF[8] = {CAN_OUT_TS_OFF, 0, 0, 0, 0, 0, 0, 0};
 
-CAN_FilterConfTypeDef filter_ecu = {.FilterNumber = 0,
+CAN_FilterTypeDef filter_ecu = { .FilterBank = 0,
 									.FilterMode = CAN_FILTERMODE_IDLIST,
 									.FilterIdHigh = CAN_ID_ECU << 5,
 									.FilterIdLow = 0,
@@ -26,7 +26,7 @@ CAN_FilterConfTypeDef filter_ecu = {.FilterNumber = 0,
 									.FilterScale = CAN_FILTERSCALE_16BIT,
 									.FilterActivation = ENABLE};
 
-CAN_FilterConfTypeDef filter_inv = {.FilterNumber = 0,
+CAN_FilterTypeDef filter_inv = {.FilterBank = 0,
 									.FilterMode = CAN_FILTERMODE_IDLIST,
 									.FilterIdHigh = CAN_ID_ECU << 5,
 									.FilterIdLow = CAN_ID_IN_INVERTER_L << 5,
@@ -36,7 +36,11 @@ CAN_FilterConfTypeDef filter_inv = {.FilterNumber = 0,
 									.FilterScale = CAN_FILTERSCALE_16BIT,
 									.FilterActivation = ENABLE};
 
-void can_init(CAN_HandleTypeDef *canh) { HAL_CAN_ConfigFilter(canh, &filter_ecu); }
+void can_init(CAN_HandleTypeDef *canh) {
+	HAL_CAN_ConfigFilter(canh, &filter_ecu);
+	HAL_CAN_ActivateNotification(canh, CAN_IT_ERROR | CAN_IT_RX_FIFO0_MSG_PENDING);
+	HAL_CAN_Start(canh);
+}
 
 bool can_check_error(CAN_HandleTypeDef *canh) { return HAL_CAN_GetState(canh) == HAL_CAN_ERROR_BOF; }
 
@@ -47,16 +51,15 @@ bool can_check_error(CAN_HandleTypeDef *canh) { return HAL_CAN_GetState(canh) ==
  * @param		data	The data to send
  */
 void can_send(CAN_HandleTypeDef *canh, uint16_t id, uint8_t data[], size_t size) {
-	CanTxMsgTypeDef tx = {.IDE = CAN_ID_STD, .StdId = id, .DLC = size, .RTR = CAN_RTR_DATA};
+	CAN_TxHeaderTypeDef header = {.IDE = CAN_ID_STD, .StdId = id, .DLC = size, .RTR = CAN_RTR_DATA };
 
-	uint8_t i;
-	for (i = 0; i < tx.DLC; i++) {
-		tx.Data[i] = data[i];
-	}
+	uint32_t mailbox = CAN_TX_MAILBOX0;
 
-	canh->pTxMsg = &tx;
-	HAL_CAN_Transmit_IT(canh);
-	// HAL_CAN_Transmit(canh, 2);
+	if(!HAL_CAN_IsTxMessagePending(canh, CAN_TX_MAILBOX0)) mailbox = CAN_TX_MAILBOX0;
+	else if(!HAL_CAN_IsTxMessagePending(canh, CAN_TX_MAILBOX1)) mailbox = CAN_TX_MAILBOX1;
+	else if(!HAL_CAN_IsTxMessagePending(canh, CAN_TX_MAILBOX2)) mailbox = CAN_TX_MAILBOX2;
+
+	HAL_CAN_AddTxMessage(canh, &header, data, &mailbox);
 }
 
 /**

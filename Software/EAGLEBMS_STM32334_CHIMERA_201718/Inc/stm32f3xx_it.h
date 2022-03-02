@@ -24,7 +24,7 @@
 
 #ifdef __cplusplus
  extern "C" {
-#endif 
+#endif
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -57,7 +57,6 @@ void DebugMon_Handler(void);
 void PendSV_Handler(void);
 void SysTick_Handler(void);
 void DMA1_Channel1_IRQHandler(void);
-void CAN_TX_IRQHandler(void);
 void CAN_RX0_IRQHandler(void);
 void CAN_RX1_IRQHandler(void);
 void CAN_SCE_IRQHandler(void);
@@ -70,5 +69,3 @@ void CAN_SCE_IRQHandler(void);
 #endif
 
 #endif /* __STM32F3xx_IT_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
