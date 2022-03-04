@@ -23,8 +23,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TEMPS_READ_INTERVAL 600
-#define VOLTS_READ_INTERVAL 20
+#define READ_INTERVAL_UNIT  20
+#define TEMPS_READ_INTERVAL 30
+//#define VOLTS_READ_INTERVAL 1
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -64,8 +66,12 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim6;
 
 uint32_t timer_precharge = 0;
+uint32_t timer_reads = 100;
+uint8_t timer_counter = 0;
+/*
 uint32_t timer_volts = 1000;
 uint32_t timer_temps = 1000;
+*/
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -252,40 +258,23 @@ BMS_STATE_T run_state(BMS_STATE_T state, state_global_data_t *data) {
 }
 
 void check_timers(state_global_data_t *data) {
-	uint32_t tick = HAL_GetTick();
-	// Start temperature conversion ahead of time
-	if (tick - timer_temps >= TEMPS_READ_INTERVAL - 4) {
-		if ((VOLTS_READ_INTERVAL - 4) - (tick - timer_volts) <= 4) {
-			timer_volts += 5;
-		}
-		_ltc6804_adcv(&hspi1, 0);
-		pack_init_temperature_conversion(&hspi1);
-	}
-	// Read and send temperatures
-	if (tick - timer_temps >= TEMPS_READ_INTERVAL) {
-		timer_temps = tick;
+	// Read and send volts or temperatures (the last one every TEMPS_READ_INTERVAL times)
+	if (HAL_GetTick() - timer_reads >= READ_INTERVAL_UNIT) {
 
-		read_temps(data);
-		ER_CHK(data->error);
-
-		// Delay voltage measurement to avoid interferences
-		timer_volts = tick - (VOLTS_READ_INTERVAL / 2);
-	}
-
-	// Start voltage conversion ahead of time
-	if (tick - timer_volts >= VOLTS_READ_INTERVAL - 4) {
-		if ((TEMPS_READ_INTERVAL - 4) - (tick - timer_temps) <= 4) {
-			timer_temps += 5;
-		}
-		_ltc6804_adcv(&hspi1, 0);
-	}
-	// Read and send voltages and current
-	if (tick - timer_volts >= VOLTS_READ_INTERVAL) {
-		timer_volts = tick;
-
-		read_volts(data);
-		ER_CHK(data->error);
-	}
+    if(timer_counter == TEMPS_READ_INTERVAL-1) {
+      pack_init_temperature_conversion(&hspi1);
+      read_temps(data);
+      pack_deInit_temperature_conversion(&hspi1);
+      //_ltc6804_adcv(&hspi1, 0);
+      //HAL_Delay(5);
+    } else {
+      _ltc6804_adcv(&hspi1, 0);
+      read_volts(data);
+    }
+    timer_reads = HAL_GetTick();
+    timer_counter = (timer_counter+1) % TEMPS_READ_INTERVAL;
+    ER_CHK(data->error);
+  }
 
 End:;
 }
