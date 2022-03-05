@@ -14,7 +14,6 @@
 #define LTC6804_EMU 0
 
 uint16_t _pec15(uint8_t len, uint8_t data[]);
-uint16_t _convert_voltage(uint8_t v_data[]);
 uint16_t _convert_temp(uint16_t volt);
 void _wakeup_idle(SPI_HandleTypeDef *hspi, bool apply_delay);
 
@@ -95,10 +94,10 @@ uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc, ER_UINT16_
 			for (cell = 0; cell < LTC6804_REG_CELL_COUNT; cell++) {
 				// If cell is present
 				if (ltc->cell_distribution[reg * LTC6804_REG_CELL_COUNT + cell]) {
-					volts[count].value = _convert_voltage(&data[2 * cell]);
+					volts[count].value = _CONVERT_VOLTAGE(data, cell);
 
 					ltc6804_check_voltage(&volts[count], warning, error);
-					ER_CHK(error);
+					ER_CHK(*error);
 
 					count++;
 				}
@@ -108,7 +107,7 @@ uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc, ER_UINT16_
 		}
 
 		*error = error_check_fatal(&ltc->error, HAL_GetTick());
-		ER_CHK(error);
+		ER_CHK(*error);
 	}
 End:;
 	return count;
@@ -132,7 +131,7 @@ void _ltc6804_adcv(SPI_HandleTypeDef *spi, bool dcp) {
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
 	cmd[0] = (uint8_t)0b00000011;
-	cmd[1] = (uint8_t)0b01100000 + dcp * 0b00010000;
+	cmd[1] = !dcp ? (uint8_t)0b01100000 : (uint8_t)0b01110000;
 	cmd_pec = _pec15(2, cmd);
 	cmd[2] = (uint8_t)(cmd_pec >> 8);
 	cmd[3] = (uint8_t)(cmd_pec);
@@ -217,9 +216,6 @@ void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start_bal, bool even) {
 	HAL_SPI_Transmit(hspi, cfgr, 8, 100);
 
 	ltc6804_disable_cs(hspi, CS_6820_GPIO_Port, CS_6820_Pin);
-
-	// TODO: remove this
-	_ltc6804_adcv(hspi, start_bal);
 }
 
 void ltc6804_configure_temperature(SPI_HandleTypeDef *hspi, bool enable, bool even) {
@@ -246,7 +242,7 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, bool 
 								  ERROR_T *error) {
 	uint8_t cmd[4];
 	uint16_t cmd_pec;
-	uint8_t data[8];
+	uint8_t ltc_data[8];
 
 	cmd[0] = (uint8_t)0x80 + ltc->address;
 
@@ -261,10 +257,10 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, bool 
 		_wakeup_idle(hspi, false);
 
 		ltc6804_enable_cs(hspi, CS_6820_GPIO_Port, CS_6820_Pin);
-		HAL_Delay(0);
+		HAL_Delay(1);
 
 		HAL_SPI_Transmit(hspi, cmd, 4, 10);
-		HAL_SPI_Receive(hspi, data, 8, 10);
+		HAL_SPI_Receive(hspi, ltc_data, 8, 10);
 
 		ltc6804_disable_cs(hspi, CS_6820_GPIO_Port, CS_6820_Pin);
 
@@ -282,7 +278,7 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, bool 
 		data[7] = (uint8_t)emu_pec;
 #endif
 
-		bool pec = (_pec15(6, data) == (uint16_t)(data[6] * 256 + data[7]));
+		bool pec = (_pec15(6, ltc_data) == (uint16_t)(ltc_data[6] * 256 + ltc_data[7]));
 
 		if (pec) {
 			error_unset(ERROR_LTC6804_PEC_ERROR, &ltc->error);
@@ -296,13 +292,13 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, bool 
 					bool is_even = count % 2 == 0;
 					// If the cell we're reading respects the even condition
 					if (is_even == even) {
-						uint16_t temp = _convert_temp(_convert_voltage(&data[2 * cell]));
+						uint16_t temp = _convert_temp(_CONVERT_VOLTAGE(ltc_data, cell));
 
 						if (temp > 0) {
 							temps[count].value = temp;
 
 							ltc6804_check_temperature(&temps[count], error);
-							ER_CHK(error);
+							ER_CHK(*error);
 						}
 					}
 					count++;
@@ -314,7 +310,7 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, bool 
 	}
 
 	*error = error_check_fatal(&ltc->error, HAL_GetTick());
-	ER_CHK(error);	// In case of error, set the error and goto label End
+	ER_CHK(*error);	// In case of error, set the error and goto label End
 
 End:;
 
@@ -345,7 +341,7 @@ void ltc6804_check_voltage(ER_UINT16_T *volts, WARNING_T *warning, ERROR_T *erro
 	}
 
 	*error = error_check_fatal(&volts->error, HAL_GetTick());
-	ER_CHK(error);
+	ER_CHK(*error);
 
 End:;
 }
@@ -364,7 +360,7 @@ void ltc6804_check_temperature(ER_UINT16_T *temp, ERROR_T *error) {
 	}
 
 	*error = error_check_fatal(&temp->error, HAL_GetTick());
-	ER_CHK(error);
+	ER_CHK(*error);
 
 End:;
 }
@@ -400,17 +396,6 @@ uint16_t _pec15(uint8_t len, uint8_t data[]) {
 	// The CRC15 has a 0 in the LSB so the final value must be multiplied by 2
 	return (remainder * 2);
 }
-
-/**
- * @brief	This function is used to convert the 2 byte raw data from the
- * 				LTC68xx to a 16 bit unsigned integer
- *
- * @param 	v_data	Raw data bytes
- *
- * @retval	Voltage [mV]
- */
-uint16_t _convert_voltage(uint8_t v_data[]) { return v_data[0] + (v_data[1] << 8); }
-
 /**
  * @brief		This function converts a voltage data from the zener sensor
  * 					to a temperature
@@ -420,8 +405,11 @@ uint16_t _convert_voltage(uint8_t v_data[]) { return v_data[0] + (v_data[1] << 8
  * @retval	Temperature [C° * 100]
  */
 uint16_t _convert_temp(uint16_t volt) {
-	float voltf = volt * 0.0001;
-	float temp;
-	temp = -225.7 * voltf * voltf * voltf + 1310.6 * voltf * voltf - 2594.8 * voltf + 1767.8;
-	return (uint16_t)(temp * 100);
+	float v = volt*0.001;
+	float v2 = v * v;
+	float v3 = v2 * v;
+	float v4 = v2 * v2;
+	float v5 = v2 * v3;
+	float temp = -0.871f*v5 + 77.999f*v4 -2798.726f*v3 + 50341.204f*v2 - 455146.232f*v + 1665002.408f; //coefficients are already multiplied by 100 in order to get cents of C°
+	return (uint16_t)(temp);
 }

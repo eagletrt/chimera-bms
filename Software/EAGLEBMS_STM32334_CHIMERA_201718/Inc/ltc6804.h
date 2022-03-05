@@ -15,6 +15,8 @@
 #include <stdbool.h>
 #include <stm32f3xx_hal.h>
 
+#define _CONVERT_VOLTAGE(data, index) (((uint16_t*)data)[index])
+
 /** @brief Basic definition of a LTC6804 */
 typedef struct
 {

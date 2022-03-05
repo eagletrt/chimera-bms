@@ -101,5 +101,3 @@ void read_temps(state_global_data_t *data);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

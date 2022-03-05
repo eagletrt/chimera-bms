@@ -94,10 +94,10 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
   /* USER CODE END ADC1_MspInit 0 */
     /* Peripheral clock enable */
     __HAL_RCC_ADC12_CLK_ENABLE();
-  
+
     __HAL_RCC_GPIOA_CLK_ENABLE();
-    /**ADC1 GPIO Configuration    
-    PA0     ------> ADC1_IN1 
+    /**ADC1 GPIO Configuration
+    PA0     ------> ADC1_IN1
     */
     GPIO_InitStruct.Pin = CurrentSensor_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
@@ -111,7 +111,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     hdma_adc1.Init.PeriphInc = DMA_PINC_DISABLE;
     hdma_adc1.Init.MemInc = DMA_MINC_ENABLE;
     hdma_adc1.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-    hdma_adc1.Init.MemDataAlignment = DMA_MDATAALIGN_WORD;
+    hdma_adc1.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
     hdma_adc1.Init.Mode = DMA_CIRCULAR;
     hdma_adc1.Init.Priority = DMA_PRIORITY_HIGH;
     if (HAL_DMA_Init(&hdma_adc1) != HAL_OK)
@@ -143,9 +143,9 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
   /* USER CODE END ADC1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_ADC12_CLK_DISABLE();
-  
-    /**ADC1 GPIO Configuration    
-    PA0     ------> ADC1_IN1 
+
+    /**ADC1 GPIO Configuration
+    PA0     ------> ADC1_IN1
     */
     HAL_GPIO_DeInit(CurrentSensor_GPIO_Port, CurrentSensor_Pin);
 
@@ -174,11 +174,11 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* hcan)
   /* USER CODE END CAN_MspInit 0 */
     /* Peripheral clock enable */
     __HAL_RCC_CAN1_CLK_ENABLE();
-  
+
     __HAL_RCC_GPIOA_CLK_ENABLE();
-    /**CAN GPIO Configuration    
+    /**CAN GPIO Configuration
     PA11     ------> CAN_RX
-    PA12     ------> CAN_TX 
+    PA12     ------> CAN_TX
     */
     GPIO_InitStruct.Pin = GPIO_PIN_11|GPIO_PIN_12;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -188,8 +188,6 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef* hcan)
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     /* CAN interrupt Init */
-    HAL_NVIC_SetPriority(CAN_TX_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(CAN_TX_IRQn);
     HAL_NVIC_SetPriority(CAN_RX0_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(CAN_RX0_IRQn);
     HAL_NVIC_SetPriority(CAN_RX1_IRQn, 0, 0);
@@ -218,15 +216,14 @@ void HAL_CAN_MspDeInit(CAN_HandleTypeDef* hcan)
   /* USER CODE END CAN_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_CAN1_CLK_DISABLE();
-  
-    /**CAN GPIO Configuration    
+
+    /**CAN GPIO Configuration
     PA11     ------> CAN_RX
-    PA12     ------> CAN_TX 
+    PA12     ------> CAN_TX
     */
     HAL_GPIO_DeInit(GPIOA, GPIO_PIN_11|GPIO_PIN_12);
 
     /* CAN interrupt DeInit */
-    HAL_NVIC_DisableIRQ(CAN_TX_IRQn);
     HAL_NVIC_DisableIRQ(CAN_RX0_IRQn);
     HAL_NVIC_DisableIRQ(CAN_RX1_IRQn);
     HAL_NVIC_DisableIRQ(CAN_SCE_IRQn);
@@ -253,12 +250,12 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* hspi)
   /* USER CODE END SPI1_MspInit 0 */
     /* Peripheral clock enable */
     __HAL_RCC_SPI1_CLK_ENABLE();
-  
+
     __HAL_RCC_GPIOB_CLK_ENABLE();
-    /**SPI1 GPIO Configuration    
+    /**SPI1 GPIO Configuration
     PB3     ------> SPI1_SCK
     PB4     ------> SPI1_MISO
-    PB5     ------> SPI1_MOSI 
+    PB5     ------> SPI1_MOSI
     */
     GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -289,11 +286,11 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* hspi)
   /* USER CODE END SPI1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_SPI1_CLK_DISABLE();
-  
-    /**SPI1 GPIO Configuration    
+
+    /**SPI1 GPIO Configuration
     PB3     ------> SPI1_SCK
     PB4     ------> SPI1_MISO
-    PB5     ------> SPI1_MOSI 
+    PB5     ------> SPI1_MOSI
     */
     HAL_GPIO_DeInit(GPIOB, GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5);
 
@@ -352,4 +349,3 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
 
 /* USER CODE END 1 */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

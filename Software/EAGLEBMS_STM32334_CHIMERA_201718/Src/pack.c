@@ -17,8 +17,12 @@
 #define CURRENT_ROLLING_AVERAGE_FACTOR 0.75f
 #define PACK_DROP_DELTA 2000  // 0.2V
 
-uint32_t adc_current[CURRENT_ARRAY_LENGTH];
+uint16_t adc_current[CURRENT_ARRAY_LENGTH];
 int16_t current_zero = 0;
+
+float input_voltage_convertion_factor = ((3.3f / 4096) / CURRENT_ARRAY_LENGTH) * 2;
+float current_convertion_factor = (200 / 1.25f);
+
 bool temp_even = false;
 
 LTC6804_T ltc[LTC6804_COUNT];
@@ -31,7 +35,7 @@ LTC6804_T ltc[LTC6804_COUNT];
  */
 void pack_init(ADC_HandleTypeDef *adc, PACK_T *pack) {
 	// Start current measuring
-	HAL_ADC_Start_DMA(adc, adc_current, CURRENT_ARRAY_LENGTH);
+	HAL_ADC_Start_DMA(adc, (uint32_t*)adc_current, CURRENT_ARRAY_LENGTH);
 
 	pack->total_voltage = 0;
 	pack->max_voltage = 0;
@@ -79,7 +83,7 @@ uint8_t pack_update_voltages(SPI_HandleTypeDef *spi, PACK_T *pack, WARNING_T *wa
 
 	for (ltc_i = 0; ltc_i < LTC6804_COUNT || !error; ltc_i++) {
 		cell = ltc6804_read_voltages(spi, &ltc[ltc_i], &pack->voltages[ltc_i * LTC6804_CELL_COUNT], warning, error);
-		ER_CHK(error);
+		ER_CHK(*error);
 	}
 
 End:;
@@ -92,6 +96,7 @@ End:;
 }
 
 void pack_init_temperature_conversion(SPI_HandleTypeDef *spi) { ltc6804_configure_temperature(spi, true, temp_even); }
+void pack_deInit_temperature_conversion(SPI_HandleTypeDef *spi) { _ltc6804_adcv(spi, false); }
 
 /**
  * @brief		Polls the LTCs for temperatures
@@ -122,7 +127,7 @@ uint8_t pack_update_temperatures(SPI_HandleTypeDef *spi, PACK_T *pack, ERROR_T *
 		cell_index = ltc6804_read_temperatures(spi, &ltc[ltc_index], temp_even,
 											   &pack->temperatures[ltc_index * LTC6804_CELL_COUNT], error);
 
-		ER_CHK(error);
+		ER_CHK(*error);
 
 		ltc_index = (ltc_index + 1) % LTC6804_COUNT;
 		if (ltc_index == 0) {
@@ -149,19 +154,17 @@ End:;
  * @param		error		The error return value
  */
 void pack_update_current(ER_INT16_T *current, ERROR_T *error) {
-	int32_t tmp = 0;
+	uint32_t tmp = 0;
 	uint16_t i;
 	for (i = 0; i < CURRENT_ARRAY_LENGTH; i++) {
 		tmp += adc_current[i];
 	}
-	tmp /= CURRENT_ARRAY_LENGTH;
 
 	// We calculate the input voltage
-	float in_volt = (((tmp * 3.3f) / 4096) * 2);
+	float in_volt = ((float)tmp * input_voltage_convertion_factor); //calculates the mean value and converts it to voltage
 
-	int16_t cur = (int16_t)round(-(((in_volt - 2.169f) * 200 / 1.25f)) * 10);
+	current->value = (int16_t)round(-((in_volt - 2.169f) * current_convertion_factor) * 10 - current_zero); //converts the voltage value to the current one
 	// Check the current sensor datasheet for the correct formula
-	current->value = cur - current_zero;
 	// current->value =
 	//(CURRENT_ROLLING_AVERAGE_FACTOR * cur + (1 - CURRENT_ROLLING_AVERAGE_FACTOR) * current->value) - current_zero;
 
@@ -172,7 +175,7 @@ void pack_update_current(ER_INT16_T *current, ERROR_T *error) {
 	}
 
 	*error = error_check_fatal(&current->error, HAL_GetTick());
-	ER_CHK(error);
+	ER_CHK(*error);
 
 End:;
 }
@@ -237,9 +240,9 @@ uint8_t pack_check_errors(PACK_T *pack, ERROR_T *error) {
 	uint8_t i;
 	for (i = 0; i < PACK_MODULE_COUNT; i++) {
 		ltc6804_check_voltage(&pack->voltages[i], &warning, error);
-		ER_CHK(error);
+		ER_CHK(*error);
 		ltc6804_check_temperature(&pack->temperatures[i], error);
-		ER_CHK(error);
+		ER_CHK(*error);
 	}
 
 End:
