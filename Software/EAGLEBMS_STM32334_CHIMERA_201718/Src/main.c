@@ -264,9 +264,6 @@ void check_timers(state_global_data_t *data) {
     if(timer_counter == TEMPS_READ_INTERVAL-1) {
       pack_init_temperature_conversion(&hspi1);
       read_temps(data);
-      pack_deInit_temperature_conversion(&hspi1);
-      //_ltc6804_adcv(&hspi1, 0);
-      //HAL_Delay(5);
     } else {
       _ltc6804_adcv(&hspi1, 0);
       read_volts(data);

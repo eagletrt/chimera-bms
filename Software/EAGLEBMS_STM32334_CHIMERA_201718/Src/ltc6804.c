@@ -140,6 +140,7 @@ void _ltc6804_adcv(SPI_HandleTypeDef *spi, bool dcp) {
 	ltc6804_enable_cs(spi, CS_6820_GPIO_Port, CS_6820_Pin);
 	HAL_SPI_Transmit(spi, cmd, 4, 10);
 	ltc6804_disable_cs(spi, CS_6820_GPIO_Port, CS_6820_Pin);
+	HAL_Delay(3);
 }
 
 /**
@@ -257,7 +258,7 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, bool 
 		_wakeup_idle(hspi, false);
 
 		ltc6804_enable_cs(hspi, CS_6820_GPIO_Port, CS_6820_Pin);
-		HAL_Delay(1);
+		HAL_Delay(1); //without this, voltage measurements are sborati, I don't understand why
 
 		HAL_SPI_Transmit(hspi, cmd, 4, 10);
 		HAL_SPI_Receive(hspi, ltc_data, 8, 10);
