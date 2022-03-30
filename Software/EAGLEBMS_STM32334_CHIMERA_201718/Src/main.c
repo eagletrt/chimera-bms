@@ -25,7 +25,7 @@
 /* USER CODE BEGIN PD */
 #define READ_INTERVAL_UNIT  20U
 #define TEMPS_READ_INTERVAL 30U
-#define CONV_TIME           5U
+#define CONV_TIME           6U
 //#define VOLTS_READ_INTERVAL 1
 
 /* USER CODE END PD */
