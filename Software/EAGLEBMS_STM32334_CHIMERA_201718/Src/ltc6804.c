@@ -16,6 +16,7 @@
 uint16_t _pec15(uint8_t len, uint8_t data[]);
 uint16_t _convert_temp(uint16_t volt);
 void _wakeup_idle(SPI_HandleTypeDef *hspi, bool apply_delay);
+void _ltc6804_clrcells(SPI_HandleTypeDef *spi);
 
 void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start, bool parity);
 
@@ -94,6 +95,8 @@ uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc, ER_UINT16_
 			for (cell = 0; cell < LTC6804_REG_CELL_COUNT; cell++) {
 				// If cell is present
 				if (ltc->cell_distribution[reg * LTC6804_REG_CELL_COUNT + cell]) {
+					if(_CONVERT_VOLTAGE(data, cell) == (uint16_t)0xFFFF) continue; //skip unready values
+					
 					volts[count].value = _CONVERT_VOLTAGE(data, cell);
 
 					ltc6804_check_voltage(&volts[count], warning, error);
@@ -110,6 +113,7 @@ uint8_t ltc6804_read_voltages(SPI_HandleTypeDef *spi, LTC6804_T *ltc, ER_UINT16_
 		ER_CHK(*error);
 	}
 End:;
+	//_ltc6804_clrcells(spi);
 	return count;
 }
 
@@ -137,10 +141,20 @@ void _ltc6804_adcv(SPI_HandleTypeDef *spi, bool dcp) {
 	cmd[3] = (uint8_t)(cmd_pec);
 
 	_wakeup_idle(spi, false);
+
+	_ltc6804_clrcells(spi);
+
 	ltc6804_enable_cs(spi, CS_6820_GPIO_Port, CS_6820_Pin);
 	HAL_SPI_Transmit(spi, cmd, 4, 10);
 	ltc6804_disable_cs(spi, CS_6820_GPIO_Port, CS_6820_Pin);
-	HAL_Delay(3);
+}
+
+void _ltc6804_clrcells(SPI_HandleTypeDef *spi) {
+	uint8_t clr_cells_cmd[4] = {0x07, 0x11, 0xC9, 0xC0};
+ 	//clear cells
+	ltc6804_enable_cs(spi, CS_6820_GPIO_Port, CS_6820_Pin);
+	HAL_SPI_Transmit(spi, clr_cells_cmd, 4, 10);
+	ltc6804_disable_cs(spi, CS_6820_GPIO_Port, CS_6820_Pin);
 }
 
 /**
@@ -181,9 +195,9 @@ void _ltc6804_wrcfg(SPI_HandleTypeDef *hspi, bool start_bal, bool even) {
 
 	wrcfg[0] = 0x00;
 	wrcfg[1] = 0x01;
-	cmd_pec = _pec15(2, wrcfg);
-	wrcfg[2] = (uint8_t)(cmd_pec >> 8);
-	wrcfg[3] = (uint8_t)(cmd_pec);
+	//cmd_pec = _pec15(2, wrcfg);
+	wrcfg[2] = 0x3D;
+	wrcfg[3] = 0x6E;
 
 	cfgr[0] = 0x00;
 	cfgr[1] = 0x00;
@@ -258,7 +272,6 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, bool 
 		_wakeup_idle(hspi, false);
 
 		ltc6804_enable_cs(hspi, CS_6820_GPIO_Port, CS_6820_Pin);
-		HAL_Delay(1); //without this, voltage measurements are sborati, I don't understand why
 
 		HAL_SPI_Transmit(hspi, cmd, 4, 10);
 		HAL_SPI_Receive(hspi, ltc_data, 8, 10);
@@ -291,8 +304,8 @@ uint8_t ltc6804_read_temperatures(SPI_HandleTypeDef *hspi, LTC6804_T *ltc, bool 
 				// If the cell is present
 				if (ltc->cell_distribution[reg_cell + cell]) {
 					bool is_even = count % 2 == 0;
-					// If the cell we're reading respects the even condition
-					if (is_even == even) {
+					// If the cell we're reading respects the even condition and if the value read is ready
+					if (is_even == even && _CONVERT_VOLTAGE(ltc_data, cell) != 0xFFFF) {
 						uint16_t temp = _convert_temp(_CONVERT_VOLTAGE(ltc_data, cell));
 
 						if (temp > 0) {

@@ -23,8 +23,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define READ_INTERVAL_UNIT  20
-#define TEMPS_READ_INTERVAL 30
+#define READ_INTERVAL_UNIT  20U
+#define TEMPS_READ_INTERVAL 30U
+#define CONV_TIME           6U
 //#define VOLTS_READ_INTERVAL 1
 
 /* USER CODE END PD */
@@ -67,7 +68,7 @@ TIM_HandleTypeDef htim6;
 
 uint32_t timer_precharge = 0;
 uint32_t timer_reads = 100;
-uint8_t timer_counter = 0;
+uint8_t timer_counter = 0, conv_started = 0;
 /*
 uint32_t timer_volts = 1000;
 uint32_t timer_temps = 1000;
@@ -259,13 +260,20 @@ BMS_STATE_T run_state(BMS_STATE_T state, state_global_data_t *data) {
 
 void check_timers(state_global_data_t *data) {
 	// Read and send volts or temperatures (the last one every TEMPS_READ_INTERVAL times)
-	if (HAL_GetTick() - timer_reads >= READ_INTERVAL_UNIT) {
 
+  if(!conv_started && (HAL_GetTick() - timer_reads >= READ_INTERVAL_UNIT - CONV_TIME)) { //start convertion 5ms before reading
+    conv_started = 1;
     if(timer_counter == TEMPS_READ_INTERVAL-1) {
       pack_init_temperature_conversion(&hspi1);
-      read_temps(data);
     } else {
       _ltc6804_adcv(&hspi1, 0);
+    }
+  }
+	if (conv_started && (HAL_GetTick() - timer_reads >= READ_INTERVAL_UNIT)) {
+    conv_started = 0;
+    if(timer_counter == TEMPS_READ_INTERVAL-1) {
+      read_temps(data);
+    } else {
       read_volts(data);
     }
     timer_reads = HAL_GetTick();
